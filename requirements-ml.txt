@@ -1,0 +1,24 @@
+# Heavy machine-learning and quantum libraries.
+#
+# These are large downloads (hundreds of megabytes to a few gigabytes) and you
+# only need them for specific parts of the book, so they live here instead of in
+# the main requirements.txt. Install them when you reach those chapters:
+#
+#     pip install -r requirements-ml.txt
+#
+# Where they are used:
+#   torch, torchvision  -> Part 14 (Deep Learning) and Part 20 (Generative/Agentic AI)
+#   tensorflow          -> Part 14 (the Keras examples)
+#   qiskit              -> Part 19.2 (the optional "real library" quantum computing aside)
+#
+# Notes:
+#   - On Apple Silicon, plain `pip install torch` works and uses the built-in
+#     Metal backend. On machines with an NVIDIA GPU, follow the install selector
+#     at pytorch.org to get the CUDA build instead.
+#   - TensorFlow support varies by OS and Python version. If it will not install,
+#     you can skip it: every deep-learning idea in the book is also shown in PyTorch.
+
+torch
+torchvision
+tensorflow
+qiskit

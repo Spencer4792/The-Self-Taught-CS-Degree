@@ -1,0 +1,90 @@
+# Requirements for the code in this textbook.
+#
+# You do NOT need all of this to start. Stages 0 to 3 use almost nothing but the
+# Python standard library. Install packages as the chapters ask for them, or just
+# install everything here once inside a virtual environment:
+#
+#     python -m venv .venv
+#     source .venv/bin/activate      # on Windows: .venv\Scripts\activate
+#     pip install -r requirements.txt
+#
+# The heavy machine-learning and quantum libraries (PyTorch, TensorFlow, Qiskit)
+# are kept in a separate file so you are not forced to download gigabytes before
+# you need them. When you reach Parts 14, 19, and 20:
+#
+#     pip install -r requirements-ml.txt
+#
+# Versions are intentionally left unpinned so the book keeps working over time.
+# If you want a frozen, reproducible set, run `pip freeze > requirements.lock`.
+# Python 3.10 or newer is recommended.
+
+# --- Core scientific and data (Parts 14, 16, 18, 19) ---
+numpy
+scipy
+pandas
+sympy
+scikit-learn
+statsmodels
+joblib
+
+# --- Visualization (Part 16) ---
+matplotlib
+seaborn
+plotly
+dash
+umap-learn
+
+# --- Web, APIs, and async (Parts 8, 9, 20) ---
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
+strawberry-graphql
+SQLAlchemy
+requests
+httpx
+aiohttp
+websockets
+beautifulsoup4
+lxml
+jinja2
+python-dotenv
+playwright
+
+# --- Data stores and cloud (Parts 7, 9, 10) ---
+redis
+boto3
+
+# --- Security and cryptography (Part 12) ---
+cryptography
+argon2-cffi
+passlib
+PyJWT
+
+# --- Files and office formats (Part 4) ---
+openpyxl
+pypdf
+Pillow
+
+# --- Observability (Part 13) ---
+opentelemetry-sdk
+opentelemetry-exporter-otlp
+prometheus-client
+python-json-logger
+
+# --- Networking utilities (Part 6) ---
+dnspython
+
+# --- Performance and native speedups (Part 16) ---
+numba
+
+# --- Testing, typing, profiling, and security tooling (used throughout) ---
+pytest
+hypothesis
+mypy
+line-profiler
+memory-profiler
+py-spy
+detect-secrets
+mitmproxy
