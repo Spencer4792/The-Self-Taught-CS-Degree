@@ -20,7 +20,7 @@ The approach is simple and it never changes:
 - **Learn by doing.** Every chapter has code you run yourself, exercises with worked solutions, and a mini-project you can put on GitHub. Reading is not enough. You build.
 - **Go deep, not just wide.** When math shows up, we derive it and make it intuitive instead of asking you to take it on faith.
 
-It is written in a friendly, first-person voice, like a knowledgeable friend walking you through it at a whiteboard. When you read "I," read it as you.
+It is written in a friendly, direct voice, like a knowledgeable instructor walking you through the material at a whiteboard.
 
 > **Where it ends:** the final stage, Landing the Job (Part 15), is dedicated to [coding interviews](15-Career/15.1-coding-interviews.md), [system design interviews](15-Career/15.2-system-design-interviews.md), [behavioral prep, resume and job-search strategy](15-Career/15.3-behavioral-resume-jobsearch.md), and [capstone portfolio projects](15-Career/15.4-capstone-projects.md). Start that practice early and keep it warm the whole way through.
 
@@ -35,21 +35,21 @@ Whether you are teaching yourself from scratch, filling gaps after a degree, or 
 - **Dip into the reference.** The [cheat sheets](28-Appendix/28.1-cheat-sheets.md) and [glossary](28-Appendix/28.2-glossary.md) are meant to stay open in a tab.
 - **Plan and stay on track.** Use the [Study Guide](STUDY-GUIDE.md) to pick a route (fastest path to a job, web, or data/ML) and a schedule, the [Progress Tracker](PROGRESS.md) to check off chapters, the [Project Index](PROJECTS.md) to build a portfolio as you go, and the [Stage Checkpoints](CHECKPOINTS.md) to confirm you are ready before moving on.
 
-The first-person "notes to myself" voice is intentional, so when you read "I," read it as you. The material is licensed under the [MIT License](LICENSE), so you can use, copy, and adapt it freely. Corrections and improvements are very welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
+The material is licensed under the [MIT License](LICENSE), so you can use, copy, and adapt it freely. Corrections and improvements are very welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
 ## How to use this book
 
-**Read it with your hands, not just your eyes.** Every chapter has code you should type out (not copy-paste, *type it*) and run. There are exercises with worked solutions and a mini-project in each chapter. Don't skip them. The whole reason I'm here is that I've done too much passive learning.
+**Read it with your hands, not just your eyes.** Every chapter has code you should type out (not copy-paste, *type it*) and run, plus exercises with worked solutions and a mini-project. Don't skip them. Passive reading is exactly the trap this book is built to help you avoid.
 
-**The rules I'm holding myself to:**
+**The rules this book follows:**
 
-1. **No black boxes.** If I use a tool, I should be able to explain roughly what it does underneath. We build the simple version from scratch *before* reaching for the library version.
+1. **No black boxes.** Before reaching for a library, the book builds the simple version from scratch, so you can always explain roughly what a tool does underneath.
 2. **Math gets derived, not asserted.** When a complexity bound or a formula shows up, we show *why*.
-3. **Every concept gets code.** If I can't write it, I don't understand it.
-4. **Build something.** Each chapter ends with a project I can put on GitHub.
-5. **Explain it back.** At the end of each chapter there's a "teach it back" prompt. If I can't explain it simply, I go back.
+3. **Every concept gets code.** If you can't write it, you don't really understand it, so every idea comes with runnable code.
+4. **Build something.** Each chapter ends with a project you can put on GitHub.
+5. **Explain it back.** Each chapter closes with a "teach it back" prompt. If you can't explain it simply, that is the signal to go back.
 
 **Every chapter now has the same rhythm:** a beginner "🌱 Start here" on-ramp, 📐 the theory/math, 💻 a "Build it" from-scratch implementation, a 🧪 mini-project, a "⚠️ Common mistakes" box, a "💼 On the job / interview angle" callout, and an "✏️ Exercises" section with fully worked solutions, closing with "✅ Teach it back."
 
@@ -57,12 +57,12 @@ The first-person "notes to myself" voice is intentional, so when you read "I," r
 
 ## 📚 The Learning Path - follow this order
 
-This is the spine of the book: **everything arranged from easiest to hardest, as a natural progression where each stage unlocks the next**, basically a self-paced CS degree. If I just want a roadmap, I follow the stages top to bottom. (A flat by-subject index is at the bottom for reference.) The folder numbers are just storage labels; *this ordering is the real curriculum.*
+This is the spine of the book: **everything arranged from easiest to hardest, as a natural progression where each stage unlocks the next**, basically a self-paced CS degree. If you just want a roadmap, follow the stages top to bottom. (A flat by-subject index is at the bottom for reference.) The folder numbers are just storage labels; *this ordering is the real curriculum.*
 
-> **Honest pacing:** the whole path is a multi-year journey if I do the projects (and the projects are the point). That's fine. Depth is the entire goal. A reasonable rhythm is one chapter every couple of days, building the capstone projects (Part 15) as I go.
+> **Honest pacing:** the whole path is a multi-year journey if you do the projects (and the projects are the point). That is fine. Depth is the entire goal. A reasonable rhythm is one chapter every couple of days, building the capstone projects (Part 15) as you go.
 
 ### 🟢 Stage 0 - Get set up (Week 0)
-*Start here even if I think I know it. Zero prior coding assumed.*
+*Start here even if you think you know it. Zero prior coding assumed.*
 - [0.1 Setup & Tooling, the command line, Python, PyCharm, git](00-Orientation/00.1-setup-and-tooling.md)
 - [0.2 Programming Fundamentals (starting from zero)](00-Orientation/00.2-programming-fundamentals.md)
 - [0.3 Problem-Solving & Computational Thinking](00-Orientation/00.3-problem-solving.md)
@@ -112,13 +112,13 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [23.2 Computability & Complexity (Turing machines, halting, P vs NP)](23-Theory-of-Computation/23.2-computability-and-complexity.md)
 
 ### 🟡 Stage 4 - Working with data (degree year 2 - 3)
-*My home turf, now on a rigorous footing. Needs the Stage 1 math.*
+*The data skills employers want, now on a rigorous footing. Needs the Stage 1 math.*
 - [16.1 Statistics & Probability for Data Science](16-Data/16.1-statistics-and-probability.md)
 - [16.2 Data Wrangling with pandas & NumPy](16-Data/16.2-data-wrangling-pandas-numpy.md)
 - [16.3 Data Visualization (Matplotlib, Plotly, D3, Recharts, Chart.js)](16-Data/16.3-data-visualization.md)
 
 ### 🟡 Stage 5 - Building & shipping real software (degree year 3)
-*From "I can code" to "I can build, deploy, secure, and operate a product." Learn the engineering craft (27) alongside the stack, clean code and tests make everything else here easier.*
+*Going from writing code to building, deploying, securing, and operating a real product. Learn the engineering craft (27) alongside the stack; clean code and tests make everything else here easier.*
 - [27.1 Clean Code, SOLID & Design Patterns](27-Software-Engineering/27.1-clean-code-and-design-patterns.md)
 - [27.2 Testing, Software Architecture & Engineering Practices](27-Software-Engineering/27.2-testing-and-architecture.md)
 - [7.1 Relational Databases & SQL](07-Databases/07.1-relational-and-sql.md)
@@ -173,14 +173,14 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [21.1 Building & Structuring a Software Company](21-Business/21.1-software-company.md)
 
 ### 🎯 Stage 8 - Landing the job (run alongside Stages 5 - 7)
-*Start the coding-interview practice during Stage 2 and keep it warm; do the rest as I near applying.*
+*Start the coding-interview practice during Stage 2 and keep it warm; do the rest as you near applying.*
 - [15.1 Cracking the Coding Interview (the patterns)](15-Career/15.1-coding-interviews.md)
 - [15.2 System Design Interviews (entry-level)](15-Career/15.2-system-design-interviews.md)
 - [15.3 Behavioral Interviews, Resume & the Job Search](15-Career/15.3-behavioral-resume-jobsearch.md)
 - [15.4 Capstone & Portfolio Projects](15-Career/15.4-capstone-projects.md)
 
 ### 📎 Appendix - keep these open in a tab the whole way through
-*Reference material, not a stage. Dip in whenever I need a fast lookup or a definition.*
+*Reference material, not a stage. Dip in whenever you need a fast lookup or a definition.*
 - [28.1 Cheat Sheets (git, bash, SQL, regex, Python, Docker, kubectl, Big-O…)](28-Appendix/28.1-cheat-sheets.md)
 - [28.2 Glossary (A-Z of every key term, linked to its chapter)](28-Appendix/28.2-glossary.md)
 
@@ -226,14 +226,14 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 
 ---
 
-## How this maps to where I want to go
+## How the stages map to where you want to go
 
-My resume says I do data, ML, telemetry, and full-stack work, and I'm building real products (NYX Finance, Anneava). This curriculum is built to take me from **absolute beginner to genuinely deep**, and to a job, without ever hand-waving:
+This curriculum is built to take you from **absolute beginner to genuinely deep**, and to a job, without ever hand-waving:
 
-- **Stages 0-2** fix the foundations I've always felt shaky on, including the calculus and linear algebra (eigenvalues, SVD) that make everything later make sense.
-- **Stages 3-5** turn me into someone who can build, ship, scale, secure, and operate real software end to end, the backbone of the products I'm building.
+- **Stages 0-2** build the foundations most self-taught developers feel shaky on, including the calculus and linear algebra (eigenvalues, SVD) that make everything later make sense.
+- **Stages 3-5** turn you into someone who can build, ship, scale, secure, and operate real software end to end.
 - **Stage 6** is the intelligence layer: classical ML and deep learning on a firm mathematical footing, then production MLOps, then how LLMs actually work and how to build **agentic AI** systems.
-- **Stage 7** is where I go deep and wide on the things I'm curious about: **physics** and quantum computing, the full **semiconductor** stack (with a researched guide to breaking into that industry), other programming languages, **building server farms / Mac-mini infrastructure**, and **running a software company**.
-- **Stage 8** is the bridge to employment, interviews, portfolio, and the job search, and I keep it warm the whole way through.
+- **Stage 7** is where you go deep and wide on whatever you are curious about: **physics** and quantum computing, the full **semiconductor** stack (with a researched guide to breaking into that industry), other programming languages, **building server farms and Mac-mini infrastructure**, and **running a software company**.
+- **Stage 8** is the bridge to employment: interviews, portfolio, and the job search, kept warm the whole way through.
 
 Let's build the deep understanding. Start at [Stage 0](00-Orientation/00.1-setup-and-tooling.md).

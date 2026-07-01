@@ -20,7 +20,7 @@ If you are new to this workflow, the git tutorial in the book itself walks throu
 
 ## Style notes
 
-- **Plain, friendly, first person.** The book reads like notes written to yourself. Keep that tone.
+- **Plain, friendly, and direct.** The book speaks to the reader as "you," and uses "we"/"let's" when working through something together, like a good instructor at a whiteboard. Keep that tone.
 - **No black boxes.** Explain why something works before showing the tool that does it. Derive the math. Build the simple version from scratch.
 - **Runnable code.** Prefer Python. Test what you add. Do not paste code you have not run.
 - **No em dashes.** Use commas, colons, or short sentences instead. This keeps the prose clean and consistent.

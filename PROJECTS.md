@@ -258,8 +258,8 @@ Tip: the six capstone briefs at the very bottom (in 15.4) are the projects most 
 
 ### [12.4 Hands-On with Burp Suite](12-Security/12.4-burp-suite.md)
 - Mini-project - Structured authorized assessment of local Juice Shop
-- Mini-project #2 - "Prove my own app is server-side secure" harness (DVWA + a tiny FastAPI of mine)
-- Mini-project #3 - A repeatable defensive proxy harness in CI (mitmproxy + my own app)
+- Mini-project #2 - "Prove your own app is server-side secure" harness (DVWA + a tiny FastAPI of your own)
+- Mini-project #3 - A repeatable defensive proxy harness in CI (mitmproxy + your own app)
 
 ### [13.1 Logging, Metrics and Tracing](13-Observability/13.1-observability.md)
 - Mini-project - Build an observable service
@@ -286,7 +286,7 @@ Tip: the six capstone briefs at the very bottom (in 15.4) are the projects most 
 - Mini-project - a model, end to end
 
 ### [20.3 Generative AI and Large Language Models](20-AI/20.3-generative-ai-and-llms.md)
-- Mini-project - "Chat with my documents" (end-to-end RAG)
+- Mini-project - "Chat with your documents" (end-to-end RAG)
 
 ### [20.4 Agentic AI: Creating and Implementing Agents](20-AI/20.4-agentic-ai.md)
 - Mini-project - a tool-using research agent (end to end)
@@ -322,7 +322,7 @@ Tip: the six capstone briefs at the very bottom (in 15.4) are the projects most 
 - Mini-project 2 - node shrink × die growth × yield, all interacting
 
 ### [17.6 The Industry and Landing an Entry-Level Semiconductor Job](17-Semiconductors/17.6-semiconductor-careers.md)
-- Mini-project - my personalized 90-day roadmap, portfolio plan & resume rewrite
+- Mini-project - your personalized 90-day roadmap, portfolio plan & resume rewrite
 
 ### [16.5 Beyond Python: Go, C++, R and Node.js](16-Data/16.5-beyond-python-languages.md)
 - Mini-project: word-frequency counter in Python, Go, and Node
@@ -353,7 +353,7 @@ Tip: the six capstone briefs at the very bottom (in 15.4) are the projects most 
 - Six capstone project briefs (increasing ambition)
 - Project 1 - Full-stack CRUD + Auth app (the must-have)
 - Project 2 - A "Twitter-lite" / social or content app (full-stack, a notch up)
-- Project 3 - Data/ML project: pipeline → model → dashboard (plays to my strengths)
+- Project 3 - Data/ML project: pipeline → model → dashboard (plays to your strengths)
 - Project 4 - A systems project: mini key-value store (or web server)
 - Project 5 - A rate-limited API gateway / backend service (systems + web)
 - Project 6 - "Automate something real" (pragmatism that signals seniority)

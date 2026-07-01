@@ -122,12 +122,12 @@ This is not about more knowledge. It is about evidence and readiness.
 
 **Can you check every box?**
 
-- I have two or three projects on GitHub, each with a clear README, that I can demo and discuss in depth.
+- You have two or three projects on GitHub, each with a clear README, that you can demo and discuss in depth.
 - At least one project is deployed and reachable by a link.
-- I can solve a medium interview problem while talking through my reasoning and stating complexity.
-- I can walk through a basic system design out loud using a clear framework.
-- I have STAR-method answers ready for the common behavioral questions.
-- My resume states impact with numbers, and my LinkedIn and GitHub are presentable.
-- I have applied to real jobs and done at least one mock interview.
+- You can solve a medium interview problem while talking through your reasoning and stating complexity.
+- You can walk through a basic system design out loud using a clear framework.
+- You have STAR-method answers ready for the common behavioral questions.
+- Your resume states impact with numbers, and your LinkedIn and GitHub are presentable.
+- You have applied to real jobs and done at least one mock interview.
 
 **Prove it.** Do a full mock interview (coding, plus a short system design or project deep-dive, plus two behavioral questions) with another person, and act on their feedback. Then send applications. You are ready. Keep learning while you interview.
