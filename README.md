@@ -51,23 +51,23 @@ The material is licensed under the [MIT License](LICENSE), so you can use, copy,
 4. **Build something.** Each chapter ends with a project you can put on GitHub.
 5. **Explain it back.** Each chapter closes with a "teach it back" prompt. If you can't explain it simply, that is the signal to go back.
 
-**Every chapter now has the same rhythm:** a beginner "🌱 Start here" on-ramp, 📐 the theory/math, 💻 a "Build it" from-scratch implementation, a 🧪 mini-project, a "⚠️ Common mistakes" box, a "💼 On the job / interview angle" callout, and an "✏️ Exercises" section with fully worked solutions, closing with "✅ Teach it back."
+**Every chapter has the same rhythm:** a beginner "Start here" on-ramp, the theory and math, a "Build it" from-scratch implementation, a mini-project, a "Common mistakes" box, an "On the job / interview angle" callout, and an "Exercises" section with fully worked solutions, closing with "Teach it back."
 
 ---
 
-## 📚 The Learning Path - follow this order
+## The Learning Path - follow this order
 
 This is the spine of the book: **everything arranged from easiest to hardest, as a natural progression where each stage unlocks the next**, basically a self-paced CS degree. If you just want a roadmap, follow the stages top to bottom. (A flat by-subject index is at the bottom for reference.) The folder numbers are just storage labels; *this ordering is the real curriculum.*
 
 > **Honest pacing:** the whole path is a multi-year journey if you do the projects (and the projects are the point). That is fine. Depth is the entire goal. A reasonable rhythm is one chapter every couple of days, building the capstone projects (Part 15) as you go.
 
-### 🟢 Stage 0 - Get set up (Week 0)
+### Stage 0 - Get set up (Week 0)
 *Start here even if you think you know it. Zero prior coding assumed.*
 - [0.1 Setup & Tooling, the command line, Python, PyCharm, git](00-Orientation/00.1-setup-and-tooling.md)
 - [0.2 Programming Fundamentals (starting from zero)](00-Orientation/00.2-programming-fundamentals.md)
 - [0.3 Problem-Solving & Computational Thinking](00-Orientation/00.3-problem-solving.md)
 
-### 🟢 Stage 1 - Foundations: how computers work + the math (degree year 1)
+### Stage 1 - Foundations: how computers work + the math (degree year 1)
 *The bedrock. The math here (calculus, linear algebra) is what later makes ML and physics click instead of feeling like magic.*
 - [1.1 How Computers Represent Everything](01-Foundations/01.1-data-representation.md)
 - [1.2 Boolean Logic & Digital Foundations](01-Foundations/01.2-boolean-logic.md)
@@ -76,7 +76,7 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [18.2 Linear Algebra & Eigenvalues](18-Math/18.2-linear-algebra-and-eigenvalues.md)
 - [1.4 Algorithmic Complexity & Big-O (rigorous)](01-Foundations/01.4-complexity-and-big-o.md)
 
-### 🟢 Stage 2 - Core CS: data structures, algorithms & real programming craft (degree year 1 - 2)
+### Stage 2 - Core CS: data structures, algorithms & real programming craft (degree year 1 - 2)
 *The heart of the degree and of every interview. Build every structure from scratch.*
 - [2.1 Arrays & Dynamic Arrays](02-Data-Structures/02.1-arrays.md)
 - [2.2 Linked Lists](02-Data-Structures/02.2-linked-lists.md)
@@ -98,7 +98,7 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [11.1 Git & GitHub Deep Dive (branching, rebasing, cherry-pick)](11-Version-Control/11.1-git-and-github.md)
 - [11.2 Git Hands-On Tutorial (do it with me)](11-Version-Control/11.2-git-hands-on-tutorial.md)
 
-### 🟡 Stage 3 - Under the hood: systems, architecture, networking & theory (degree year 2)
+### Stage 3 - Under the hood: systems, architecture, networking & theory (degree year 2)
 *How the machine and the internet actually work, the layer most self-taught devs skip and regret, plus the formal theory of what computation even is.*
 - [5.1 Memory: the Stack, the Heap & Pointers](05-Systems/05.1-memory.md)
 - [5.2 Processes, Threads, Concurrency & Parallelism](05-Systems/05.2-concurrency.md)
@@ -111,13 +111,13 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [23.1 Automata & Formal Languages](23-Theory-of-Computation/23.1-automata-and-languages.md)
 - [23.2 Computability & Complexity (Turing machines, halting, P vs NP)](23-Theory-of-Computation/23.2-computability-and-complexity.md)
 
-### 🟡 Stage 4 - Working with data (degree year 2 - 3)
+### Stage 4 - Working with data (degree year 2 - 3)
 *The data skills employers want, now on a rigorous footing. Needs the Stage 1 math.*
 - [16.1 Statistics & Probability for Data Science](16-Data/16.1-statistics-and-probability.md)
 - [16.2 Data Wrangling with pandas & NumPy](16-Data/16.2-data-wrangling-pandas-numpy.md)
 - [16.3 Data Visualization (Matplotlib, Plotly, D3, Recharts, Chart.js)](16-Data/16.3-data-visualization.md)
 
-### 🟡 Stage 5 - Building & shipping real software (degree year 3)
+### Stage 5 - Building & shipping real software (degree year 3)
 *Going from writing code to building, deploying, securing, and operating a real product. Learn the engineering craft (27) alongside the stack; clean code and tests make everything else here easier.*
 - [27.1 Clean Code, SOLID & Design Patterns](27-Software-Engineering/27.1-clean-code-and-design-patterns.md)
 - [27.2 Testing, Software Architecture & Engineering Practices](27-Software-Engineering/27.2-testing-and-architecture.md)
@@ -147,7 +147,7 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [13.1 Logging, Metrics & Tracing (Grafana, ELK, Splunk, SLI/SLO)](13-Observability/13.1-observability.md)
 - [16.4 Performance Optimization & Profiling (+ an HPC primer)](16-Data/16.4-performance-optimization.md)
 
-### 🟠 Stage 6 - Intelligence: machine learning & AI (degree year 3 - 4)
+### Stage 6 - Intelligence: machine learning & AI (degree year 3 - 4)
 *The deep end. Pays off everything from Stage 1's math through Stage 5's engineering.*
 - [14.1 Machine Learning Foundations (math + scikit-learn)](14-ML-DL/14.1-ml-foundations.md)
 - [14.2 Deep Learning with PyTorch & TensorFlow](14-ML-DL/14.2-deep-learning.md)
@@ -156,7 +156,7 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [20.3 Generative AI & Large Language Models (how they actually work)](20-AI/20.3-generative-ai-and-llms.md)
 - [20.4 Agentic AI: Creating & Implementing Agents](20-AI/20.4-agentic-ai.md)
 
-### 🔴 Stage 7 - Going deep & wide: advanced & specialized tracks (degree year 4 / electives)
+### Stage 7 - Going deep & wide: advanced & specialized tracks (degree year 4 / electives)
 *Pick by curiosity and goals. Compilers builds on Stage 3's automata/architecture; semiconductors needs Stage 1 (logic) + Stage 3 (architecture); physics needs the Stage 1 math.*
 - [24.1 Lexing, Parsing & Abstract Syntax Trees](24-Compilers/24.1-lexing-parsing-asts.md)
 - [24.2 Interpreters, Type Systems & a Bytecode VM](24-Compilers/24.2-interpreters-and-vms.md)
@@ -172,21 +172,21 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [22.1 Mac Minis, Home Labs & Building Server Farms](22-Infrastructure/22.1-mac-minis-and-server-farms.md)
 - [21.1 Building & Structuring a Software Company](21-Business/21.1-software-company.md)
 
-### 🎯 Stage 8 - Landing the job (run alongside Stages 5 - 7)
+### Stage 8 - Landing the job (run alongside Stages 5 - 7)
 *Start the coding-interview practice during Stage 2 and keep it warm; do the rest as you near applying.*
 - [15.1 Cracking the Coding Interview (the patterns)](15-Career/15.1-coding-interviews.md)
 - [15.2 System Design Interviews (entry-level)](15-Career/15.2-system-design-interviews.md)
 - [15.3 Behavioral Interviews, Resume & the Job Search](15-Career/15.3-behavioral-resume-jobsearch.md)
 - [15.4 Capstone & Portfolio Projects](15-Career/15.4-capstone-projects.md)
 
-### 📎 Appendix - keep these open in a tab the whole way through
+### Appendix - keep these open in a tab the whole way through
 *Reference material, not a stage. Dip in whenever you need a fast lookup or a definition.*
 - [28.1 Cheat Sheets (git, bash, SQL, regex, Python, Docker, kubectl, Big-O…)](28-Appendix/28.1-cheat-sheets.md)
 - [28.2 Glossary (A-Z of every key term, linked to its chapter)](28-Appendix/28.2-glossary.md)
 
 ---
 
-## 🗂️ Reference: all parts by subject
+## Reference: all parts by subject
 
 <details>
 <summary>Click to expand the flat, by-subject index (folder order)</summary>
