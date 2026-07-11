@@ -35,7 +35,7 @@ Whether you are teaching yourself from scratch, filling gaps after a degree, or 
 - **Dip into the reference.** The [cheat sheets](28-Appendix/28.1-cheat-sheets.md) and [glossary](28-Appendix/28.2-glossary.md) are meant to stay open in a tab.
 - **Plan and stay on track.** Use the [Study Guide](STUDY-GUIDE.md) to pick a route (fastest path to a job, web, or data/ML) and a schedule, the [Progress Tracker](PROGRESS.md) to check off chapters, the [Project Index](PROJECTS.md) to build a portfolio as you go, and the [Stage Checkpoints](CHECKPOINTS.md) to confirm you are ready before moving on.
 
-The material is licensed under the [MIT License](LICENSE), so you can use, copy, and adapt it freely. Corrections and improvements are very welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
+The material is licensed under the [MIT License](LICENSE), so you can use, copy, and adapt it freely. Corrections and improvements are very welcome.
 
 ---
 

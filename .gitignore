@@ -35,3 +35,7 @@ Thumbs.db
 scratch/
 notes.local.md
 *.local.md
+
+# Generated
+book-site/
+qa-results.jsonl
