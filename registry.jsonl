@@ -1,0 +1,4 @@
+{"name": "nyx_fraud", "version": "2", "uri": "s3://models/nyx_fraud/2", "stage": "Production", "metrics": {"pr_auc": 0.94, "worst_slice_recall": 0.82}, "data_hash": "d41d8c", "code_sha": "e4f5g6h", "ts": 1783739294.3329744}
+{"name": "nyx_fraud", "version": "2", "uri": "s3://models/nyx_fraud/2", "stage": "None", "metrics": {"pr_auc": 0.94, "worst_slice_recall": 0.82}, "data_hash": "d41d8c", "code_sha": "e4f5g6h", "ts": 1783739294.3560135}
+{"name": "nyx_fraud", "version": "2", "uri": "s3://models/nyx_fraud/2", "stage": "None", "metrics": {"pr_auc": 0.94, "worst_slice_recall": 0.82}, "data_hash": "d41d8c", "code_sha": "e4f5g6h", "ts": 1783739294.5227263}
+{"name": "nyx_fraud", "version": "2", "uri": "s3://models/nyx_fraud/2", "stage": "None", "metrics": {"pr_auc": 0.94, "worst_slice_recall": 0.82}, "data_hash": "d41d8c", "code_sha": "e4f5g6h", "ts": 1783739294.695369}

@@ -39,13 +39,17 @@ tests, incorrect expected outputs. Those are already committed.)
 
 ## Follow-ups for the remaining prose waves
 
-1. **04-Programming-Mastery/04.4-automation-projects.md** — confirm the five IndexError
-   blocks are argv-driven scripts and that the text tells the reader how to invoke them.
-2. **NameError-heavy files** (12.3 web-app-security, 08.2 backend-apis, 08.3 auth,
-   24.2 interpreters-and-vms) — while polishing, confirm each snippet's dependencies
-   appear in an earlier block or are clearly framed as fragments.
-3. Consider fencing REPL transcripts as ` ```pycon ` and pseudo-code as ` ```text ` so
-   tooling (and readers' editors) stop treating them as runnable Python. Cosmetic only.
+1. ~~04.4 IndexError blocks~~ DONE (2026-07-10): all five (plus 04.2's wordcount) now
+   print a clean usage line via a `SystemExit` guard instead of a traceback, and each
+   carries a usage comment.
+2. ~~NameError-heavy files~~ DONE (2026-07-10): triaged all 102 NameErrors; 24 were
+   real. Fixed with minimal imports/stubs (08.3, 12.3, 16.4, 16.5, 04.1) or explicit
+   prose framing (07.2 sketches, 20.4 pseudocode, 24.2 now credits its 24.1 classes).
+   Also fixed: a forward reference to `heapsort` in 02.6, a `cProfile.run` scoping
+   gotcha in 16.4 (switched to `runctx`), two Flask handler bodies in 12.3 wrapped in
+   their route context, and an invalid one-line `try/except/finally` in 28.1.
+3. ~~REPL fencing~~ PARTIAL (2026-07-10): 01.1's two REPL transcripts re-fenced as
+   ` ```pycon `. Remaining REPL/pseudo blocks elsewhere still fence as python.
 
 ## Per-file issue counts (FAIL + TIMEOUT + DEP)
 
