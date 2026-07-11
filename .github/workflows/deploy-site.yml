@@ -1,8 +1,9 @@
-name: Build and deploy book site
+name: Checks, build, and deploy
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -11,28 +12,47 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prose regression scan (slop_scan gate)
+        run: python3 tools/slop_scan.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate Mermaid diagrams
+        run: |
+          npm install --no-save --no-audit --no-fund mermaid jsdom
+          node tools/check_mermaid.js $(grep -rl '```mermaid' --include='*.md' . || true)
+
   build:
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
         with:
           enablement: true
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install mkdocs-material pymdown-extensions
-      - run: python3 tools/build_site.py book-site
+      - name: Build site (strict = broken links fail)
+        run: python3 tools/build_site.py book-site --strict
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: book-site
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

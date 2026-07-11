@@ -39,3 +39,6 @@ notes.local.md
 # Generated
 book-site/
 qa-results.jsonl
+node_modules/
+package-lock.json
+package.json

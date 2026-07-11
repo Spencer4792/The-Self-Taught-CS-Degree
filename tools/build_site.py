@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Build the book as a static website from SUMMARY.md.
 
-Usage: python3 tools/build_site.py [output-dir]     (default: book-site/)
+Usage: python3 tools/build_site.py [output-dir] [--strict]   (default: book-site/)
+
+--strict passes mkdocs build --strict, turning any warning (broken links,
+missing nav targets) into a build failure. CI uses this as a link gate.
 
 Parses SUMMARY.md (the curriculum order), generates a Material for MkDocs
 config, stages the markdown into a temp docs dir, and builds. Requires:
@@ -12,7 +15,9 @@ To browse with working search, serve it:  python3 -m http.server -d book-site
 import re, sys, shutil, subprocess, pathlib, tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "book-site"
+_args = [a for a in sys.argv[1:] if not a.startswith("--")]
+OUT = pathlib.Path(_args[0]) if _args else ROOT / "book-site"
+STRICT = "--strict" in sys.argv
 
 def parse_summary():
     """Return nav structure: list of (section_title, [(title, path), ...])."""
@@ -106,8 +111,11 @@ def main():
 
     if OUT.exists():
         shutil.rmtree(OUT)
-    r = subprocess.run(["mkdocs", "build", "-f", str(stage / "mkdocs.yml"),
-                        "-d", str(OUT.resolve())], capture_output=True, text=True)
+    cmd = ["mkdocs", "build", "-f", str(stage / "mkdocs.yml"),
+           "-d", str(OUT.resolve())]
+    if STRICT:
+        cmd.append("--strict")
+    r = subprocess.run(cmd, capture_output=True, text=True)
     print(r.stdout or "", r.stderr or "", sep="")
     shutil.rmtree(stage)
     if r.returncode != 0:
