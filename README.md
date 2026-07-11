@@ -4,6 +4,10 @@
 
 You start at "what is a program," and you finish with the data structures, systems knowledge, real projects, and interview preparation that actually get people hired. Every concept is built from the ground up, with runnable code and a project in every chapter. No degree, no bootcamp, and no prior experience required.
 
+[![Checks, build, and deploy](https://github.com/Spencer4792/The-Self-Taught-CS-Degree/actions/workflows/deploy-site.yml/badge.svg)](https://github.com/Spencer4792/The-Self-Taught-CS-Degree/actions/workflows/deploy-site.yml)
+
+**📖 Read it as a website: [spencer4792.github.io/The-Self-Taught-CS-Degree](https://spencer4792.github.io/The-Self-Taught-CS-Degree/)** — full-text search, sidebar navigation in curriculum order, rendered diagrams, dark mode. It rebuilds automatically from this repo.
+
 *Created and maintained by Spencer Hales. Free and open under the [MIT License](LICENSE).*
 
 ---
@@ -30,6 +34,7 @@ It is written in a friendly, direct voice, like a knowledgeable instructor walki
 
 Whether you are teaching yourself from scratch, filling gaps after a degree, or switching into the field, the path is the same. Here is how to move through it:
 
+- **Read on the website or in the repo.** The [website](https://spencer4792.github.io/The-Self-Taught-CS-Degree/) is the same content with search and navigation; the repo is where you clone, run the code, and do the exercises. Most people read on the site and work in a local clone.
 - **Follow the order.** [SUMMARY.md](SUMMARY.md) lists every chapter in the exact order to read them, from easiest to hardest. The same progression, with stage descriptions, is in the Learning Path below. The numbered folders are just stable labels for storage, so read by the path, not by folder order.
 - **Read with your hands.** Every chapter has runnable code (mostly Python) and exercises with worked solutions. Type the code out and run it. That is the whole point. To run the examples, create a virtual environment and `pip install -r requirements.txt`. The heavy machine-learning libraries live in `requirements-ml.txt`, so install those only when you reach Parts 14, 19, and 20.
 - **Dip into the reference.** The [cheat sheets](28-Appendix/28.1-cheat-sheets.md) and [glossary](28-Appendix/28.2-glossary.md) are meant to stay open in a tab.
@@ -228,7 +233,7 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 
 ## How the stages map to where you want to go
 
-This curriculum is built to take you from **absolute beginner to genuinely deep**, and to a job, without ever hand-waving:
+This curriculum is built to take you from **absolute beginner to properly deep**, and to a job, without ever hand-waving:
 
 - **Stages 0-2** build the foundations most self-taught developers feel shaky on, including the calculus and linear algebra (eigenvalues, SVD) that make everything later make sense.
 - **Stages 3-5** turn you into someone who can build, ship, scale, secure, and operate real software end to end.
