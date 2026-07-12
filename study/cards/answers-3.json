@@ -1,0 +1,782 @@
+[
+  {
+    "id": "03.1-recursion-1",
+    "chapter": "03-Algorithms/03.1-recursion.md",
+    "prompt": "**The call stack.** Trace `factorial(4)` frame by frame: draw the stack as it grows toward the base case and as it unwinds. At its deepest, how many frames are on the stack, and what's the space complexity in terms of `n`?",
+    "answer": "The stack grows one frame per call: `factorial(4)` pauses waiting on `factorial(3)`, which pauses waiting on `factorial(2)`, then `factorial(1)`, until `factorial(0)` hits the base case and returns `1` with no further recursion. At its deepest, right when `factorial(0)` returns, there are `n + 1 = 5` frames stacked (`factorial(4)` through `factorial(0)`). It then unwinds: `factorial(1)` resumes as `1*1=1`, `factorial(2)` as `2*1=2`, `factorial(3)` as `3*2=6`, `factorial(4)` as `4*6=24`, popping one frame per step. Space complexity is **O(n)**, since the stack holds up to `n+1` frames at once, the hidden memory cost that iteration doesn't pay."
+  },
+  {
+    "id": "03.1-recursion-2",
+    "chapter": "03-Algorithms/03.1-recursion.md",
+    "prompt": "**Base case & progress.** What two things must every recursive function have, and what specifically goes wrong if (a) the base case is missing, or (b) the recursive call doesn't move strictly closer to the base case? Which error does Python raise?",
+    "answer": "Every recursive function needs a **base case** (a version of the problem small enough to answer without recursing) and a **recursive case** that shrinks the problem, making progress toward that base case each call. (a) If the base case is missing, there's no floor to land on, so the function keeps descending forever, like `bad_countdown` calling itself with no stopping condition. (b) If the recursive call doesn't move strictly closer to the base case, for example `bad_sum` passing the same `lst` back instead of `lst[1:]`, it's an infinite loop wearing a recursion costume: a base case exists but is never reached. Both cases raise `RecursionError: maximum recursion depth exceeded`, since Python's recursion limit (around 1000 frames) gets hit before anything ever returns."
+  },
+  {
+    "id": "03.1-recursion-3",
+    "chapter": "03-Algorithms/03.1-recursion.md",
+    "prompt": "**The leap of faith.** Explain how writing a recursive function maps onto a proof by induction. When you write `reverse(lst[1:]) + [lst[0]]`, what are you *assuming*, and why are you allowed to assume it without tracing the whole thing?",
+    "answer": "A recursive function's base case matches induction's base case, and its recursive case matches the inductive step: \"if the smaller call is correct, then this call is correct.\" If both hold, the function is correct for all `n` by induction, exactly the same logic used for `factorial`. When you write `reverse(lst[1:]) + [lst[0]]`, you're assuming `reverse(lst[1:])` already correctly reverses the tail, the smaller subproblem, without tracing how it does it. You're allowed to assume this because induction guarantees it: the base case (`reverse([]) == []`) is trivially correct, and every call shrinks the list by one element until it bottoms out there, so trusting the smaller call is the whole point of the leap of faith, not a shortcut around correctness."
+  },
+  {
+    "id": "03.1-recursion-4",
+    "chapter": "03-Algorithms/03.1-recursion.md",
+    "prompt": "**Fibonacci.** Why is `fib_naive` O(2ⁿ)? Draw the recursion tree for `fib(4)` and circle a repeated subproblem. Then explain in one sentence how memoization drops it to O(n), what exactly does the memo store and how many times does each `fib(k)` get truly computed?",
+    "answer": "`fib_naive` is O(2ⁿ) because every call branches into two more recursive calls, `fib(n-1)` and `fib(n-2)`, and those branches overlap heavily: in the `fib(4)` tree, `fib(4)` splits into `fib(3)` and `fib(2)`, and `fib(3)` splits into `fib(2)` and `fib(1)`, so `fib(2)` (circle it) gets computed twice, once directly and once inside `fib(3)`, and the call count roughly doubles with each extra level. Memoization drops it to O(n) because the instant a `fib(k)` is computed it's cached, so every later request for that same `fib(k)` becomes an O(1) lookup instead of recomputing the whole subtree. The memo stores each computed value keyed by `n` (`memo[n] = result`), and since there are only `n` distinct subproblems (`fib(0)` through `fib(n)`), each `fib(k)` is truly computed exactly once."
+  },
+  {
+    "id": "03.1-recursion-5",
+    "chapter": "03-Algorithms/03.1-recursion.md",
+    "prompt": "**Hanoi recurrence.** Starting from `M(n) = 2·M(n-1) + 1` and `M(0) = 0`, derive the closed form `M(n) = 2ⁿ − 1`. Is this exponential cost a flaw in the algorithm or inherent to the problem? (Contrast with naive Fibonacci.)",
+    "answer": "Unrolling `M(n) = 2·M(n-1) + 1` repeatedly gives `M(n) = 2ᵏ·M(n-k) + (2ᵏ⁻¹ + ... + 2 + 1)`. Setting `k = n` hits the base case `M(0) = 0`, leaving `M(n) = 0 + (2ⁿ⁻¹ + ... + 1)`, and that sum is a geometric series equal to `2ⁿ - 1`. This exponential cost is inherent to the problem, not a flaw: Hanoi is optimal, you cannot move `n` disks in fewer moves, unlike naive `fib_naive`, where the exponential blowup was a bad implementation caused by overlapping subproblems and could be fixed down to O(n) with memoization. Hanoi has no overlapping subproblems to memoize away, every one of the `2ⁿ - 1` moves is genuinely necessary."
+  },
+  {
+    "id": "03.1-recursion-6",
+    "chapter": "03-Algorithms/03.1-recursion.md",
+    "prompt": "**Recursion vs iteration in Python.** What is tail recursion, and why doesn't Python's version of a tail-recursive factorial save any stack space? Given that, when should you convert a recursive function to an explicit-stack iterative one, and when should you leave it recursive?",
+    "answer": "Tail recursion is when the recursive call is the very last thing a function does, with nothing left to compute after it returns, like `fact_tail`'s `return fact_tail(n - 1, acc * n)`, versus `fact`'s pending multiply after the call returns. Python doesn't perform tail-call optimization (Guido left it out deliberately to keep stack traces clean for debugging), so even a tail-recursive function pushes a fresh frame on every call and gains no stack savings, which is why Python still enforces a recursion limit (around 1000 frames) and raises `RecursionError` regardless. Convert to an explicit-stack iterative version when recursion depth scales with input size `n` and `n` could be large (deep lists, huge ranges), or when the function sits in a hot loop and per-call overhead matters. Leave it recursive when depth is bounded or logarithmic (like divide & conquer on halves) or when recursion is clearly more readable, readability is a real feature worth keeping."
+  },
+  {
+    "id": "03.1-recursion-7",
+    "chapter": "03-Algorithms/03.1-recursion.md",
+    "prompt": "**Spotting the tool.** Given a new problem, name three structural signals that tell you \"use recursion here,\" and explain why the arithmetic-expression evaluator's precedence rules came for free from the grammar's call hierarchy.",
+    "answer": "Three signals: the problem is defined in terms of itself (a self-referential definition, like \"an expression is a number, or two expressions joined by an operator\"), there's a tree or graph structure to walk (file systems, nested JSON, DFS is recursion), or the ask is \"all combinations / subsets / paths / ways,\" which signals backtracking (choose, recurse, un-choose). The evaluator's precedence came free because its grammar is itself a call hierarchy: `parse_expr` calls `parse_term`, which calls `parse_factor`, so multiplication automatically binds tighter than addition without anyone coding an explicit precedence rule. And because `parse_factor` loops back to `parse_expr` through parentheses, that single recursive edge in the grammar lets nesting go to unlimited depth."
+  },
+  {
+    "id": "03.2-sorting-1",
+    "chapter": "03-Algorithms/03.2-sorting.md",
+    "prompt": "State the Master Theorem and apply it to `T(n) = 2T(n/2) + Θ(n)`. Which case is it, and what's the closed form? Then re-derive the same answer with a recursion-tree argument (how many levels, how much work per level, why).",
+    "answer": "The Master Theorem compares `f(n)` against the watershed `n^(log_b a)` for `T(n) = aT(n/b) + f(n)`: if `f(n)` is polynomially smaller, `T(n) = Θ(n^(log_b a))` (Case 1); if `f(n) = Θ(n^(log_b a))`, `T(n) = Θ(n^(log_b a) log n)` (Case 2); if `f(n)` is polynomially larger, `T(n) = Θ(f(n))` (Case 3). For `T(n) = 2T(n/2) + Θ(n)`, `a=2`, `b=2`, so the watershed is `n^(log_2 2) = n`, and `f(n) = Θ(n)` matches it exactly, that's **Case 2**, giving the closed form `T(n) = Θ(n log n)`. The recursion tree confirms it: halving `n` down to 1 takes `log₂ n + 1` levels, and at every level the per-node work sums to exactly `n` (`2^k` nodes each doing `n/2^k` merge work), so total work is `n` times `(log₂ n + 1)` levels, which is `Θ(n log n)`."
+  },
+  {
+    "id": "03.2-sorting-2",
+    "chapter": "03-Algorithms/03.2-sorting.md",
+    "prompt": "Why is a sorted (or reverse-sorted) array the worst case for naive-pivot quicksort, and how exactly does randomization fix it? Write the degenerate recurrence and show it solves to Θ(n²). Why doesn't randomization change the worst-case bound, yet still \"fixes\" the problem in practice?",
+    "answer": "A naive-pivot quicksort that always picks the last (or first) element as pivot peels off exactly one element per partition on an already-sorted (or reverse-sorted) array, since that element is always the max or min, giving the maximally unbalanced split. This gives the degenerate recurrence `T(n) = T(n-1) + Θ(n)`, which sums to `n + (n-1) + (n-2) + ... + 1 = n(n+1)/2 = Θ(n²)`. Randomizing the pivot fixes this in practice because the pivot's badness no longer depends on the input's order, an adversary or a sorted array can't force a bad choice since the pivot is chosen uniformly at random each time. Randomization doesn't change the worst-case *bound* (an unlucky sequence of random pivots could still produce Θ(n²)), but it makes that sequence astronomically unlikely, so the expected running time is Θ(n log n) regardless of input."
+  },
+  {
+    "id": "03.2-sorting-3",
+    "chapter": "03-Algorithms/03.2-sorting.md",
+    "prompt": "Prove the Ω(n log n) lower bound for comparison sorts. Walk through the decision-tree model: why must there be ≥ n! leaves, why does that force height ≥ log₂(n!), and how does Stirling turn that into Θ(n log n)?",
+    "answer": "Model any comparison sort as a binary decision tree where each internal node is a comparison and each leaf is a final output permutation. The tree must have at least `n!` leaves because the algorithm must be able to produce every one of the `n!` possible orderings of the input, since any of them could be the correct sorted answer for some input. A binary tree of height `h` has at most `2ʰ` leaves, so `2ʰ ≥ n!`, which forces `h ≥ log₂(n!)`, and since the tree's height equals the worst-case number of comparisons, that's a lower bound on comparisons. Stirling's approximation gives `log₂(n!) = n log₂ n − n log₂ e + O(log n) = Θ(n log n)`, so every comparison-based sort makes **Ω(n log n)** comparisons in the worst case, a bound merge sort and heapsort actually match."
+  },
+  {
+    "id": "03.2-sorting-4",
+    "chapter": "03-Algorithms/03.2-sorting.md",
+    "prompt": "Counting sort runs in O(n + k) and \"beats\" the n log n lower bound: explain why that's not a contradiction. When does counting sort become a bad choice, and why does radix sort require its inner sort to be stable?",
+    "answer": "It's not a contradiction because the Ω(n log n) bound only applies to **comparison sorts**, and counting sort never compares two elements against each other, it indexes directly into a count array by value, so the bound simply doesn't apply to it. Counting sort becomes a bad choice when `k ≫ n` (the key range is much bigger than the element count), since it allocates a `count` array of size `k`, so sorting two elements spanning a billion-value range wastes a billion-element array. Radix sort requires its inner (per-digit) sort to be stable because it processes digits from least to most significant, and a later, higher-digit pass must not scramble the ordering that earlier, lower-digit passes already established, stability is what guarantees that."
+  },
+  {
+    "id": "03.2-sorting-5",
+    "chapter": "03-Algorithms/03.2-sorting.md",
+    "prompt": "Define stability precisely and give a concrete `(name, age)` scenario where it matters. Which of our sorts are stable and which aren't? Describe the O(n)-space trick to make any sort stable.",
+    "answer": "A sort is **stable** if, whenever two elements compare equal (same key), their relative order in the output matches their relative order in the input. Concretely: given `(name, age)` records already sorted by name, sorting them again by age with a stable sort leaves people of the same age still in name order, a free secondary sort, while an unstable sort scrambles the names within each age group. From the chapter's roster: **Bubble, Insertion, Merge, Counting, Radix, and Timsort are stable**; **Selection (array form), Quicksort, and Heapsort are unstable**. Any unstable sort can be made stable by augmenting each key with its original index, `(key, index)`, and comparing lexicographically, so equal keys break ties by original position, at the cost of O(n) extra space."
+  },
+  {
+    "id": "03.2-sorting-6",
+    "chapter": "03-Algorithms/03.2-sorting.md",
+    "prompt": "When would you reach for insertion sort over merge/quicksort, and why? Name the two input conditions where it wins, give its complexity on nearly-sorted data, and explain its role inside Timsort.",
+    "answer": "Reach for insertion sort when the input is **nearly sorted** or the array is **small** (roughly `n ≲ 16`). On nearly-sorted data, where every element is at most `k` positions from its final spot, insertion sort runs in **O(n·k)**, basically linear for small `k`, since the `while` loop bails almost immediately for each element. On small arrays, its low constant factors and cache-friendly sequential access beat the recursion and bookkeeping overhead that merge/quicksort pay before their `n log n` advantage kicks in. It's also the engine inside **Timsort**: Python's `sorted()`/`list.sort()` identify already-ordered runs and use binary insertion sort to handle small runs and to merge them, so every call to `sorted()` is quietly using insertion sort under the hood."
+  },
+  {
+    "id": "03.2-sorting-7",
+    "chapter": "03-Algorithms/03.2-sorting.md",
+    "prompt": "How does quickselect get to O(n) when quicksort is O(n log n)? Explain the single algorithmic difference and the geometric-series argument, and name one problem (k-th largest, median) where it's the right tool. --- That's sorting, end to end: from the humble bubble sort to the optimal merge, past the comparison-sort wall, and out into linear-time counting and radix. The idea to carry forward: the cost of an algorithm is something you can derive on paper and watch on a stopwatch, and when the two agree, you actually understand it.",
+    "answer": "The single difference: quicksort recurses into **both** sides of every partition, while quickselect recurses into only the **one side that contains the answer**, throwing the other side away without sorting it. That turns the work into a geometric series, `n + n/2 + n/4 + ... ≈ 2n`, instead of quicksort's `n` work repeated across `log n` levels on both sides, so quickselect's expected cost is **O(n)** versus quicksort's **O(n log n)** (both share the same worst-case O(n²) risk from a bad pivot, tamed the same way by randomization). It's the right tool for problems like **k-th largest** or **median**, where the chapter's `kth_largest` and `median` functions use exactly this trick, since you only need one position located, not the whole array sorted."
+  },
+  {
+    "id": "03.3-searching-1",
+    "chapter": "03-Algorithms/03.3-searching.md",
+    "prompt": "State the binary-search loop invariant in one sentence, and explain how it proves the algorithm returns `-1` correctly when the target is absent. (Hint: what does an empty window `[lo, hi]` with `lo > hi` imply about where the target could be?)",
+    "answer": "The invariant is: if `target` is in `arr` at all, its index is always within the inclusive window `[lo, hi]`. Each iteration shrinks the window (via `lo = mid + 1` or `hi = mid - 1`) while preserving this invariant, and the window length strictly decreases every step, so the loop must terminate. When it terminates without a match, `lo > hi` means the window `[lo, hi]` is empty, no index at all. By the invariant, if `target` were present its index would have to live in that empty window, which is impossible, so `target` is not in `arr` and returning `-1` is correct."
+  },
+  {
+    "id": "03.3-searching-2",
+    "chapter": "03-Algorithms/03.3-searching.md",
+    "prompt": "Why do we write `mid = lo + (hi - lo) // 2` instead of `(lo + hi) // 2`? In which languages does it actually matter, why doesn't it matter in Python, and why should you still write it the careful way?",
+    "answer": "`lo + (hi - lo) // 2` avoids computing `lo + hi` directly, which can overflow a fixed-width integer when both are large. It matters in languages like C, Java, or Rust, where `lo + hi` can overflow a 32-bit int on a large array (the chapter notes this was a real bug in the JDK's binary search for nearly a decade). It doesn't matter in Python because Python ints are unbounded and never overflow. You should still write it the careful way out of habit, so the logic transfers cleanly to languages where it does matter."
+  },
+  {
+    "id": "03.3-searching-3",
+    "chapter": "03-Algorithms/03.3-searching.md",
+    "prompt": "What single property must a predicate have for \"binary search on the answer\" to apply, and how would you phrase Koko's predicate `P(k)` so it has that property? Sketch why \"she can finish at speed `k`\" is monotonic in `k`.",
+    "answer": "The predicate must be monotonic: over the range of candidate answers it looks like `False False ... True True`, flipping once from False to True and never flipping back. Koko's predicate is `P(k) = \"she can finish within h hours at speed k\"`. It's monotonic because the time to clear a pile of size `p` at speed `k` is `⌈p/k⌉`, which only shrinks as `k` grows, so total hours `Σ⌈p_i/k⌉` only shrinks as `k` grows; if speed `k` already finishes within `h` hours, any faster speed finishes at least as fast, so `P` stays True once it becomes True."
+  },
+  {
+    "id": "03.3-searching-4",
+    "chapter": "03-Algorithms/03.3-searching.md",
+    "prompt": "In the converging two-pointer for two-sum on a sorted array, when the current sum is too small we move `lo` right. Prove that we lose no valid answer by discarding `lo`. (What do we know about every pair that used `arr[lo]`?)",
+    "answer": "When `arr[lo] + arr[hi] < target`, every remaining index is `<= hi`, and since the array is sorted, `arr[lo]` paired with any of them gives a sum `<= arr[lo] + arr[hi] = s < target`. So `arr[lo]` paired with anything still in range can never reach `target`; every pair using `lo` is provably too small. Discarding `lo` and moving it right therefore loses no valid answer, because `hi` is already the largest available value and moving `lo` right is the only lever left to increase the sum."
+  },
+  {
+    "id": "03.3-searching-5",
+    "chapter": "03-Algorithms/03.3-searching.md",
+    "prompt": "Explain why a variable sliding window is O(n) even though it contains a nested `while` loop. What's the amortized argument about how far `left` can travel?",
+    "answer": "The window is O(n) because the outer loop advances `right` at most `n` times, and `left` only ever moves forward, never backward and never past `right`. So across the entire run, the inner `while` loop (which advances `left`) can fire at most `n` times total, not `n` times per outer step. Amortized over the whole traversal, each index enters and leaves the window at most once, so the combined work of the outer and inner loops is O(n), not O(n²)."
+  },
+  {
+    "id": "03.3-searching-6",
+    "chapter": "03-Algorithms/03.3-searching.md",
+    "prompt": "For \"find first and last position,\" we used a half-open window (`hi = n`) for one helper but an inclusive window (`hi = len-1`) for plain binary search. Why is the half-open convention necessary here? What answer must `first_geq` be able to return that an inclusive `[0, n-1]` window cannot represent?",
+    "answer": "The half-open convention (`hi = n`, loop `while lo < hi`) is necessary because `first_geq` must be able to return `n`, meaning \"no index in the array satisfies `nums[i] >= x`,\" which happens when `x` is bigger than every element. An inclusive window `[0, n-1]` only ever contains valid array indices up to `n-1`, so it has no way to represent \"one past the end.\" The half-open window naturally allows `lo` to reach `n`, which is exactly the sentinel value `first_geq` needs when `target` isn't present or falls beyond all elements."
+  },
+  {
+    "id": "03.3-searching-7",
+    "chapter": "03-Algorithms/03.3-searching.md",
+    "prompt": "\"Ship packages within D days,\" \"split array to minimize the largest sum,\" and \"Koko eats bananas\" all collapse to the same skeleton. What are the four steps of that skeleton, and what is the one creative decision you make per problem? (Hint: it's not the search loop.)",
+    "answer": "The four steps: (1) identify the answer you're minimizing or maximizing, a number like a speed, capacity, or largest piece; (2) write `feasible(x)`, \"can the job be done if the answer is `x`?\", and confirm it's monotonic; (3) bound the range `[lo, hi]` so the boundary is guaranteed to be inside it; (4) call `find_first_true` on that predicate and range. The one creative decision per problem is writing `feasible(x)` itself (and picking a valid range), not the search loop, which is the same `find_first_true` skeleton every time."
+  },
+  {
+    "id": "03.3-searching-8",
+    "chapter": "03-Algorithms/03.3-searching.md",
+    "prompt": "Why does \"subarray sum equals k\" break a sliding-window approach when the array contains negatives, and what replaces it? What property does a window argument need that negatives destroy?",
+    "answer": "A sliding window needs the property that growing the window can only push the aggregate in one direction, so you know whether shrinking from `left` or growing from `right` fixes a broken constraint. With negatives, adding an element to the window can decrease the sum instead of increasing it, so there's no longer a reliable rule for which pointer to move; the window's sum stops being monotonic as it grows. This is replaced by prefix sums plus a hash map, which counts subarrays summing to `k` without relying on any monotonic window behavior."
+  },
+  {
+    "id": "03.4-graph-algorithms-1",
+    "chapter": "03-Algorithms/03.4-graph-algorithms.md",
+    "prompt": "Why does BFS find shortest paths in an unweighted graph but not a weighted one, and what data structure makes BFS behave this way? (Hint: FIFO queue → vertices discovered in non-decreasing hop-distance; weights break the \"first time reached = cheapest\" assumption.)",
+    "answer": "BFS uses a FIFO queue, so it finishes processing all vertices at distance 1 before touching any at distance 2, and so on, discovering vertices in non-decreasing order of hop-distance. That means the first time BFS reaches a vertex, it has done so via the fewest possible edges, which is the shortest path when every edge costs 1. In a weighted graph this breaks down because a path using more edges can have less total weight than a path using fewer edges (a 3-edge path can undercut a 1-edge path), so \"first time reached\" no longer means \"cheapest,\" and BFS's queue order no longer matches true shortest distance."
+  },
+  {
+    "id": "03.4-graph-algorithms-2",
+    "chapter": "03-Algorithms/03.4-graph-algorithms.md",
+    "prompt": "Walk through why Dijkstra requires non-negative edge weights. What specifically goes wrong if you run it on a graph with a negative edge, and which algorithm should you use instead? How does that algorithm also detect when there's no answer at all?",
+    "answer": "Dijkstra finalizes a vertex's distance the moment it's popped from the heap, betting that no cheaper route can appear later; that bet is only safe because adding more non-negative edges can never decrease a distance. With a negative edge, a path discovered later could undercut a distance already declared final, but Dijkstra never revisits finalized vertices, so it silently returns a wrong answer with no crash. The fix is Bellman-Ford, which relaxes every edge `V - 1` times. It detects \"no answer at all\" (a negative cycle) by doing one more relaxation pass after that: if any edge can still be relaxed, a negative cycle must exist, since you could keep going around it lowering the distance forever, so no finite shortest path exists, and it raises rather than returning garbage."
+  },
+  {
+    "id": "03.4-graph-algorithms-3",
+    "chapter": "03-Algorithms/03.4-graph-algorithms.md",
+    "prompt": "Derive the `O(V + E)` running time of BFS/DFS from scratch. Account separately for the per-vertex work and the per-edge work, and explain why the visited set is essential to the bound (not just to correctness).",
+    "answer": "Per-vertex work: each vertex is marked visited and enqueued/pushed at most once (BFS marks on enqueue, DFS marks on visit), and we never re-add a visited vertex, so the queue or stack does `O(V)` total enqueue/dequeue or push/pop operations. Per-edge work: when a vertex `u` is processed, we scan its adjacency list, `deg(u)` work; summed over all vertices, `Σ deg(u) = 2E` for an undirected graph or `E` for a directed one, giving `O(E)`. Adding the two parts gives `O(V) + O(E) = O(V + E)`. The visited set is essential to the bound itself, not just correctness, because without it a cycle causes an infinite loop and even a DAG causes exponential re-exploration of shared subtrees, so it's the check that guarantees each vertex and edge is processed only a constant number of times."
+  },
+  {
+    "id": "03.4-graph-algorithms-4",
+    "chapter": "03-Algorithms/03.4-graph-algorithms.md",
+    "prompt": "Explain the cut property and how both Kruskal and Prim are instances of it. Why do the two algorithms always agree on the total MST weight even when they pick different edges?",
+    "answer": "The cut property says that for any partition of the vertices into two non-empty groups, the minimum-weight edge crossing that cut belongs to some MST, because any spanning tree must cross the cut at least once, and swapping a heavier crossing edge for the lightest one only gets cheaper. Kruskal is an instance of it because it processes edges globally from cheapest to most expensive and adds one only if it connects two currently separate components, always taking the minimum edge across the cut between those components. Prim is an instance of it because it grows a single tree and always adds the cheapest edge connecting a vertex inside the tree to one outside, which is exactly the minimum edge crossing the cut between in-tree and not-yet-in-tree vertices. They may pick different edges when weights tie, but the total MST weight is unique, so both greedy strategies, each repeatedly applying the same cut property, always converge on the same total."
+  },
+  {
+    "id": "03.4-graph-algorithms-5",
+    "chapter": "03-Algorithms/03.4-graph-algorithms.md",
+    "prompt": "What two optimizations make Union-Find nearly constant-time per operation, and what does each one actually do to the trees? What is `α(n)` and why is it \"effectively constant\" but not literally `O(1)`?",
+    "answer": "The two optimizations are union by rank and path compression. Union by rank attaches the shorter tree under the taller tree's root during `union`, keeping trees shallow instead of letting them grow into long chains. Path compression, during `find`, points every node along the path directly at the root, flattening the tree so future lookups are faster. Together they give an amortized cost of `O(α(n))` per operation, where `α` is the inverse Ackermann function; `α(n)` is less than 5 for any `n` that could ever be stored in a computer, so it behaves as effectively constant in practice, but it isn't literally `O(1)` because it still grows, just unimaginably slowly, as `n` increases."
+  },
+  {
+    "id": "03.4-graph-algorithms-6",
+    "chapter": "03-Algorithms/03.4-graph-algorithms.md",
+    "prompt": "Topological sort: give the intuition for both Kahn's algorithm and the DFS-finish-time approach, and explain how each one simultaneously detects a cycle. Why does a cycle make a topological order impossible in the first place?",
+    "answer": "Kahn's algorithm repeatedly outputs a vertex with indegree 0 (no unmet prerequisites), then \"removes\" it by decrementing its neighbors' indegrees, and repeats; it detects a cycle because vertices stuck in a cycle never reach indegree 0 and never get queued, so if the final output has fewer vertices than the graph, `len(order) != len(vertices)` signals a cycle. The DFS-finish-time approach runs DFS and prepends a vertex to the order only when it finishes (all its descendants are fully explored), which works because a vertex finishes only after everything it points to has finished, putting it correctly before them; it detects a cycle with a three-color scheme (white/gray/black), where hitting a gray vertex (still in progress, on the current path) means a back edge, i.e. a cycle. A cycle makes a topological order impossible in the first place because it creates a chicken-and-egg dependency, some vertex would have to come both before and after another, so no linear ordering can satisfy every \"u before v\" edge constraint."
+  },
+  {
+    "id": "03.5-dynamic-programming-1",
+    "chapter": "03-Algorithms/03.5-dynamic-programming.md",
+    "prompt": "**The two ingredients.** What are the two properties a problem must have for dynamic programming to apply? Explain why merge sort has one but not the other, and what that means (D&C vs DP). Give one example of a problem that *lacks* optimal substructure.",
+    "answer": "A DP problem needs **optimal substructure** (the optimal solution to the whole can be built from optimal solutions to its parts) and **overlapping subproblems** (a naive recursion would solve the same subproblem many times). Merge sort has optimal substructure, since sorted halves merge cleanly, but it lacks overlapping subproblems: the two halves are disjoint and never share work, so caching buys nothing. That's why merge sort is divide and conquer, not DP, it splits and combines without ever recomputing the same subproblem. An example that lacks optimal substructure entirely is the longest simple path (no repeated vertices): gluing two longest sub-paths might revisit a vertex, so plain DP doesn't apply, and the problem is actually NP-hard."
+  },
+  {
+    "id": "03.5-dynamic-programming-2",
+    "chapter": "03-Algorithms/03.5-dynamic-programming.md",
+    "prompt": "**Memoization vs tabulation.** Describe both styles using Fibonacci. Which is \"lazy\" and which is \"eager\"? Name one concrete advantage and one disadvantage of each. They share the same Big-O, so what actually drives the choice between them in practice?",
+    "answer": "**Memoization** (top-down) writes the recursion exactly as the math reads: `fib_memo(n)` checks a cache before computing a value and stores it after, so it only ever computes states actually reachable from the answer. **Tabulation** (bottom-up), `fib_tab(n)`, allocates a table and fills it iteratively from the base cases up to `fib(n)`, computing every cell in range. Memoization is lazy; tabulation is eager. Memoization stays closest to the recurrence and is easy to write, but carries recursion overhead and risks stack overflow on deep chains; tabulation avoids recursion and stack limits and is often easier to space-optimize, but you have to reason about fill order and may compute cells you didn't strictly need. Since both are the same Big-O, the choice in practice comes down to taste and constraints, like recursion depth limits or how easily you want to space-optimize afterward."
+  },
+  {
+    "id": "03.5-dynamic-programming-3",
+    "chapter": "03-Algorithms/03.5-dynamic-programming.md",
+    "prompt": "**The recipe.** List the four parts of defining a DP solution (state, transition, base cases, answer). For coin-change-min, write out all four in one sentence each. Why is writing the *state* as a precise English sentence the single most important step?",
+    "answer": "The four parts are: **define the state precisely** (what `dp[i]` means as an English sentence), **write the transition** (how to compute `dp[i]` from smaller states), **nail the base cases** (the smallest states answerable with no recursion), and **identify the answer** (which cell holds the final result). For coin-change-min: the state is `dp[a]` = the minimum number of coins needed to make amount `a`; the transition is `dp[a] = min(dp[a-c] + 1 for c in coins if c <= a)`; the base case is `dp[0] = 0`; and the answer is `dp[amount]`, or -1 if it's still the infinity sentinel. Writing the state as a precise English sentence is the single most important step because a vague state definition guarantees a buggy recurrence, you can't correctly write a transition for something you haven't defined exactly."
+  },
+  {
+    "id": "03.5-dynamic-programming-4",
+    "chapter": "03-Algorithms/03.5-dynamic-programming.md",
+    "prompt": "**Knapsack iteration direction.** In the 1D rolling-array version of 0/1 knapsack, why must you iterate the capacity from high to low? What problem would you accidentally solve if you went low to high instead? Connect this to the meaning of \"each item used at most once.\"",
+    "answer": "You must iterate capacity from high to low because going low to high would let `dp[w - wi]` already reflect an update made earlier in that same item's pass, effectively letting the algorithm use the item twice within one pass. That mistake silently solves the **unbounded knapsack** instead, where each item can be taken infinitely many times, rather than 0/1 knapsack. Iterating right to left keeps `dp[w - wi]` referring to the previous item's value (equivalent to the untouched `dp[i-1]` row in the 2D version), which is exactly what \"each item used at most once\" requires: the current item's own take-decision must never feed back into itself."
+  },
+  {
+    "id": "03.5-dynamic-programming-5",
+    "chapter": "03-Algorithms/03.5-dynamic-programming.md",
+    "prompt": "**Space optimization, generally.** What property of a recurrence tells you that you can throw away old rows/columns and shrink space (e.g., Fibonacci `O(n)`→`O(1)`, knapsack `O(nW)`→`O(W)`)? Why can't you do this for LCS *reconstruction* even though you can for LCS *length*?",
+    "answer": "You can shrink space whenever the recurrence only reaches back a constant, limited distance: if `dp[i]` only depends on a fixed number of previous rows or cells, not the whole table, you can discard older rows once they're no longer needed. That's why Fibonacci, which only looks back two values, collapses from `O(n)` to `O(1)`, and why 0/1 knapsack, where `dp[i]` only depends on row `dp[i-1]`, collapses from `O(nW)` to `O(W)`. LCS length can be rolled the same way since each cell only needs the row above and the current row. Reconstruction can't use this trick, though, because recovering the actual subsequence means walking the table backward and replaying every decision from `dp[n][m]` back to `dp[0][0]`, which requires the full table of past cells still being present, not just the most recent row."
+  },
+  {
+    "id": "03.5-dynamic-programming-6",
+    "chapter": "03-Algorithms/03.5-dynamic-programming.md",
+    "prompt": "**LIS two ways.** Explain the `O(n²)` LIS state (\"longest subsequence ending at `i`\") and why that framing is necessary for a clean transition. Then explain what the `tails` array means in the `O(n log n)` version, and why `tails` correctly tracks the LIS *length* even though it might not be an actual increasing subsequence of the input. --- *That's Chapter 3.5. Every algorithm here came from the same six-line recipe, state, transition, base, answer, then style and space. The classics aren't a list of tricks to memorize; they're the recipe applied to different shapes of state. Next time you hit a problem that smells like DP, reach for this page, define the state in one careful sentence, and the rest will fall out.*",
+    "answer": "In the `O(n²)` version, `dp[i]` means the length of the longest increasing subsequence that ends exactly at index `i` and includes `nums[i]`. That framing is necessary because if you instead defined `dp[i]` as \"LIS in `nums[:i]`\" you'd lose track of what the last element was, so you couldn't write a clean transition; \"ends at `i`\" lets you check `nums[j] < nums[i]` for every earlier `j` and extend `dp[j] + 1`. In the `O(n log n)` patience-sorting version, `tails[k]` is the smallest possible tail value of any increasing subsequence of length `k+1` seen so far, and the array's length at the end is the LIS length. `tails` correctly tracks the length even though it may not be a real increasing subsequence of the input because keeping each length's tail as small as possible only ever maximizes future extension options, an overwrite trades in a smaller tail for the same length without destroying any longer subsequence already found, so the count of distinct lengths achieved stays accurate even as the recorded values drift away from any single real subsequence."
+  },
+  {
+    "id": "03.6-greedy-and-backtracking-1",
+    "chapter": "03-Algorithms/03.6-greedy-and-backtracking.md",
+    "prompt": "What two properties must a problem have for greedy to be provably optimal, and what is an exchange argument? (Greedy-choice property + optimal substructure; an exchange argument transforms an arbitrary optimal solution into the greedy one by swapping choices without increasing cost, proving greedy is at least as good.)",
+    "answer": "Greedy is provably optimal when a problem has the **greedy-choice property** (there exists a globally optimal solution that agrees with greedy's first choice) and **optimal substructure** (after committing to the greedy choice, what remains is a smaller instance of the same problem, and an optimal solution to the whole contains an optimal solution to that subproblem). The tool used to prove the greedy-choice property is the **exchange argument**: take any optimal solution and show you can swap one of its choices for the greedy choice without making it worse, then repeat until the arbitrary optimum has been transformed into the greedy solution, which proves greedy is at least as good."
+  },
+  {
+    "id": "03.6-greedy-and-backtracking-2",
+    "chapter": "03-Algorithms/03.6-greedy-and-backtracking.md",
+    "prompt": "Give a concrete input where greedy coin change is wrong, and explain why it fails. (Coins `{1,3,4}`, amount `6`: greedy takes `4+1+1=3` coins, optimum is `3+3=2`. Greedy can't see that skipping the locally biggest coin enables a better total, since the choice's value depends on the future.)",
+    "answer": "With coins `{1,3,4}` and amount `6`, greedy takes the largest coin that fits at each step: 4, then 1, then 1, for `4+1+1=3` coins total. The true optimum is `3+3=2` coins. Greedy fails because it grabs the locally biggest coin without seeing that skipping it would enable a better total, the value of a choice depends on the future, and greedy never looks back to reconsider."
+  },
+  {
+    "id": "03.6-greedy-and-backtracking-3",
+    "chapter": "03-Algorithms/03.6-greedy-and-backtracking.md",
+    "prompt": "In Huffman coding, why do we always merge the two least-frequent nodes, and why is the resulting code prefix-free? (Merging the rarest two pushes them deepest, giving the longest codes to the rarest symbols, minimizing `Σ freq×depth`. It's prefix-free because every symbol is a leaf, so no symbol's root-to-leaf path is a prefix of another's.)",
+    "answer": "Huffman always merges the two least-frequent nodes because doing so pushes them deepest in the tree, and since cost is `Σ frequency × depth`, giving the longest codes to the rarest symbols minimizes total cost. This is justified by an exchange argument: if an optimal tree put a higher-frequency symbol deeper than the two rarest, swapping it with one of them would decrease total cost, contradicting optimality, so the two rarest symbols can always be made siblings at the deepest level. The resulting code is prefix-free because every symbol sits at a leaf and a code is just the root-to-leaf path (left = 0, right = 1); since no leaf lies on the path to another leaf, no symbol's code can be a prefix of another's."
+  },
+  {
+    "id": "03.6-greedy-and-backtracking-4",
+    "chapter": "03-Algorithms/03.6-greedy-and-backtracking.md",
+    "prompt": "Describe the three steps of the backtracking framework, and why \"un-choose\" is critical. (Choose a candidate, recursively explore, then un-choose to restore state. Un-choose must perfectly reverse choose; otherwise sibling branches inherit corrupted shared state, the most common backtracking bug.)",
+    "answer": "The backtracking framework is choose, explore, un-choose: pick a candidate from the current state, recursively explore the resulting state, then un-choose to restore the state before trying the next candidate. Un-choose is critical because it must perfectly reverse choose; if `make` mutates shared state and `undo` doesn't restore it exactly, sibling branches inherit corrupted state, which the chapter calls the #1 source of backtracking bugs."
+  },
+  {
+    "id": "03.6-greedy-and-backtracking-5",
+    "chapter": "03-Algorithms/03.6-greedy-and-backtracking.md",
+    "prompt": "In N-Queens and Sudoku, where exactly does pruning happen, and roughly how much does it save? (N-Queens: skipping any column/diagonal already attacked turns `8⁸≈16M` placements into a few thousand nodes. Sudoku: `is_valid_move` rejects digits violating row/column/box before recursing, turning `9⁸¹` possibilities into milliseconds.)",
+    "answer": "In N-Queens, pruning happens in the validity check inside the column loop: any column or diagonal already attacked (tracked via the `cols`, `diag1`, `diag2` sets) is skipped before recursing, so the search never descends into a doomed branch. Without that pruning, 8-Queens would require `8⁸ ≈ 16M` placements; with column and diagonal pruning it explores only a few thousand nodes. In Sudoku, pruning happens in `is_valid_move`, which rejects any digit that violates its row, column, or 3×3 box before it's placed and recursed into. That turns a blank board's up to `9⁸¹` possible fillings into a puzzle solved in milliseconds, since most branches die immediately."
+  },
+  {
+    "id": "03.6-greedy-and-backtracking-6",
+    "chapter": "03-Algorithms/03.6-greedy-and-backtracking.md",
+    "prompt": "How does branch-and-bound extend backtracking, and what does the bound let you do? (It adds an optimistic bound on the best solution reachable from a partial state plus an incumbent best-so-far; if a node's bound can't beat the incumbent, the entire subtree is pruned. This is how exponential optimization problems like 0/1 knapsack and TSP become tractable on real inputs.)",
+    "answer": "Branch-and-bound extends backtracking by adding a **bound**: at every partial solution it cheaply computes an optimistic estimate (an upper bound for maximization, lower bound for minimization) of the best complete solution reachable from that node, while tracking the best complete solution found so far, the **incumbent**. If a node's bound can't beat the incumbent, the entire subtree is pruned because it cannot possibly do better. This is the same pruning philosophy as backtracking's validity check, but driven by cost potential instead of feasibility, and it's how exponential optimization problems like 0/1 knapsack and TSP become tractable in practice: still exponential worst case, but the bound slashes the search dramatically on real inputs."
+  },
+  {
+    "id": "09.1-scalability-fundamentals-1",
+    "chapter": "09-System-Design/09.1-scalability-fundamentals.md",
+    "prompt": "**State Little's Law and derive it.** Then: a service measures average latency 50 ms and 400 concurrent in-flight requests, what's its throughput, and what does it need to double throughput at constant latency?",
+    "answer": "Little's Law states `L = λ · W`, where `L` is the average number of items in the system (concurrency), `λ` is the average arrival rate (throughput when stable), and `W` is the average time an item spends in the system (latency). It holds for any stable system: over a window of length `T`, the time-average number in system is the area under the \"number in system\" curve divided by `T`, which equals `(ΣW_i)/T`; since `λ = N/T` and `W = (ΣW_i)/N`, substituting gives `L = (N/T)·(ΣW_i/N) = λ·W`, no distributional assumptions needed. With `W = 0.05 s` and `L = 400`, throughput is `λ = L/W = 400/0.05 = 8,000 req/s`. To double throughput to 16,000 req/s while holding `W = 0.05 s`, the system needs `L = λW = 16,000 × 0.05 = 800` concurrent in-flight requests, meaning the worker/connection pool (and downstream capacity) must support 800 at once, double the current 400, or requests will just queue and latency will balloon past 50 ms."
+  },
+  {
+    "id": "09.1-scalability-fundamentals-2",
+    "chapter": "09-System-Design/09.1-scalability-fundamentals.md",
+    "prompt": "**Why does the average latency \"lie\"?** Construct a 10-sample dataset where the mean is higher than 9 of the 10 samples, and explain what p50/p95/p99 each tell you. Then explain the tail-at-scale math: if one backend has p99=1% and a page fans out to 50 calls, what fraction of pages are slow?",
+    "answer": "Use the chapter's dataset: `10, 12, 11, 13, 10, 12, 11, 14, 12, 900` (ms). The mean is `(105 + 900)/10 = 100.5 ms`, which is higher than 9 of the 10 individual samples (only the 900 ms outlier exceeds it), so the average describes nobody. **p50 (median)** ≈ 12 ms, the typical request's experience; **p95** marks where the \"unlucky\" 5% begins; **p99** ≈ 900 ms is the tail, the roughly 1% of requests that wait nearly a second. For the fan-out math, if one backend has `p99 = 1%` chance of being slow and a page makes 50 such calls, `P(page slow) = 1 - (1-0.01)^50 = 1 - 0.99^50 ≈ 1 - 0.605 = 0.395`, so about **39.5%** of page loads hit at least one slow call, turning a rare 1% leaf event into a common page-level experience."
+  },
+  {
+    "id": "09.1-scalability-fundamentals-3",
+    "chapter": "09-System-Design/09.1-scalability-fundamentals.md",
+    "prompt": "**Availability multiplication.** Four services in series at 99.99%, 99.95%, 99.9%, 99.9%, what's the combined availability, and is it better or worse than the weakest link? Then show how two 99% replicas in parallel reach four nines, and state the key assumption that can break that math.",
+    "answer": "In series, availabilities multiply: `A = 0.9999 · 0.9995 · 0.999 · 0.999 = 0.9974 ≈ 99.74%`, which is worse than the weakest single link (99.9%), because every additional hop in a chain subtracts nines. In parallel, unavailabilities multiply instead: with two independent 99% replicas, `A = 1 - (1-0.99)^2 = 1 - 0.0001 = 0.9999 = 99.99%`, four nines from two mediocre boxes. The key assumption is that the replicas fail **independently**; if they share a failure domain (same rack/power supply, same region/fiber, same bad deploy), the `(1-A)^N` term no longer holds and correlated failures collapse the gain, so real redundancy requires spreading replicas across failure domains (zones, regions, deploy waves)."
+  },
+  {
+    "id": "09.1-scalability-fundamentals-4",
+    "chapter": "09-System-Design/09.1-scalability-fundamentals.md",
+    "prompt": "**Vertical vs horizontal, stateless vs stateful.** Why is statelessness a prerequisite for easy horizontal scaling and autoscaling? Where should session state live instead?",
+    "answer": "A service is stateless if any instance can handle any request because it keeps no per-client data in local memory between requests; that's what lets a load balancer send a request to *any* node and lets you add or remove nodes freely, which is exactly what horizontal scaling and autoscaling require. If a node holds session state in local RAM instead, the load balancer must pin that user to that specific node (sticky sessions), and if the node dies, the user's session is lost. So session/JWT and cache state should live in a shared store like Redis or the database, so nodes are \"cattle, not pets\" and any node can serve any request."
+  },
+  {
+    "id": "09.1-scalability-fundamentals-5",
+    "chapter": "09-System-Design/09.1-scalability-fundamentals.md",
+    "prompt": "**Numbers to know.** Roughly how much slower is a cross-country network round trip than a main-memory read? Use that ratio to justify (a) caching in RAM and (b) using a CDN.",
+    "answer": "Main memory (RAM) reference is ~100 ns, while a cross-country round trip (CA ↔ Netherlands) is ~150 ms, a gap of about **1.5 million times**. (a) That ratio is why caching in RAM is the single biggest performance lever: anytime you can answer a request from memory instead of going over the network, you save on the order of a million-fold in latency. (b) A CDN exists because no amount of CPU fixes geography, the ~150 ms round trip is a speed-of-light tax; instead of making the origin server faster, a CDN puts cached copies physically closer to users at edge POPs, cutting a 300 ms round trip (e.g., Sydney to Virginia) down to ~10 ms (Sydney to a local edge)."
+  },
+  {
+    "id": "09.1-scalability-fundamentals-6",
+    "chapter": "09-System-Design/09.1-scalability-fundamentals.md",
+    "prompt": "**Capacity drill.** A service has 20M DAU, each making 30 requests/day, read:write = 9:1, 2 KB per response. Estimate average and peak (3×) QPS, and peak egress bandwidth in Gbps. Then decide: is a CDN warranted?",
+    "answer": "Requests/day = 20M × 30 = 600M/day. `QPS_avg = 600e6 / 86,400 ≈ 6,944 QPS`; with a 3× peak factor, `QPS_peak ≈ 20,800 QPS`. At a 9:1 read:write split, peak read QPS ≈ 0.9 × 20,800 ≈ 18,750, so peak egress bandwidth ≈ `18,750 × 2 KB = 37.5 MB/s ≈ 0.3 Gbps`. That's far below the multi-Gbps egress that \"screams CDN\" for bandwidth reasons alone, so a CDN isn't forced by raw egress here; it would only be clearly warranted if a meaningful share of these responses are public/cacheable (shared market data, static assets) rather than personalized per-user data, since a CDN can't offload responses that must be computed per user."
+  },
+  {
+    "id": "09.2-caching-and-cdn-1",
+    "chapter": "09-System-Design/09.2-caching-and-cdn.md",
+    "prompt": "**The cost gap + locality.** Why does a small cache capture most of the traffic? Define temporal locality, spatial locality, and popularity skew, and connect them to why LRU is a sane default eviction policy.",
+    "answer": "A small cache captures most traffic because of the enormous cost gap between fast and slow layers (RAM ~100 ns vs. a cross-country round trip ~150 ms, up to 1.5 million× faster) combined with the fact that real workloads are not uniform. **Temporal locality** means something accessed recently is likely accessed again soon (a trending ticker); **spatial locality** means data near recently-accessed data is likely needed next (adjacent rows/bytes); **popularity skew** (Zipf/80-20) means a small fraction of items get the overwhelming majority of requests, often ~20% of keys serve ~80% of traffic. Because traffic is this lopsided, a small cache holding just the hot set intercepts most requests. LRU is a sane default because it directly exploits temporal locality: it evicts the item unused longest, which matches skewed workloads where hot items tend to stay hot."
+  },
+  {
+    "id": "09.2-caching-and-cdn-2",
+    "chapter": "09-System-Design/09.2-caching-and-cdn.md",
+    "prompt": "**Hit-rate math.** With T_cache=2 ms and T_source=150 ms, compute the effective average latency at 80%, 95%, and 99% hit rate. Explain why the jump from 95%→99% still matters so much.",
+    "answer": "Using `T_avg ≈ h·T_cache + (1-h)·(T_cache + T_source)`: at `h=0.80`, `T_avg = 0.8·2 + 0.2·152 = 1.6 + 30.4 = 32 ms`; at `h=0.95`, `T_avg = 0.95·2 + 0.05·152 = 1.9 + 7.6 = 9.5 ms`; at `h=0.99`, `T_avg = 0.99·2 + 0.01·152 = 1.98 + 1.52 = 3.5 ms`. Going from 95% to 99% hit rate still cuts latency by roughly `9.5/3.5 ≈ 2.7×` because the misses dominate the average: since `T_source >> T_cache`, the `(1-h)·T_source` term controls the result, and shrinking the miss rate from 5% to 1% is a 5× reduction in that dominant term, which is why chasing the last few percent of hit rate is worth real engineering effort."
+  },
+  {
+    "id": "09.2-caching-and-cdn-3",
+    "chapter": "09-System-Design/09.2-caching-and-cdn.md",
+    "prompt": "**Strategies.** Contrast cache-aside, write-through, write-back, and write-around. For NYX's write-once-rarely-read audit logs, which fits and why? For a hot view-counter? For data that must never be read stale?",
+    "answer": "**Cache-aside** (the default): the app reads from cache, falls back to the DB on miss and populates the cache, and on write deletes (not updates) the key, simple, cache failure just means slower, but a race is possible on concurrent read-miss-write. **Write-through**: every write goes to cache and DB synchronously, so the cache is always consistent and reads never see stale data, at the cost of higher write latency and possibly caching data no one reads. **Write-back**: writes hit the cache immediately and are flushed to the DB asynchronously, very fast and batchable, but risks data loss if the cache dies before flush. **Write-around**: writes go straight to the DB, skipping the cache, so write-once/rarely-read data doesn't pollute the cache, at the cost of a guaranteed miss on the first read after write. For NYX's write-once-rarely-read audit logs, **write-around** fits, since caching them on write would just churn the cache for data nobody reads. For a hot view-counter, **write-back** fits, coalescing thousands of increments/sec and flushing periodically since some loss is tolerable. For data that must never be read stale (like an account balance), **write-through** fits, since it keeps the cache in lockstep with the DB on every write."
+  },
+  {
+    "id": "09.2-caching-and-cdn-4",
+    "chapter": "09-System-Design/09.2-caching-and-cdn.md",
+    "prompt": "**Invalidation & stampede.** Why is invalidation \"one of the two hard things\"? Describe a cache stampede and give two distinct mitigations, explaining how each reduces source load. Why do content-hashed filenames make static-asset invalidation a non-problem?",
+    "answer": "Invalidation is hard because the cache is a copy, and the moment the source changes, that copy becomes a lie; explicit invalidation requires finding *every* affected key, including derived/aggregate keys across nodes, and missing one leaves stale data forever, every approach trades freshness vs. complexity vs. write cost, with no free lunch (Phil Karlton's \"two hard things\"). A **cache stampede** happens when a hot key expires (or the cache restarts cold) and thousands of concurrent requests all miss simultaneously and all hammer the source to recompute the same value, e.g. 10,000 concurrent misses on one key, which can make the DB fall over. Two mitigations: **single-flight/locking**, where only the first miss recomputes and everyone else waits for that result, collapsing N recomputes into 1; and **stale-while-revalidate**, where readers get served the just-expired value while one background task refreshes it, so the source sees exactly one recompute instead of a burst. Content-hashed filenames (`app.9f3c2.js`) sidestep invalidation entirely for static assets because a new deploy produces a new hash and thus a new URL, so the old cached copy never needs to be invalidated, it just becomes irrelevant while the immutable, year-long `max-age` copy sits harmlessly in caches."
+  },
+  {
+    "id": "09.2-caching-and-cdn-5",
+    "chapter": "09-System-Design/09.2-caching-and-cdn.md",
+    "prompt": "**LRU internals.** Why do we need *both* a hashmap and a doubly linked list to get O(1) get *and* put? What does each structure give us, and what breaks if we drop one?",
+    "answer": "The hashmap gives O(1) lookup from `key → node`, while the doubly linked list gives O(1) move-to-front (to mark an item most-recently-used) and O(1) eviction from the tail (the least-recently-used item), with the head as MRU and the tail as LRU. If you drop the hashmap, `get`/`put` have no fast way to locate a node by key and degrade to an O(n) scan of the list. If you drop the linked list, the hashmap alone has no notion of recency order, so finding the least-recently-used item to evict, or reordering on access, requires an O(n) scan. Only the combination, hashmap for instant lookup plus linked list for instant reordering and eviction, gets both `get` and `put` to O(1)."
+  },
+  {
+    "id": "09.2-caching-and-cdn-6",
+    "chapter": "09-System-Design/09.2-caching-and-cdn.md",
+    "prompt": "**CDN reasoning.** Explain how a CDN beats a problem that more CPU can't solve. What is a \"cache key,\" and how can a bad cache key either tank your hit rate or leak one user's data to another? When would you choose `Cache-Control: private, no-store`?",
+    "answer": "A CDN beats the speed-of-light tax on a cross-country/ocean round trip (~150 ms), a problem no origin CPU upgrade can fix, by physically placing cached content at edge POPs near users, e.g. a Sydney user gets a ~10 ms round trip to a local edge instead of a ~300 ms round trip to an origin in Virginia. A **cache key** is what the cache uses to identify a request, typically the URL plus selected headers/query params. If the key is too narrow, ignoring things like query-param order (`?id=AAPL&debug=1` vs `?debug=1&id=AAPL`), logically identical requests get treated as different, tanking the hit rate; if the key is too broad, ignoring a dimension that actually changes the response (like a user/auth cookie for personalized content), the edge can serve user A's cached response to user B, a real data leak. You'd choose `Cache-Control: private, no-store` for personalized or secret responses that must never be cached anywhere shared, e.g. anything containing `Set-Cookie` or per-user account data."
+  },
+  {
+    "id": "09.2-caching-and-cdn-7",
+    "chapter": "09-System-Design/09.2-caching-and-cdn.md",
+    "prompt": "**Cache sizing.** Given a working set, item size, and overhead, walk through computing the provisioned Redis memory, and explain why \"buy more than you think\" is usually the right call for cache memory.",
+    "answer": "Following the chapter's worked example: raw value size = working_set_items × item_size (e.g. 5,000 tickers × 4 KB ≈ 20 MB); add per-key overhead for the key string, `dictEntry`, object header, expiry entry, and allocator rounding (~50-100 B/key, e.g. 5,000 × 90 B ≈ 0.45 MB), giving a subtotal (~20.45 MB); then apply a headroom factor (~1.5×) to cover memory-allocator fragmentation, hot/cold churn, and safety margin so Redis never runs near 100% full, yielding a provisioned figure (~31 MB) that you'd round up to a sensible instance size (e.g. 256 MB). \"Buy more than you think\" is right because RAM is cheap relative to the cost of a hit-rate cliff, if the cache is undersized and starts evicting hot keys, you get latency spikes and on-call pages, so a few hundred extra MB of RAM is trivial compared to the engineer-hours lost when the cache thrashes."
+  },
+  {
+    "id": "09.2-caching-and-cdn-8",
+    "chapter": "09-System-Design/09.2-caching-and-cdn.md",
+    "prompt": "**Interview pitch.** In one paragraph, design the caching for a read-heavy endpoint at 50k QPS: state hit-rate target and resulting origin load, strategy, TTL justification, invalidation, and stampede protection.",
+    "answer": "It's read-heavy with popularity skew, so target roughly a 95% hit rate, which brings origin load from 50,000 QPS down to about 2,500 QPS, a survivable number instead of one that melts the DB. Use cache-aside in Redis with LRU eviction (the default for read-heavy workloads that tolerate slight staleness), with a TTL set from the business's acceptable staleness window (short, jittered so co-cached keys don't all expire in the same instant and cause a synchronized miss storm). Invalidate by delete-on-write rather than update-on-write, since updating on write races under concurrency and can leave the cache stuck on an older value. Add single-flight locking on hot keys so a TTL expiry collapses thousands of concurrent misses into a single recompute instead of stampeding the origin."
+  },
+  {
+    "id": "09.3-load-balancing-proxies-1",
+    "chapter": "09-System-Design/09.3-load-balancing-proxies.md",
+    "prompt": "**L4 vs L7.** What can an L7 load balancer do that an L4 one fundamentally cannot? Give a concrete NYX routing example that *requires* L7, and one case where L4 is the better choice.",
+    "answer": "An L7 LB terminates the connection and parses HTTP, so it can route on content: URL path, Host header, cookies, method, headers, body, and can do TLS termination and per-request retries. An L4 LB only sees source/dest IP, port, and TCP flags, it forwards packets/connections without looking inside them, so it fundamentally cannot make a decision based on what's in the request. NYX example requiring L7: routing `/api/v1/quotes` to one service and `/api/v1/reports` to another while terminating TLS centrally, that decision depends on the URL path, which L4 never sees. L4 is the better choice for something like a TCP proxy in front of a Postgres replica pool, where you want protocol-agnostic, low-overhead forwarding with no HTTP parsing."
+  },
+  {
+    "id": "09.3-load-balancing-proxies-2",
+    "chapter": "09-System-Design/09.3-load-balancing-proxies.md",
+    "prompt": "**Algorithms.** When does round-robin distribute load badly, and how does least-connections (or power-of-two-choices) fix it? Walk through it using the slow-node example from `mini_lb.py`.",
+    "answer": "Round-robin distributes badly when request cost varies, it hands out requests 1, 2, 3, 1, 2, 3... blind to how loaded each node actually is, so slow requests can pile up on one node while others sit idle. In `mini_lb.py`, three backends are created with `fast-1` and `fast-2` at `base_latency=0.01` and `slow-3` intentionally 3x slower at `0.03`. `RoundRobin` sends equal request counts to `slow-3` regardless of its load, so requests queue there and total wall time suffers. `LeastConnections` and `PowerOfTwo` instead check each backend's `active` in-flight count and route new requests away from `slow-3` once it's accumulating connections, steering more traffic to `fast-1`/`fast-2` and finishing the same batch faster."
+  },
+  {
+    "id": "09.3-load-balancing-proxies-3",
+    "chapter": "09-System-Design/09.3-load-balancing-proxies.md",
+    "prompt": "**Consistent hashing.** Why is `hash(key) % N` a disaster when N changes? Explain how consistent hashing with virtual nodes limits key movement to ~K/N, and name two systems that rely on it.",
+    "answer": "`hash(key) % N` is a disaster when N changes because a key stays put only if `hash % N_old == hash % N_new`, and since the moduli are nearly independent almost every key remaps. The chapter's own numbers: with `K=1,000,000` keys and `N=4` nodes, adding a 5th node moves `K × (1 − 1/5) = 800,000` keys (80%), a cache stampede caused just by adding capacity. Consistent hashing maps servers and keys onto a circular ring; a key belongs to the first server clockwise from its hash, so adding or removing a server only steals/returns the arc near its own ring position, moving on average `K/N` keys, in the same example only `1,000,000 × 1/5 = 200,000` keys (20%), a 4x improvement. Virtual nodes (100-200 per physical server) smooth out uneven arcs so no single server gets clumped with too much or too little of the ring. Memcached client sharding and Cassandra/DynamoDB partitioning (and Envoy's ring-hash LB) all rely on this."
+  },
+  {
+    "id": "09.3-load-balancing-proxies-4",
+    "chapter": "09-System-Design/09.3-load-balancing-proxies.md",
+    "prompt": "**Sticky vs stateless.** Why are sticky sessions a liability for availability, load distribution, and autoscaling? Where should session state live so the LB can use plain round-robin?",
+    "answer": "Sticky sessions pin a client to one backend (via cookie or IP hash) so that backend's local session RAM stays valid. That's a liability for availability because the pinned node becomes a single point of failure for those users, if it dies they're logged out; for load distribution because sticky users pile up unevenly on whichever nodes they first landed on; and for autoscaling because you can't freely drain, replace, or rebalance a node without disrupting its pinned users' sessions. Session state should live in a shared store, Redis, a signed JWT, or a DB, so that any node can serve any request and the LB can use plain round-robin or least-connections. For NYX, sessions/JWTs and live state live in Redis and the app tier is fully stateless, so stickiness is never needed for correctness."
+  },
+  {
+    "id": "09.3-load-balancing-proxies-5",
+    "chapter": "09-System-Design/09.3-load-balancing-proxies.md",
+    "prompt": "**The three proxies.** Distinguish forward proxy, reverse proxy, and API gateway by *who they act on behalf of*. Which is a load balancer most like, and what extra responsibilities turn a reverse proxy into an API gateway?",
+    "answer": "A forward proxy sits in front of clients and acts on behalf of the client, hiding client identity and enforcing egress policy (a corporate web filter, Squid). A reverse proxy sits in front of servers and acts on behalf of the server, hiding backend topology, terminating TLS, caching, and load-balancing (nginx, Varnish, Envoy). An API gateway is a reverse proxy that has also taken on cross-cutting API concerns: authn/authz, rate limiting, request transformation, routing/aggregation, API keys, quotas, versioning, and observability (Kong, AWS API Gateway). A load balancer is most like a reverse proxy, an L7 LB *is* a reverse proxy whose main job is distribution; adding those extra policy responsibilities is exactly what turns a plain reverse proxy into an API gateway."
+  },
+  {
+    "id": "09.3-load-balancing-proxies-6",
+    "chapter": "09-System-Design/09.3-load-balancing-proxies.md",
+    "prompt": "**Health & autoscaling.** Differentiate liveness from readiness, and passive from active health checks. Why does connection draining matter during a deploy? Why should autoscaling thresholds leave headroom, tying back to the utilization math from Chapter 9.1?",
+    "answer": "Liveness asks \"is the process alive, should it be restarted?\" and should depend on nothing external, so a DB outage doesn't trigger pointless restarts of otherwise healthy processes. Readiness asks \"can I serve traffic right now?\" and does consider dependencies, a node that can't reach Postgres or Redis should be pulled from the LB but not killed. Passive health checks observe real traffic and mark a backend down after repeated errors/timeouts, free but reactive, it only catches a bad node once real users hit it; active health checks proactively probe a dedicated endpoint like `/healthz` on an interval, N consecutive failures marks it down and M consecutive successes marks it back up. Connection draining matters during a deploy because killing a node with in-flight requests turns every deploy into a burst of 5xx errors and dropped connections; draining means deregister, stop new traffic, let in-flight requests finish, then terminate. Autoscaling thresholds should leave headroom because scaling has lag (new instances take seconds-to-minutes to become ready), and per Chapter 9.1's utilization math you want steady-state around 50-70% so a sudden spike doesn't push the system toward the queueing cliff before new capacity arrives."
+  },
+  {
+    "id": "09.3-load-balancing-proxies-7",
+    "chapter": "09-System-Design/09.3-load-balancing-proxies.md",
+    "prompt": "**Making the LB itself HA.** Your app tier is redundant but the LB is one box. Explain why that's still a single point of failure and give three ways to make the load balancer itself highly available, with a tradeoff for each.",
+    "answer": "A redundant app tier doesn't help if the LB is a single box, because if that one box (or its host, process, or network path) dies, clients can no longer reach any of the healthy app nodes behind it, the whole service goes down regardless of app-tier redundancy. Three fixes: (1) run the LB as an HA pair, active/passive sharing a floating/virtual IP via VRRP-style failover, or active/active, tradeoff: failover takes a few seconds and the standby sits mostly idle. (2) Put multiple LB IPs behind DNS failover, tradeoff: client failover is bounded by DNS TTL, so a dead LB keeps getting hit until cached answers expire. (3) Use anycast, announcing one IP from multiple locations via BGP, tradeoff: near-instant failover but requires control of IP space and BGP, in practice this means using a managed cloud/global LB rather than rolling it yourself."
+  },
+  {
+    "id": "09.3-load-balancing-proxies-8",
+    "chapter": "09-System-Design/09.3-load-balancing-proxies.md",
+    "prompt": "**Sizing.** Given a peak QPS, a safe per-node capacity, an N+2 redundancy requirement, and a 70% utilization ceiling, walk through computing the number of nodes, and explain why \"peak ÷ capacity\" alone is the wrong answer.",
+    "answer": "Using the chapter's own numbers: `Q_peak=9,000 req/s`, safe per-node capacity `C=1,500 req/s`. Step 1, base nodes: `N_base = ceil(Q_peak/C) = ceil(9,000/1,500) = 6`. Step 2, add N+2 redundancy: `N_total = N_base + 2 = 8`, and verify the failure case, losing 2 of 8 leaves 6 × 1,500 = 9,000, exactly covers peak. Step 3, check steady-state utilization with all 8 up: `9,000/8 = 1,125` per node, `1,125/1,500 = 75%`, too hot for a spiky workload, so bump to 9 nodes, giving `9,000/9 ≈ 1,000` per node (67% utilization) while still surviving 2 losses (7 × 1,500 = 10,500 ≥ 9,000). \"Peak ÷ capacity\" alone is wrong because it yields a fleet with zero slack: it doesn't survive any node loss (no redundancy) and leaves no headroom for spikes or autoscaling lag, the real formula is `ceil(peak/safe_capacity) + redundancy`, then verify the post-failure fleet still covers peak and the steady-state utilization leaves room."
+  },
+  {
+    "id": "09.4-rate-limiting-1",
+    "chapter": "09-System-Design/09.4-rate-limiting.md",
+    "prompt": "**Why limit?** Give the four reasons to rate-limit, and tie \"protection\" back to the utilization/queueing math from Chapter 9.1, what specifically goes wrong without a limiter under a traffic spike?",
+    "answer": "The four reasons: (1) protection/stability, (2) fairness/multi-tenancy so one noisy tenant can't starve everyone else, (3) cost control on downstream calls (third-party market-data APIs, LLM tokens, egress), and (4) security/abuse, throttling login attempts, signups, password resets, OTP sends. For protection, tying back to Chapter 9.1: as utilization approaches 100%, latency explodes for everyone, the queueing cliff. Without a limiter, a bug, a retry storm, a scraper, or a DDoS can drive QPS past what the system can serve, and that excess doesn't just hurt the offending source, it drags latency down for every user and can make the service collapse entirely instead of degrading gracefully by shedding some requests as 429s."
+  },
+  {
+    "id": "09.4-rate-limiting-2",
+    "chapter": "09-System-Design/09.4-rate-limiting.md",
+    "prompt": "**Fixed window's flaw.** Demonstrate the boundary-burst problem numerically with R=10, window=60s. How do the sliding window log and sliding window counter each fix it, and what does each cost in memory?",
+    "answer": "With R=10, window=60s, a client can send 10 requests at t=59 (end of window 0) and 10 more at t=61 (start of window 1): fixed window allows all 20 in about 2 seconds, double the intended rate (the intended rate over 2s is only `R×2/60 ≈ 0.33`), because the counter reset to 0 at the boundary. Sliding window log fixes it by keeping every timestamp and dropping entries older than `now − window`: at t=61 the t=59 timestamps are still under 60s old, so it allows 10 at t=59 but rejects all 10 of the second batch, 0 at t=61, exact but costs O(R) memory per key (every timestamp in the window). Sliding window counter fixes it approximately with just two integers, current and previous window counts, weighted by remaining overlap: `estimate = curr + prev*weight`. For example at t=75s (15s into window 2) with prev=9, curr=5, weight=(60-15)/60=0.75, estimate=5+9×0.75=11.75>10, correctly rejected where a fixed window would have allowed it, cheap and nearly as accurate as the log."
+  },
+  {
+    "id": "09.4-rate-limiting-3",
+    "chapter": "09-System-Design/09.4-rate-limiting.md",
+    "prompt": "**Token vs leaky bucket.** State the one-line difference in their burst philosophy. For NYX's customer API (want responsive bursts but bounded average) which fits? For shaping calls to a fragile third-party vendor that needs a steady stream, which fits?",
+    "answer": "Token bucket limits the input rate but tolerates bursts, spending saved-up tokens instantly up to `capacity`; leaky bucket enforces a smooth constant output rate and absorbs bursts into a queue (adding latency), so no burst passes through. NYX's customer API, wanting responsive bursts but a bounded long-run average, fits a token bucket, the chapter's default for API limits (e.g. the \"1,000 req/min\" tier). Shaping calls to a fragile third-party vendor that needs a steady stream fits a leaky bucket, matching the market-data vendor guard, a shared bucket capped at the vendor's hard rate (e.g. ~100/s)."
+  },
+  {
+    "id": "09.4-rate-limiting-4",
+    "chapter": "09-System-Design/09.4-rate-limiting.md",
+    "prompt": "**The atomicity problem.** Show the read-modify-write race between two app nodes sharing a Redis counter, and explain precisely how a Lua script eliminates it. Why is `INCR` alone insufficient for token bucket?",
+    "answer": "With a fixed-window count of 99 and limit R=100: node A does `GET` and reads 99, node B also `GET`s and reads 99 (both before either writes), both compute `99+1=100`, both `SET` 100, so both requests are allowed. The true count should be 101 and the second request should have been rejected, the limit leaked. A Lua script eliminates this because Redis executes the whole script (read tokens and timestamp, compute refill, decide, write new state) atomically in a single round trip, no other client's commands can interleave between the read and the write, so the read-refill-decide-write sequence can never race across nodes. `INCR` alone is insufficient for token bucket because the bucket needs multi-step logic, read stored tokens and last-refill timestamp, compute elapsed-time refill capped at capacity, decide, then write back both new fields, that's several dependent operations on multiple values, not a single atomic integer bump."
+  },
+  {
+    "id": "09.4-rate-limiting-5",
+    "chapter": "09-System-Design/09.4-rate-limiting.md",
+    "prompt": "**Where to enforce.** Lay out edge → gateway → app → downstream and what kind of limit belongs at each layer. Why layer them instead of picking one?",
+    "answer": "Edge/CDN does coarse, IP-based volumetric/DDoS shedding (e.g. a token bucket, cap≈200, ~100/s per IP), cheapest and furthest out, before requests cost any compute. API gateway/LB enforces per-API-key or per-user limits, the contracted product tier (a token bucket keyed on API key, made global via the Redis Lua script), the natural home per Chapter 9.3. The application adds per-endpoint or business-rule limits that need user context, like a guard on an expensive report-generation endpoint. A downstream guard protects a specific fragile dependency, such as a shared leaky bucket capping calls to the market-data vendor at its hard 100/s limit. Layering matters because each has a different job, key, and cost profile: the edge stops abuse before it costs compute, the gateway centralizes quotas so individual services don't reimplement them, and the app/downstream layers add context the earlier ones don't have, a request must pass all of them."
+  },
+  {
+    "id": "09.4-rate-limiting-6",
+    "chapter": "09-System-Design/09.4-rate-limiting.md",
+    "prompt": "**Client behavior.** What should a server send when it throttles, and what should a well-behaved client do in response? Why is jitter essential in the backoff, and how does that connect to the stampede problem from Chapter 9.2?",
+    "answer": "A throttling server should return HTTP 429 Too Many Requests with a `Retry-After` header (seconds), plus informational `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. A well-behaved client should respect `Retry-After` when present, and otherwise back off with exponential delay plus jitter, `delay = min(cap, base * 2^attempt) * random(0.5, 1.0)`, capping total attempts and surfacing a clear error once they're exhausted. Jitter is essential because without it every throttled client computes the identical delay and retries at the identical instant, recreating the exact spike the limiter just shed. That's the same thundering-herd/stampede problem as Chapter 9.2, jitter spreads retries across a window so recovered load ramps up smoothly instead of the system oscillating between spike and shed."
+  },
+  {
+    "id": "09.5-message-queues-1",
+    "chapter": "09-System-Design/09.5-message-queues.md",
+    "prompt": "**Why async?** Give the three wins of a queue (load leveling, reliability, fan-out) with a concrete NYX example of each. What's the cost you take on, and when should work stay synchronous instead?",
+    "answer": "Load leveling: NYX's open-bell data surge lands in a queue instead of melting the processors, turning a spike into bounded delay instead of a crash. Reliability: if a consumer crashes mid-job the message isn't lost, it's redelivered, so the web request can return 'accepted' and trust the work completes. Fan-out: one event like 'trade executed' fans out to the ledger, notifications, analytics, and audit without the producer knowing or caring who consumes it. The cost is eventual consistency and complexity, since the work isn't done when you answer the user you inherit pending states, duplicate deliveries, and ordering problems. Work should stay synchronous when it must be done before you can answer the user, for example checking whether a username is taken."
+  },
+  {
+    "id": "09.5-message-queues-2",
+    "chapter": "09-System-Design/09.5-message-queues.md",
+    "prompt": "**Three shapes.** Distinguish queue, pub/sub, and stream by *who consumes and what happens after consumption*. Why is \"a log is not a queue\" a meaningful statement, what can a stream do that a queue fundamentally cannot?",
+    "answer": "A queue delivers each message to exactly one consumer and the message is gone once consumed, competing consumers share the load (RabbitMQ classic queue, SQS). Pub/sub delivers a copy of each message to every subscriber, a fire-and-forget broadcast usually without retention (SNS, fanout exchange). A stream is an ordered, retained, replayable log where consumers track their own offset, and consuming just advances a pointer, the data stays. 'A log is not a queue' is meaningful because in a queue consuming destroys the message, while in a log many independent consumer groups can read the same data and a brand-new consumer can replay from the beginning, something a delete-on-consume queue fundamentally cannot do."
+  },
+  {
+    "id": "09.5-message-queues-3",
+    "chapter": "09-System-Design/09.5-message-queues.md",
+    "prompt": "**Delivery semantics.** Define at-most/at-least/exactly-once. Walk through the crash scenarios that make exactly-once delivery impossible across two systems, and explain the practical workaround (\"effectively once\").",
+    "answer": "At-most-once delivers without confirming, so messages can be lost if the consumer crashes before processing. At-least-once keeps redelivering until the consumer acks, so nothing is lost but the same message can be processed twice. Exactly-once means delivered and processed once, no loss, no duplication, and it's very hard because processing and acknowledging are separate actions across a network you can't trust: if the consumer crashes after doing the work but before acking, the broker redelivers and the work happens twice; if it acks first and crashes before the work, the work happens zero times. You can't atomically do the side effect and ack across two systems, the broker and your DB, so true exactly-once delivery is impossible in general. The practical workaround is 'effectively once': at-least-once delivery plus idempotent processing, or exactly-once within a single system via transactions, like Kafka's transactional producer with offsets committed atomically alongside output."
+  },
+  {
+    "id": "09.5-message-queues-4",
+    "chapter": "09-System-Design/09.5-message-queues.md",
+    "prompt": "**Idempotency.** Why does at-least-once delivery force you to make handlers idempotent? Give an idempotency-key approach and a \"natural idempotency\" data design, and explain why `balance += 10` is dangerous under redelivery.",
+    "answer": "At-least-once delivery guarantees no message is lost but allows duplicates, since a worker can crash after doing the work but before acking, causing a redelivery, so handlers must be idempotent: doing the work twice must have the same effect as doing it once. The idempotency-key approach gives each message a unique ID, records processed IDs in a dedup table with a TTL covering the max redelivery window, and skips if already seen. Natural idempotency designs the operation itself to be safely repeatable, like `SET balance = 100`, upserts keyed by a business ID, or `INSERT ... ON CONFLICT DO NOTHING`. `balance += 10` is dangerous under redelivery because it isn't naturally repeatable, a duplicate delivery adds 10 a second time and silently corrupts the balance."
+  },
+  {
+    "id": "09.5-message-queues-5",
+    "chapter": "09-System-Design/09.5-message-queues.md",
+    "prompt": "**Reliability mechanics.** What is a poison message, and how do retries + backoff + a DLQ together keep the main queue flowing? What is backpressure, and why can't a queue fix a *sustained* producer/consumer imbalance?",
+    "answer": "A poison message is one that keeps failing, malformed or triggers a bug, and under at-least-once delivery it gets redelivered forever, blocking the queue and wasting resources. Retries with exponential backoff let transient failures recover automatically, and after N failed attempts (`maxReceiveCount`) the message moves to a dead-letter queue instead of being redelivered again, quarantining the poison so the main queue keeps flowing and giving a place to inspect, fix, and replay it later. Backpressure is the feedback that slows producers or sheds load when they persistently outpace consumers: bounded queues that reject or block producers, autoscaling consumers on lag, or rate limiting at the producer. A queue can't fix a sustained imbalance because if consumers are permanently slower than producers, the backlog grows unbounded forever, a queue only smooths transient spikes and buys time to scale consumers, it isn't a capacity solution by itself."
+  },
+  {
+    "id": "09.5-message-queues-6",
+    "chapter": "09-System-Design/09.5-message-queues.md",
+    "prompt": "**Choosing a system.** For each, RabbitMQ, Kafka, SQS standard, SQS FIFO, SNS, give the one scenario where it's the best fit. Which would you pick for NYX market-data ingestion that multiple teams replay and analyze, and why?",
+    "answer": "RabbitMQ fits a classic task queue needing rich routing and per-message ack, like job processing with complex routing rules. Kafka fits high-throughput event streaming where multiple independent consumers need the same events and you need replay or audit. SQS standard fits a zero-ops, high-throughput durable work queue on AWS where best-effort ordering is fine. SQS FIFO fits when strict ordering within a group and dedup matter, at lower throughput. SNS fits fan-out, broadcasting one event to many services, typically paired with SQS per consumer. For NYX market-data ingestion that multiple teams replay and analyze, Kafka is the pick, the chapter calls it 'textbook Kafka' because it needs huge throughput, per-symbol ordering via partitioning, and several independent consumer groups (analytics, fraud, dashboards) reading and replaying the same retained log."
+  },
+  {
+    "id": "09.5-message-queues-7",
+    "chapter": "09-System-Design/09.5-message-queues.md",
+    "prompt": "**Do the math.** For a spike of P/s for T seconds against capacity C/s: write the formulas for peak backlog and drain time, then use Little's Law to size the worker pool from a target latency. Why scale on *lag* rather than CPU?",
+    "answer": "For a spike of P events/sec over T seconds against consumer capacity C/s, peak backlog = (P − C) × T. After the spike ends and the producer drops to its normal rate P_normal, drain rate = C − P_normal and drain time = peak backlog / drain rate. Using Little's Law, `L = λ × W`, the number of concurrent worker slots needed to hold a target throughput λ at per-item processing time W is L = λ × W, so you size the pool by plugging in the throughput you must sustain and the latency each item takes. You scale on lag rather than CPU because when a downstream dependency slows down, workers spend their time idle-waiting on I/O (CPU stays low) while the backlog explodes, and consumer lag is the direct signal of whether you're actually keeping up."
+  },
+  {
+    "id": "09.5-message-queues-8",
+    "chapter": "09-System-Design/09.5-message-queues.md",
+    "prompt": "**Interview the design.** Sketch a notification pipeline (queue + idempotent workers + DLQ + autoscale-on-lag) and say one sentence of *why* at each box. Then defend why it's a queue and not Kafka.",
+    "answer": "The pipeline: the API tier writes a job and returns `202 Accepted` immediately, load leveling that decouples user latency from SMTP; the job lands in an SQS main queue; a worker pool dedupes on `notification_id` before processing, since at-least-once delivery means the same job can arrive twice; workers ack only after success (receive, dedupe-check, render, send, ack), so a crash before ack just causes a safe redelivery; failures retry with exponential backoff so transient provider errors recover automatically; after `maxReceiveCount` attempts a poison message, a bad template or invalid recipient, moves to a DLQ so it can't block everyone else's mail; and an autoscaler watches queue depth (lag), not CPU, adding workers for the Monday-digest spike since workers waiting on SMTP I/O show low CPU even as the backlog grows. It's a queue and not Kafka because this is task distribution, one notification, one send, then it's done, you want per-message retry, an easy DLQ, and simple scaling, and you don't need replay or multiple independent consumers reading the same notification, exactly the queue-vs-stream tie-breaker the chapter draws."
+  },
+  {
+    "id": "09.6-designing-systems-1",
+    "chapter": "09-System-Design/09.6-designing-systems.md",
+    "prompt": "**The framework.** List the 8 steps in order and explain why \"estimates before architecture\" matters, give an example where the QPS/storage math *forces* a specific component (CDN, shard, or queue).",
+    "answer": "The 8 steps in order: requirements, estimates, API, data model, high-level design, deep dives, bottlenecks, tradeoffs. Estimates before architecture matters because the math, not taste, tells you which component you need, picking a database or a queue before you know QPS and storage is 'picking bricks first.' For example, the chapter's refresher shows 6,900 peak QPS reading a 50 KB object works out to about 2.8 Gbps of read bandwidth, and that number alone is what forces a CDN, not a clever app trick."
+  },
+  {
+    "id": "09.6-designing-systems-2",
+    "chapter": "09-System-Design/09.6-designing-systems.md",
+    "prompt": "**Layer-to-pressure mapping.** For each bottleneck, hot reads, hot writes, geographic latency, traffic spikes, abuse, name the cheapest layer that relieves it and why.",
+    "answer": "Hot reads are relieved by a cache, and if that isn't enough, read replicas, since most systems are read-heavy and a cache absorbs read QPS so the DB isn't the bottleneck. Hot writes are relieved by sharding (split by key via consistent hashing) or a queue plus batching when writes or data size exceed one primary. Geographic latency is relieved by a CDN/edge, which kills distance and offloads static/cacheable egress. Traffic spikes are relieved by a queue plus autoscaling, absorbing the burst as backlog and draining it at a sustainable rate. Abuse is relieved by a rate limiter, protecting every other layer from overload. The recurring move is to find the bottleneck resource and apply the cheapest layer that relieves it."
+  },
+  {
+    "id": "09.6-designing-systems-3",
+    "chapter": "09-System-Design/09.6-designing-systems.md",
+    "prompt": "**URL shortener.** Why base62 and how many characters do you need for 6B URLs? Why is the redirect path the thing to optimize, and what two components make it sub-millisecond and highly available? Why record clicks asynchronously?",
+    "answer": "Base62 (`[a-zA-Z0-9]`) is used because it packs many distinct, URL-safe codes into few characters. For 6 billion URLs you need 7 characters, since 62^6 ≈ 56.8 billion already covers it but 62^7 ≈ 3.52 trillion gives large headroom, and the chapter picks 7 for that margin. The redirect path is the thing to optimize because reads outnumber writes 100:1 and the redirect sits in the user's click path, demanding very low latency and high availability. Two components make it sub-millisecond and highly available: a cache (Redis, cache-aside) that serves hot links in sub-milliseconds since access is skewed (some links go viral), and a replicated key-value store behind it for misses, both redundant to push availability toward 99.99%. Clicks are recorded asynchronously, enqueued and aggregated by a worker, so recording a click never blocks or slows the hot redirect path."
+  },
+  {
+    "id": "09.6-designing-systems-4",
+    "chapter": "09-System-Design/09.6-designing-systems.md",
+    "prompt": "**Feed fan-out.** Contrast fan-out on write vs read with their cost profiles. Why is fan-out on write the default here, exactly where does it break, and how does the hybrid celebrity approach fix it?",
+    "answer": "Fan-out on write (push) precomputes each follower's feed at post time, giving O(1) feed reads but expensive writes, since a celebrity with 50M followers means 50M cache writes per post. Fan-out on read (pull) stores just the post and merges followed users' recent posts at read time, cheap writes but expensive, slow reads, especially for users following many accounts. Fan-out on write is the default here because the system is read-heavy (about 5:1) and feed-read latency is the product, so precomputing makes reads instant. It breaks exactly at celebrities, pushing one post to millions of follower feeds is a write storm. The hybrid fixes it by fanning out on write for ordinary accounts via a queue and workers, but not fanning out celebrity posts at all, instead merging the user's precomputed feed with a cached pull of the few celebrities they follow at read time."
+  },
+  {
+    "id": "09.6-designing-systems-5",
+    "chapter": "09-System-Design/09.6-designing-systems.md",
+    "prompt": "**Real-time analytics.** Why is the ingest path modeled as a partitioned *log* rather than a queue or a SQL primary? Why WebSockets instead of polling for live updates, and how do you keep 1.2 TB/day of raw ticks from exploding storage?",
+    "answer": "The ingest path is modeled as a partitioned log (Kafka) rather than a queue or SQL primary because peak ingest hits 500,000 events/sec, write-heavy at a scale only Kafka's sequential-disk-write throughput is built for, and because multiple independent consumers (stream processors computing bars, alerting, audit) need to read the same events with replay for reprocessing, which a delete-on-consume queue and a generic SQL primary can't offer. WebSockets are used instead of polling because thousands of clients polling every second would generate huge QPS of mostly unchanged data with seconds of staleness, while a WebSocket holds one open connection and the server pushes only when a bar actually updates, lower latency and far less load. To keep 1.2 TB/day of raw ticks from exploding storage, the system computes rolling OHLC/VWAP bars once at ingest (fan-out on write for analytics) and downsamples, keeping fine granularity (1s) only recently and rolling older data up to 1m/1h bars under a retention policy."
+  },
+  {
+    "id": "09.6-designing-systems-6",
+    "chapter": "09-System-Design/09.6-designing-systems.md",
+    "prompt": "**Chat ordering & connections.** In Design D, how does partitioning the message store by `conv_id` give you per-conversation ordering for free? Why is the connection-gateway tier a separate, surprisingly large cost, and what backbone lets \"deliver to user X\" reach whichever node holds X's socket?",
+    "answer": "Partitioning the message store by `conv_id` (primary key `(conv_id, seq)`) puts an entire conversation in one partition, which becomes the single place that assigns the monotonic `seq`, so concurrent sends to the same conversation are serialized at that one partition and every recipient sees the same sequence, per-conversation ordering falls out for free without needing a global clock or global ordering. The connection-gateway tier is a separate, surprisingly large cost because connections are long-lived and stateful, at an assumed 25M concurrent WebSocket connections and about 10k connections per server, that's roughly 2,500 dedicated gateway nodes, far more than a stateless app tier behind a round-robin load balancer would need. A pub/sub backbone (Redis pub/sub or Kafka) lets 'deliver to user X' reach whichever gateway node currently holds X's socket, decoupling who sent a message from who holds the recipient's connection so the connection tier can scale independently of the chat service."
+  },
+  {
+    "id": "09.6-designing-systems-7",
+    "chapter": "09-System-Design/09.6-designing-systems.md",
+    "prompt": "**Consistency judgment.** Give one part of NYX that must be strongly consistent and one that should be eventually consistent, and justify each using the latency/availability tradeoff. Then state the recurring system-design pattern you saw across all four designs.",
+    "answer": "NYX's trade ledger must be strongly consistent, every read has to see the latest write because trading on a stale or wrong balance is unacceptable, an invariant worth the extra coordination cost and reduced availability under a partition. NYX's dashboard analytics should be eventually consistent, a bar appearing a few hundred milliseconds to a couple seconds late is fine, and accepting that staleness buys the throughput and availability needed at scale. The recurring pattern across all four designs is finding the single bottleneck the estimates reveal and applying the cheapest layer that relieves it, often by precomputing at write time and partitioning by key to make reads cheap and get ordering for free, recombining the same small set of levers, cache, replica, shard, queue or log, CDN, pub/sub, against whatever the numbers say is breaking first."
+  },
+  {
+    "id": "09.6-designing-systems-8",
+    "chapter": "09-System-Design/09.6-designing-systems.md",
+    "prompt": "**Interview mechanics.** Walk through the 45-minute time budget across the 8 steps, name three signals an interviewer is grading, and give two phrases you'd say out loud to demonstrate them.",
+    "answer": "In a 45-minute interview: requirements and scope get about 5 minutes, estimates about 5, API about 3, data model about 4, high-level design about 8, deep dives about 12 (the largest chunk, where most of the signal is), bottlenecks/scaling about 5, and tradeoffs/wrap-up about 3. Three signals interviewers grade: driving the conversation and structuring your own time, doing the math out loud and then using it, and stating tradeoffs unprompted, the strongest senior signal. Two phrases that demonstrate them: 'Let me do some quick back-of-envelope math to figure out the load,' and 'I'm optimizing for low redirect latency; the tradeoff is that I give up...' or equivalently 'The bottleneck here is going to be X; the cheapest way to relieve it is Y.'"
+  },
+  {
+    "id": "19.1-physics-for-cs-1",
+    "chapter": "19-Physics/19.1-physics-for-cs.md",
+    "prompt": "**Kinematics is calculus.** Velocity is the derivative of position, acceleration the derivative of velocity. Integrate acceleration twice (for constant `a`) and you *derive* `x = x₀ + v₀t + ½at²`, no memorizing.",
+    "answer": "Velocity is the derivative of position (`v = dx/dt`) and acceleration is the derivative of velocity (`a = dv/dt = d²x/dt²`), so kinematics is just calculus applied to position over time. When acceleration is constant, integrating it once gives `v(t) = v0 + at`, and integrating again gives `x(t) = x0 + v0t + ½at²`, with the `½t²` term falling straight out of `∫t dt = ½t²`. Because this equation is derived from the definitions of velocity and acceleration rather than memorized, you can rebuild it anytime by integrating twice."
+  },
+  {
+    "id": "19.1-physics-for-cs-2",
+    "chapter": "19-Physics/19.1-physics-for-cs.md",
+    "prompt": "**Newton's laws.** Inertia (no force, no velocity change); `F = ma` (force causes acceleration, mass resists it); action-reaction (forces come in equal-opposite pairs, which is *why* momentum is conserved).",
+    "answer": "Newton's first law (inertia) says an object with no net force on it keeps its velocity unchanged, at rest or moving in a straight line, forever. The second law, `F = ma` (more precisely `F = dp/dt`), says force causes acceleration and mass is the resistance to that acceleration, so the same force on double the mass produces half the acceleration. The third law says every force comes in an equal and opposite pair, if A pushes B, B pushes A back just as hard, and this pairing is exactly why total momentum in a closed system is conserved: the internal force pairs cancel when summed over the whole system."
+  },
+  {
+    "id": "19.1-physics-for-cs-3",
+    "chapter": "19-Physics/19.1-physics-for-cs.md",
+    "prompt": "**Two bookkeeping systems for motion.** Momentum `p = mv` (force integrated over *time*, conserved in closed systems) and energy `KE = ½mv²` + PE (force integrated over *space*, conserved without friction). Both must balance; knowing which is conserved in a given collision solves it.",
+    "answer": "Momentum `p = mv` is what you get by integrating force over time (`F·Δt = Δp`, impulse), and it is conserved in any closed system because Newton's third law makes internal forces cancel in pairs. Energy, kinetic energy `KE = ½mv²` plus potential energy, is what you get by integrating force over distance (work, `W = F·d`, and `W_net = ΔKE`), and total mechanical energy is conserved when there is no friction to bleed it away as heat. Both are independent books that must balance simultaneously: in an elastic collision both momentum and energy are conserved, but in an inelastic collision, where things stick, only momentum is conserved and some kinetic energy is lost to heat or deformation. Knowing which quantity is conserved in a given situation is usually enough to solve the collision without modeling the messy details of the impact itself."
+  },
+  {
+    "id": "19.1-physics-for-cs-4",
+    "chapter": "19-Physics/19.1-physics-for-cs.md",
+    "prompt": "**SHM derived.** `F = −kx` plus `F = ma` gives `x'' = −(k/m)x`, whose solution is `cos(ωt)` with `ω = √(k/m)`. Anything near a potential minimum is a spring.",
+    "answer": "Combining Hooke's law (`F = −kx`) with Newton's second law (`F = ma`) gives the differential equation `x'' = −(k/m)x`, acceleration proportional to the negative of position. The functions whose second derivative equals negative themselves (times a constant) are sine and cosine, so the solution is `x(t) = A·cos(ωt + φ)` with angular frequency `ω = √(k/m)`: stiffer spring means faster oscillation, heavier mass means slower. Because any smooth potential looks like a parabola near its minimum, a parabolic potential well produces a linear restoring force and therefore SHM, which is why springs, pendulums, atoms in a crystal, and LC circuits all wiggle the same way."
+  },
+  {
+    "id": "19.1-physics-for-cs-5",
+    "chapter": "19-Physics/19.1-physics-for-cs.md",
+    "prompt": "**Integrators differ by their conservation behavior.** Euler injects energy and explodes on oscillators; Verlet is symplectic (bounded energy, stable forever, what games use); RK4 is highly accurate per step (great for trajectories). You *validate* any sim by plotting a conserved quantity and checking it's flat.",
+    "answer": "The three integrators differ in how honestly they handle a conserved quantity like energy on an oscillator. Explicit (forward) Euler updates position and velocity using stale values from the start of the step, which systematically injects energy each cycle so the amplitude grows and the simulation eventually explodes. Velocity Verlet is symplectic, it doesn't conserve energy exactly but keeps the error bounded forever instead of drifting, which is why it's what game engines actually use for long-running stability. RK4 samples the slope four times per step for very high per-step accuracy, with error shrinking like `dt⁵`, and is excellent for a finite-time trajectory like a spacecraft path, but it slowly leaks energy over long oscillations since it isn't symplectic. The chapter's core habit is to validate any simulation by plotting a conserved quantity, energy or momentum, and checking the line stays flat."
+  },
+  {
+    "id": "19.1-physics-for-cs-6",
+    "chapter": "19-Physics/19.1-physics-for-cs.md",
+    "prompt": "**EM at a usable level.** Charge → field → force (`F = qE`); voltage is electrical \"height,\" current is charge flow, `V = IR` (Ohm); series adds resistances, Kirchhoff's laws are just conservation of charge and energy. Changing magnetic fields induce currents (generators/motors), and light is a self-propagating EM wave, the physics under every chip (17.1, 17.2) and sensor. ---",
+    "answer": "Charge creates an electric field in the space around it, and a field pushes any other charge that enters it with force `F = qE`. Voltage is electrical height or potential difference, charges roll from high to low potential the way a ball rolls downhill, and current is the resulting flow of charge; Ohm's law `V = IR` ties voltage, current, and resistance together, and in a series circuit resistances simply add. Kirchhoff's laws are nothing more than conservation of charge at a junction and conservation of energy around a loop. A changing magnetic field induces a current (Faraday's law), which is how generators and motors work as the same device run in opposite directions, and Maxwell's insight that a changing electric field makes a magnetic field and vice versa produces a self-propagating wave, light, so radio, visible light, and X-rays are all the same EM phenomenon at different frequencies. This is the physics underlying every chip and sensor discussed in 17.1 and 17.2."
+  },
+  {
+    "id": "19.2-modern-physics-and-quantum-computing-1",
+    "chapter": "19-Physics/19.2-modern-physics-and-quantum-computing.md",
+    "prompt": "**Why classical physics breaks.** Light's constant speed → relativity (fast/massive); quantization, duality, the photoelectric effect → quantum mechanics (small). Each was *forced* by an experiment classical physics declared impossible.",
+    "answer": "Classical physics broke because of experiments it declared impossible: the Michelson-Morley experiment showed light's speed is the same for every observer regardless of motion, which couldn't be reconciled with Newtonian velocity addition and forced special relativity. Separately, blackbody radiation and the photoelectric effect showed that energy comes in discrete chunks rather than a smooth continuum and that light knocks electrons loose depending on frequency, not brightness, which forced quantum mechanics. Relativity governs the very fast and very massive, quantum mechanics governs the very small, and in both cases the model had to change because reality returned a result the old theory said couldn't happen."
+  },
+  {
+    "id": "19.2-modern-physics-and-quantum-computing-2",
+    "chapter": "19-Physics/19.2-modern-physics-and-quantum-computing.md",
+    "prompt": "**Relativity for engineers.** Moving clocks tick slow (`γ = 1/√(1−v²/c²)`); mass is energy (`E = mc²`); `c` is a hard speed limit. *Why you care:* GPS would fail without the correction, `c` sets a latency floor (CDNs exist because of it), and there's no universal \"now\" (TrueTime, consensus, CAP all live downstream).",
+    "answer": "Moving clocks tick slower than stationary ones by the Lorentz factor `γ = 1/√(1−v²/c²)`, and mass and energy are interchangeable via `E = mc²`, with `c` acting as a hard cosmic speed limit that nothing carrying mass or information can reach. This matters concretely for engineers: GPS satellites must correct for a net relativistic clock offset of about 38 microseconds per day or positions would drift roughly 11 km per day; `c` sets an unbeatable latency floor, a fiber round trip across an ocean can't drop below a fixed number of milliseconds no matter how much you spend, which is why CDNs and edge servers exist; and because relativity says there's no universal now, distributed systems concepts like Google's TrueTime, consensus protocols, and the CAP theorem all have to deal with the physical fact that perfectly synchronized clocks are impossible."
+  },
+  {
+    "id": "19.2-modern-physics-and-quantum-computing-3",
+    "chapter": "19-Physics/19.2-modern-physics-and-quantum-computing.md",
+    "prompt": "**Quantum core, honestly.** Quantization (the bands of 17.1), wave-particle duality, the photoelectric effect (the solar cell / LED of 17.1), uncertainty (a real trade-off, not clumsy instruments), superposition (actually both, testable via interference), entanglement (correlated at a distance, but no faster-than-light signaling).",
+    "answer": "Quantization means energy at small scales comes in discrete steps rather than a smooth continuum, which is literally the band structure behind semiconductors in 17.1. Wave-particle duality means light and matter both show wave behavior (interference) and particle behavior (discrete photon clicks on a detector), and the photoelectric effect, light ejecting electrons only above a threshold frequency regardless of brightness, is the same physics running inside a solar cell or setting an LED's color. The uncertainty principle (`Δx·Δp ≥ ℏ/2`) is a genuine built-in trade-off in nature, not a limitation of instruments; superposition means a quantum system is actually in a combination of states at once, testable through interference rather than just we don't know which yet; and entanglement correlates two particles' outcomes at any distance without ever allowing faster-than-light signaling, since each individual measurement still looks random until you compare results over an ordinary channel."
+  },
+  {
+    "id": "19.2-modern-physics-and-quantum-computing-4",
+    "chapter": "19-Physics/19.2-modern-physics-and-quantum-computing.md",
+    "prompt": "**The qubit is linear algebra.** State = unit vector `α|0⟩+β|1⟩` in ℂ² (a point on the Bloch sphere); gate = unitary matrix (X, Z, H, CNOT) applied by matrix multiply; measurement = Born rule, outcome `k` with probability `|amplitude|²`, then collapse.",
+    "answer": "A qubit's state is a unit vector `α|0⟩ + β|1⟩` in the complex vector space ℂ², which can be pictured as a point on the surface of the Bloch sphere. A gate is a unitary matrix, X, Z, H, CNOT among others, applied to that vector by ordinary matrix multiplication, and unitarity guarantees the operation is both reversible and length-preserving so probabilities keep summing to 1. Measurement follows the Born rule: outcome `k` occurs with probability `|amplitude|²`, and afterward the state collapses to that outcome, the only random, irreversible step in the whole process."
+  },
+  {
+    "id": "19.2-modern-physics-and-quantum-computing-5",
+    "chapter": "19-Physics/19.2-modern-physics-and-quantum-computing.md",
+    "prompt": "**Bell state = entanglement you can compute.** `H` then `CNOT` on `|00⟩` gives `(|00⟩+|11⟩)/√2`: each qubit 50/50, but always correlated. Simulated and measured 10,000 times to *see* it.",
+    "answer": "Starting from `|00⟩`, applying a Hadamard gate to the first qubit puts it into an equal superposition, giving `(|00⟩ + |10⟩)/√2`, then applying CNOT, flipping the second qubit whenever the first is 1, turns that into the Bell state `(|00⟩ + |11⟩)/√2`. In this state each qubit measured alone is a perfect 50/50 coin, but the two outcomes always agree, only `00` or `11` ever appear, never `01` or `10`. The chapter builds this in NumPy and measures it 10,000 times, showing the histogram split evenly between `00` and `11` and the two measured bits agreeing 100% of the time, making the correlation visible rather than asserted."
+  },
+  {
+    "id": "19.2-modern-physics-and-quantum-computing-6",
+    "chapter": "19-Physics/19.2-modern-physics-and-quantum-computing.md",
+    "prompt": "**Speedup, real and bounded.** Shor factors → breaks RSA (12.1) → drives post-quantum crypto migration *now*. Grover is only quadratic. Quantum simulation is the likely first payoff. NISQ hardware is small, noisy, and error correction is expensive, so the threat is real but not imminent, and the hype is mostly hype. ---",
+    "answer": "Shor's algorithm factors large numbers in polynomial time on a quantum computer, which would break RSA's security since RSA depends on factoring being classically hard, and that threat is already driving a real migration to post-quantum, lattice-based cryptography like Kyber today, because data harvested now could be decrypted later. Grover's algorithm only offers a quadratic speedup for unstructured search, which is real but modest, and it's defeated for symmetric ciphers like AES simply by using a longer key. Quantum simulation of molecules and materials is the speedup most likely to pay off first since it's a quantum computer's home turf. Today's NISQ hardware has only tens to a few hundred noisy physical qubits with error rates around 0.1-1%, and full error correction would need roughly a thousand physical qubits per reliable logical qubit, so the threat to RSA is real and worth preparing for but not imminent, and the more sweeping quantum-computing hype is not warranted yet."
+  },
+  {
+    "id": "22.1-mac-minis-and-server-farms-1",
+    "chapter": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "prompt": "**What is a server, really?** A computer whose *role* is answering requests from other computers rather than a human, plus the hardware features (uptime, headless mgmt, ECC, redundancy) real servers add to play that role 24/7.",
+    "answer": "A server is defined by its role, a computer that answers requests from other computers instead of a human sitting in front of it, not by any particular hardware. The chapter notes the hardware still tends to diverge for machines meant to do that role unattended 24/7: high uptime expectations, headless operation managed entirely over the network (SSH, IPMI/BMC), ECC memory to catch silent bit-flips over months of runtime, and redundancy like dual power supplies or RAID so one failed component doesn't take the service down. A Mac mini, notably, lacks most of these server-grade features, no ECC, single PSU, no IPMI, yet still gets deployed as a server for workloads where those gaps don't matter."
+  },
+  {
+    "id": "22.1-mac-minis-and-server-farms-2",
+    "chapter": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "prompt": "**Rent vs own, and the cost model.** Cloud converts capex→opex and sells elasticity at a markup; owning amortizes a one-time buy. Owning wins for steady-state, always-on, egress-heavy, privacy-sensitive work; cloud wins for spiky, global, managed-service-hungry, capex-averse work. You can prove which with a 3-year TCO model that includes power, your time, and egress.",
+    "answer": "Cloud converts a capital expense, buying hardware, into an operating expense, paying by the hour, and that conversion, plus elasticity, is what you're paying a markup for. Owning hardware instead amortizes a one-time purchase over years, which wins economically for workloads that are steady-state, always-on, egress-heavy (cloud egress often runs $0.05-0.09/GB, which adds up fast), or privacy-sensitive, while cloud wins for spiky, unpredictable, globally-distributed load or when you need managed services and want to avoid capex. The chapter's answer is to prove which side wins with a 3-year total-cost-of-ownership model that honestly includes electricity, egress fees, and the maintenance time you'd spend, since a naive $599-mini-vs-monthly-cloud comparison always forgets those."
+  },
+  {
+    "id": "22.1-mac-minis-and-server-farms-3",
+    "chapter": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "prompt": "**Why Mac minis specifically.** Perf-per-watt, silent, tiny, and the **unified-memory + bandwidth** advantage that makes them shine for local LLM/ML inference, versus their real limits (no ECC/IPMI, macOS-as-server friction, Apple licensing). #1 commercial use: iOS/macOS CI build farms.",
+    "answer": "Mac minis stand out for their performance per watt, an M4 mini idles at just a few watts, their silence and small size, and especially their unified memory architecture, up to 64GB shared between CPU and GPU at around 273 GB/s on the M4 Pro, which lets a single mini hold a large quantized LLM entirely in fast memory for local inference, something a consumer GPU with only 8-24GB of VRAM often can't do. Their real limits are the flip side of being a desktop OS in a server costume: no ECC memory, no IPMI/BMC for remote power-cycling a hung machine, and Apple's licensing that only permits running macOS on Apple hardware. The single dominant commercial use of Mac minis as servers is iOS/macOS CI build farms, since Apple's license requires building and signing iOS apps on Apple hardware."
+  },
+  {
+    "id": "22.1-mac-minis-and-server-farms-4",
+    "chapter": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "prompt": "**Building a farm.** Switch + VLANs + stable DNS (06), shared NFS storage, orchestration up the ladder (Ansible → Swarm → k3s, 10.2), load distribution (09.3), a queue-of-jobs batch scheduler, and horizontal vs tensor-parallel inference.",
+    "answer": "Building a farm starts with networking the nodes on a managed switch, never Wi-Fi, segmented into their own VLAN, with stable static IPs or DHCP reservations and local DNS names so nodes can find each other, as covered in chapter 06. Nodes need shared storage, typically an NFS export, so any node can pick up any job's data. Orchestration climbs a ladder from Ansible, pushing identical configuration to every node but not itself a scheduler, to Docker Swarm, a gentle clustering layer on top of Docker, to k3s, real lightweight Kubernetes (10.2), and once services are replicated across nodes a load balancer distributes requests (09.3). Batch work like rendering or bulk inference instead uses a queue of jobs that worker processes pull from, and distributing ML inference can be done the easy way, the same model on every node, horizontal scaling, or, only when a model truly doesn't fit on one machine, the hard way, tensor or pipeline parallelism splitting one model across nodes."
+  },
+  {
+    "id": "22.1-mac-minis-and-server-farms-5",
+    "chapter": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "prompt": "**The ops reality (hidden cost).** Power, cooling, UPS, backups (RAID≠backup, 3-2-1), monitoring (13), security (Tailscale + default-deny, never port-forward, 12.x), redundancy, and *your time*, the line item the cheap comparison forgets.",
+    "answer": "Owning hardware carries real ongoing costs cloud hides from you: power, every always-on watt adds up over a year, cooling and noise, a UPS to survive power blips without corrupting data, and backups following the 3-2-1 rule, since RAID protects against a disk failure but is not a backup against something like a bad `rm -rf`. It also requires monitoring, a Prometheus/Grafana-style alerting setup, since nobody's walking into a server room to check if it's up, security discipline, Tailscale plus a default-deny firewall, never port-forwarding a service straight to the internet, and some level of redundancy depending on how much downtime you can tolerate. The single biggest hidden cost, though, is your own maintenance time, patching, dying fans, full disks, certificate renewals, which the naive cheap comparison always leaves out."
+  },
+  {
+    "id": "22.1-mac-minis-and-server-farms-6",
+    "chapter": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "prompt": "**The decision framework.** Home lab vs colo vs cloud vs hybrid, and the cases where self-hosting is an outright mistake. **The one sentence:** *A server is a role, not a thing; choose rent vs own by matching the billing model to the load shape (and prove it with a cost model); Mac minis are superb owned hardware for CI build farms and local inference; and the hidden cost of owning is always your own time.* > **Where this connects:** Docker (10.1) and Kubernetes/k3s (10.2) are the orchestration; AWS (10.4) is the rent-it alternative you're now equipped to argue for *or* against; networking (06) wires the cluster; load balancing (09.3) and message queues (09.5) distribute the work; observability (13) tells you it's healthy; security (12.x) keeps it off the public internet; and ML serving (20.2) + local LLMs (20.3) are the workload that makes a 64GB Mac mini farm worth building. Next, point this lab at a real always-on workload and let project (b)'s model tell you, in numbers, whether you just made a smart bet or bought an expensive hobby.",
+    "answer": "The decision framework lays out four options: a home lab, your hardware in your home, for learning and cheap steady-state or privacy-sensitive compute; colocation, your own hardware in someone else's data center, for professional power, cooling, and bandwidth without giving up ownership; cloud for spiky, unpredictable, or globally-distributed load and managed services; and hybrid, owning the predictable baseline while bursting spikes to cloud, which is the mature answer for most real businesses. Self-hosting is a mistake specifically when the workload is customer-facing and you can't provide real on-call, when the load is too spiky to justify owned peak capacity sitting idle, when you need a managed service's durability guarantees (rebuilding S3-level durability at home is unrealistic), or when your own time is worth more spent elsewhere. The chapter's one-sentence summary: a server is a role, not a thing, the rent-vs-own choice should be settled by matching the billing model to the load shape and proving it with a cost model, Mac minis are strong owned hardware specifically for CI build farms and local inference, and the hidden cost of owning is always your own time."
+  },
+  {
+    "id": "24.1-lexing-parsing-asts-1",
+    "chapter": "24-Compilers/24.1-lexing-parsing-asts.md",
+    "prompt": "**The pipeline.** Source string → **lexer** → tokens → **parser** → AST → (24.2) execution. Compiler vs interpreter share this front end. Why have a separate token stage? Because it lets the parser reason about *categories* (`NUMBER`, `PLUS`) instead of raw characters, and it's the natural place to handle whitespace, comments, and line tracking.",
+    "answer": "The pipeline is source string, then the **lexer** turns it into tokens, then the **parser** turns those tokens into an **AST**, which chapter 24.2 executes. A compiler and an interpreter share this exact front end, they only diverge at the execution stage. A separate token stage exists because it lets the parser reason about *categories* like `NUMBER` and `PLUS` instead of raw characters, and it is the natural place to skip whitespace and comments and to track line numbers for error messages."
+  },
+  {
+    "id": "24.1-lexing-parsing-asts-2",
+    "chapter": "24-Compilers/24.1-lexing-parsing-asts.md",
+    "prompt": "**The lexer is a DFA.** It walks characters, and each `if`/`peek` branch is a state transition. Tokens form a *regular* language (Chapter 23.1), which is why regexes describe them. It tags tokens with type, lexeme, literal value, and line number, and appends an `EOF` sentinel.",
+    "answer": "The lexer works like a finite automaton: it walks the source string one character at a time, and every `if`/`peek` branch (like checking whether `<` is followed by `=`) is a state transition deciding what token to emit. Tokens form a *regular* language, which is why regular expressions describe them and why tools like `lex`/`flex` compile regexes straight into DFA tables. Each token the lexer produces is tagged with a type, its lexeme (the raw source text), a literal value for `NUMBER`/`STRING` tokens, and a line number, and an `EOF` sentinel is appended at the end so the parser always has one more token to look at."
+  },
+  {
+    "id": "24.1-lexing-parsing-asts-3",
+    "chapter": "24-Compilers/24.1-lexing-parsing-asts.md",
+    "prompt": "**Grammars and precedence.** A CFG defines the structure. Naïve grammars are *ambiguous*; the fix is **one rule per precedence level**, lowest at the top, so tighter operators end up nested deeper. Left-associativity comes from a `( ... )*` loop; right-associativity from recursing on the same rule.",
+    "answer": "A context-free grammar (CFG) defines the structure of the language, but a naive one-rule grammar for `expression` is *ambiguous*, it can derive `1 + 2 * 3` two different ways with no way to pick the correct tree. The fix is to write one grammar rule per precedence level, lowest-precedence rule at the top (`equality` -> `comparison` -> `term` -> `factor` -> `unary` -> `primary`), so reaching a tighter operator like `*` requires descending through more rules, which makes it end up nested deeper in the tree than `+`. Left-associativity comes from a `( ... )*` loop that consumes operators of the same level left to right, producing `(1 - 2) - 3` for `1 - 2 - 3`; right-associativity comes from a rule recursing into itself instead of looping, which is how unary `- - x` becomes `-(-x)`."
+  },
+  {
+    "id": "24.1-lexing-parsing-asts-4",
+    "chapter": "24-Compilers/24.1-lexing-parsing-asts.md",
+    "prompt": "**Recursive descent.** Each grammar rule becomes one function; rule references become function calls. It's recursion walking a grammar. **Pratt parsing** does the same job with one function plus a binding-power table, scaling to many operators.",
+    "answer": "Recursive-descent parsing maps each grammar rule to one function, and a rule that refers to another rule becomes a call to that rule's function, so the parser is literally recursion walking the grammar. **Pratt parsing** (precedence climbing) does the same job differently: instead of one function per precedence level, there is a single expression function that takes a minimum binding power and consults a table of operator precedences, looping to consume infix operators whose binding power is at least that minimum and recursing with a higher minimum so tighter operators bind first. This scales to many operators without writing a near-identical function for every precedence level."
+  },
+  {
+    "id": "24.1-lexing-parsing-asts-5",
+    "chapter": "24-Compilers/24.1-lexing-parsing-asts.md",
+    "prompt": "**The AST + visitor pattern.** Nodes are dumb data (`@dataclass`); every *operation* (print, type-check, interpret, compile) is a `Visitor` subclass with `visit_X` methods. This keeps nodes decoupled from operations.",
+    "answer": "AST node classes like `Literal`, `Binary`, and `Unary` are plain data holders defined with `@dataclass` and have no behavior of their own. Every *operation* you want to perform on the tree, pretty-printing, type-checking, interpreting, compiling to bytecode, is instead written as its own `Visitor` subclass with one `visit_X` method per node type, dispatched by matching the node's class name in the base `Visitor.visit` method. This keeps the node classes decoupled from operations, so adding a whole new operation such as the interpreter never requires touching a single node class."
+  },
+  {
+    "id": "24.1-lexing-parsing-asts-6",
+    "chapter": "24-Compilers/24.1-lexing-parsing-asts.md",
+    "prompt": "**Error handling.** Don't crash on the first mistake. Throw a `ParseError`, catch it at statement boundaries, **synchronize** by skipping to the next `;` or keyword, and collect messages with line numbers. In Chapter [24.2](./24.2-interpreters-and-vms.md) we'll take these exact AST classes and *run* them: a tree-walking interpreter with environments, scopes, functions, and closures; a simple static type checker (another visitor); and then a bytecode compiler + stack VM. The front end is done, now we make the language *come alive*.",
+    "answer": "A parser should not crash on the first mistake. When a grammar rule fails to match, the parser throws a `ParseError`, which is caught at statement boundaries; it then **synchronizes** by discarding tokens until it reaches a likely start of the next statement, a `;` or a keyword like `if`/`while`/`var`, so one bad line does not cascade into a pile of bogus follow-on errors. Errors are treated as data, collected in a list with line numbers, rather than crashing the parser, so a single pass can report multiple distinct problems. Chapter 24.2 then takes these same AST classes and runs them, building a tree-walking interpreter with environments, scopes, functions, and closures, a static type checker written as another visitor, and finally a bytecode compiler plus stack VM."
+  },
+  {
+    "id": "24.2-interpreters-and-vms-1",
+    "chapter": "24-Compilers/24.2-interpreters-and-vms.md",
+    "prompt": "**Tree-walking interpreter.** Evaluating an AST is a recursive visitor: `visit_Binary` evaluates both children and combines them. Statements perform effects (print, mutate env, branch, loop); expressions return values. The language's *semantics* (truthiness, `+` overloading, `/0` behavior, `==` strictness) are *defined* by this code.",
+    "answer": "Evaluating an AST is a recursive visitor over the tree: `visit_Binary` evaluates its left and right children and combines them, and evaluating each child just means recursing into `visit` again. Statement nodes perform effects, printing output, mutating the environment, branching, looping, while expression nodes return values. The language's actual semantics are defined entirely by this code: truthiness is a choice (only `nil` and `false` are falsy, `0` is truthy), `+` is overloaded for numeric addition and string concatenation, dividing by zero raises a caught `LoxRuntimeError` instead of crashing, and `==` is type-strict so `1.0` never equals `\"1\"`."
+  },
+  {
+    "id": "24.2-interpreters-and-vms-2",
+    "chapter": "24-Compilers/24.2-interpreters-and-vms.md",
+    "prompt": "**Environments and scope.** An environment is `name → value` plus a pointer to the enclosing scope, a chain. `define` introduces a new binding; `assign` mutates an existing one found by walking outward. Blocks create a nested environment. This *is* lexical scoping (Python's LEGB).",
+    "answer": "An environment is a `name -> value` mapping plus a pointer to an enclosing environment, forming a chain. `define` introduces a brand-new binding in the current scope, which is what `var x = ...` does, while `assign` mutates an existing binding by walking outward through the `enclosing` chain until it finds where the name lives, which is what `x = ...` does. A `{ block }` runs its statements in a fresh `Environment(self.env)` nested in the current one, so names declared inside don't leak out and can shadow outer names. This walk-outward chain of lookups is exactly lexical scoping, the same mechanism behind Python's LEGB (local, enclosing, global, builtin) name resolution."
+  },
+  {
+    "id": "24.2-interpreters-and-vms-3",
+    "chapter": "24-Compilers/24.2-interpreters-and-vms.md",
+    "prompt": "**Functions and closures.** A function value captures the environment where it was *defined* (`self.closure`); calling it makes a fresh scope nested in that closure with parameters bound. `return` unwinds via a `Return` exception caught at the function boundary. Closures stay alive because they keep their environment reachable.",
+    "answer": "A `LoxFunction` value captures the environment in which it was *defined* (`self.closure`), not the environment of whoever calls it. Calling the function creates a fresh `Environment(self.closure)` nested in that closure, binds the parameters as new definitions in it, and runs the body there. `return` is implemented by raising a `Return` exception carrying the value, which unwinds past any nested loops or `if`s and is caught specifically at the function's call boundary in `LoxFunction.call`. Closures stay alive because the returned function keeps a reference to its closure environment, which is why `makeCounter`'s `count` variable stays reachable and mutable across repeated calls even after `makeCounter` itself has already returned."
+  },
+  {
+    "id": "24.2-interpreters-and-vms-4",
+    "chapter": "24-Compilers/24.2-interpreters-and-vms.md",
+    "prompt": "**Type systems.** Static (compile-time) vs dynamic (runtime); strong (few coercions) vs weak; checking (verify annotations) vs inference (deduce them). You built a static checker as a separate visitor pass, and you can sketch Hindley-Milner: type variables → constraints → unification → generalization.",
+    "answer": "Static vs dynamic typing is about *when* types are checked: static catches type errors before the program runs (C, Java, Rust), dynamic checks them at runtime as values flow (Python, JavaScript, our Lox). Strong vs weak is about *how much* implicit coercion a language allows: strong languages like Lox reject `1 + \"two\"`, weak languages like JavaScript silently coerce it. Type checking verifies annotations you wrote, while type inference deduces types for you without them. The chapter builds a static checker as its own `Visitor` subclass, and sketches Hindley-Milner inference as four steps: give every unknown a type variable, generate constraints from how it's used, unify those constraints to pin down concrete types (flagging a conflict as an error), and generalize whatever's left free into polymorphism."
+  },
+  {
+    "id": "24.2-interpreters-and-vms-5",
+    "chapter": "24-Compilers/24.2-interpreters-and-vms.md",
+    "prompt": "**Bytecode and the VM.** Re-walking the tree is slow (re-dispatch, re-check per iteration). So compile *once* to a flat bytecode array and run a stack VM: one tight loop, a value stack, instructions that pop operands and push results (postfix = post-order traversal). Control flow becomes jumps; forward jumps need backpatching.",
+    "answer": "Re-walking the tree on every loop iteration is slow, it re-dispatches on node type, re-checks operand types, and re-recurses into children every single pass, and chasing tree pointers also hurts cache locality. The fix is to compile the AST *once* into a flat bytecode array of opcodes like `OP_ADD`, `OP_CONSTANT`, and `OP_JUMP`, then run a stack-based VM: one tight loop with an instruction pointer and a value stack, where each instruction pops its operands and pushes its result. This operand-then-operator order is postfix notation, which is exactly a post-order traversal of the AST, so the compiler is itself a recursive visitor that emits instructions instead of computing values. Control flow like `if`/`while` becomes conditional and unconditional jumps over the flat array; forward jumps don't yet know their target distance, so they're emitted with a placeholder and backpatched once the target location is compiled."
+  },
+  {
+    "id": "24.2-interpreters-and-vms-6",
+    "chapter": "24-Compilers/24.2-interpreters-and-vms.md",
+    "prompt": "**GC and optimization.** A real VM needs garbage collection (reference counting + cycle detection, or tracing mark-and-sweep). Bytecode enables optimizations like constant folding (compute constant subexpressions at compile time).",
+    "answer": "A real VM cannot lean on a host language's garbage collector and must manage its own heap, using either reference counting (each object tracks how many references point at it and is freed when the count hits zero, backed by a cycle collector to catch cases where objects reference each other in a loop) or tracing mark-and-sweep (start from roots like the stack and globals, mark everything reachable, sweep away the rest), the strategy used by the JVM and V8 in generational form. Compiling to bytecode also opens the door to optimizations the tree-walker can't do, the simplest being constant folding: if an operation's operands are both compile-time constants, compute the result during compilation and emit a single `OP_CONSTANT` instead of the arithmetic instructions, so `1 + 2 * 3` collapses entirely into `7` before the VM ever runs."
+  },
+  {
+    "id": "24.2-interpreters-and-vms-7",
+    "chapter": "24-Compilers/24.2-interpreters-and-vms.md",
+    "prompt": "**The big picture.** CPython, the JVM, and V8 all follow *source → tokens → AST → bytecode → interpret/JIT, with a GC underneath*, the exact pipeline you built across Chapters 24.1 and 24.2, just with industrial JITs, optimizers, and collectors bolted on. You started Chapter 24.1 with a string of characters and ended Chapter 24.2 with that string *running*, two ways. None of it was ever mysterious: a lexer is a loop, a parser is recursion over a grammar, an interpreter is recursion over a tree, a VM is a loop over an array. You built a programming language from scratch, and now \"compiler\" is just a word for things you understand.",
+    "answer": "CPython, the JVM, and V8 all follow the same shape: source to tokens to AST to bytecode to interpretation and/or JIT compilation, with a garbage collector underneath, which is the exact pipeline built across chapters 24.1 and 24.2, just with industrial JITs, optimizer passes, and collectors bolted on top. CPython compiles `.py` to a bytecode `code` object run by a stack-based eval loop, the JVM's `javac` compiles to stack-based `.class` bytecode that HotSpot's JIT promotes to native code for hot methods, and V8 compiles JS to Ignition bytecode that TurboFan promotes to optimized machine code. Chapter 24.1 turned a string of characters into a tree, and 24.2 made that tree actually run, two ways, a tree-walking interpreter and a bytecode VM. None of it was ever mysterious: a lexer is a loop, a parser is recursion over a grammar, an interpreter is recursion over a tree, and a VM is a loop over an array."
+  },
+  {
+    "id": "26.1-foundations-1",
+    "chapter": "26-Distributed-Systems/26.1-foundations.md",
+    "prompt": "State the four root causes that make distributed systems hard, and give a one-line consequence of each.",
+    "answer": "The four root causes are **partial failure** (nodes fail independently and survivors often can't tell who failed), **no global clock** (no shared \"now,\" so event ordering has no cheap answer), **concurrency** (nodes act simultaneously without coordination, producing events with no inherent order), and **unreliable networks** (messages get dropped, delayed, duplicated, reordered, or the network partitions). One-line consequences: partial failure forces you to constantly handle \"I don't know\" instead of a clean crash; no global clock means ordering bugs hide as correctness bugs; concurrency breaks code that assumes a single global event sequence; unreliable networks mean every remote call can fail, so you must design for it."
+  },
+  {
+    "id": "26.1-foundations-2",
+    "chapter": "26-Distributed-Systems/26.1-foundations.md",
+    "prompt": "Recite the 8 fallacies and explain why \"a remote call is not a local call in a costume.\"",
+    "answer": "The 8 fallacies of distributed computing, catalogued at Sun in the 1990s, are: the network is reliable; latency is zero; bandwidth is infinite; the network is secure; topology doesn't change; there is one administrator; transport cost is zero; and the network is homogeneous. Each is a false assumption carried over from single-machine code, real networks drop packets, add 100-300 ms round trips, have finite bandwidth, are insecure, keep changing topology, are owned by multiple teams, cost real CPU and dollars, and mix incompatible OSes and wire formats. \"A remote call is not a local call in a costume\" because the moment a call crosses the network it inherits all eight of these hazards at once, so it must be designed with retries, timeouts, batching, encryption, and explicit wire formats, not treated like an ordinary function call."
+  },
+  {
+    "id": "26.1-foundations-3",
+    "chapter": "26-Distributed-Systems/26.1-foundations.md",
+    "prompt": "Define synchronous / asynchronous / partially-synchronous, and the failure ladder crash-stop → crash-recovery → Byzantine. Which does Raft assume?",
+    "answer": "**Synchronous** means known upper bounds on message delay, clock drift, and processing time, so a missed deadline proves a node is dead; easy to reason about but unrealistic. **Asynchronous** means no timing bounds at all, so you can never conclude a node is dead versus merely slow, this is where FLP lives. **Partially synchronous** is the realistic middle: mostly asynchronous but eventually settling into periods where bounds hold, so real systems use timeouts as a \"probably dead\" heuristic. The failure ladder runs **crash-stop** (halts permanently), **crash-recovery** (can restart, keeping only what it wrote to stable storage), **omission** (drops some sends/receives), up to **Byzantine** (arbitrary or malicious behavior, needing `3f+1` nodes instead of `2f+1`); Raft assumes the **partially synchronous, crash-recovery, non-Byzantine** model."
+  },
+  {
+    "id": "26.1-foundations-4",
+    "chapter": "26-Distributed-Systems/26.1-foundations.md",
+    "prompt": "Explain why physical clocks can't order events (skew, NTP backwards-step), then define `→`, Lamport clocks (and their limitation), and vector clocks (and what extra they give).",
+    "answer": "Physical clocks can't order events because every machine's oscillator drifts at a different rate (skew), and NTP only corrects to roughly 1-50 ms while sometimes stepping the clock backward, so two events 1 ms apart in reality can appear reversed if clocks are skewed by 10 ms. The fix is the **happened-before** relation `→`: `a → b` if they're ordered events in the same process, if `a` is a message send and `b` its receive, or by transitivity; if neither `a → b` nor `b → a`, the events are **concurrent** (`a ∥ b`) with no real fact about which came first. **Lamport clocks** give each process an integer that increments on local events and takes `max(local, received)+1` on receive, guaranteeing `a → b ⇒ L(a) < L(b)`, but the converse is false, so Lamport timestamps give only a total order consistent with causality and cannot detect concurrency. **Vector clocks** give each of `N` processes an `N`-length counter vector, updated by incrementing your own slot and taking componentwise max on receive; since `a → b` iff `V_a < V_b` and `a ∥ b` iff neither vector dominates the other, vector clocks capture causality exactly and can detect genuine concurrency, at the cost of `O(N)` size, which is how Dynamo-style stores detect conflicting writes."
+  },
+  {
+    "id": "26.1-foundations-5",
+    "chapter": "26-Distributed-Systems/26.1-foundations.md",
+    "prompt": "Define linearizable, sequential, causal, and eventual consistency with one example each, plus read-your-writes and monotonic reads.",
+    "answer": "**Linearizability**: the system behaves as if there were one copy and each operation takes effect atomically at some instant between call and return, respecting real-time order, so once a write completes every later read anywhere sees it (example: etcd/ZooKeeper/Spanner). **Sequential consistency**: there's a single total order all processes agree on that respects each process's own program order, but not real-time order across processes, so a read on another client can still see stale data even though a write already returned elsewhere. **Causal consistency**: operations related by `→` are seen in that order by everyone, but concurrent operations may be seen in different orders on different nodes (example: a reply is never seen before the comment it replies to, but two unrelated posts can appear in different orders to different users). **Eventual consistency**: if writes stop, replicas eventually converge, but nothing is promised about when or what you see meanwhile (example: a like-count, or Dynamo/Cassandra defaults). **Read-your-writes** means your own subsequent reads see your own write; **monotonic reads** means your later reads never show an older value than an earlier read within your session."
+  },
+  {
+    "id": "26.1-foundations-6",
+    "chapter": "26-Distributed-Systems/26.1-foundations.md",
+    "prompt": "State CAP correctly (partition-only, C-vs-A) and PACELC (the \"else latency-vs-consistency\" half). Give one CP and one AP system.",
+    "answer": "CAP applies **only during a network partition**: when messages between some nodes are lost, the system must choose between **Consistency** (every read sees the most recent write, i.e. linearizability) and **Availability** (every request to a non-failed node gets a non-error response); it is not \"pick two of three,\" and it doesn't apply to a single-node system at all since there's no partition to survive. **PACELC** completes the picture for normal operation: if there's a **P**artition, trade **A**vailability vs **C**onsistency, **e**lse (network healthy), trade **L**atency vs **C**onsistency, because strong consistency requires coordination, often a quorum round trip, even when nothing is broken. A CP example is etcd (also ZooKeeper, Spanner, HBase), which refuses requests during a partition rather than serve stale data; an AP example is Dynamo (also Cassandra, Riak), which keeps answering from whatever replica it can reach and reconciles conflicts later."
+  },
+  {
+    "id": "26.1-foundations-7",
+    "chapter": "26-Distributed-Systems/26.1-foundations.md",
+    "prompt": "Derive `R + W > N` from pigeonhole, and explain what `W=1,R=1` buys and loses. ---",
+    "answer": "With `N` replicas, a write acknowledged by `W` of them and a read querying `R` of them are guaranteed to overlap in at least one replica when `R + W > N`, because by the **pigeonhole principle** the `R` and `W` \"slots\" can't all be distinct once their sum exceeds `N`, so at least one replica was touched by both, and that replica holds the latest write, identified via version or timestamp among the `R` responses. `W=1, R=1` gives `1+1=2`, which is not greater than `N` for `N≥3`, so there's **no overlap guarantee**: writes and reads are fast and highly available (a write succeeds with only one replica up, a read only needs one), but the system becomes purely eventually consistent, a read can miss the latest acknowledged write entirely, the \"sloppy quorum\" / pure-AP corner."
+  },
+  {
+    "id": "26.2-consensus-and-replication-1",
+    "chapter": "26-Distributed-Systems/26.2-consensus-and-replication.md",
+    "prompt": "State the consensus problem and its four properties; explain why safety beats liveness when they conflict.",
+    "answer": "`N` processes each propose a value and must all decide on the same one; a correct protocol guarantees **Agreement** (no two correct processes decide differently), **Validity** (the decided value was actually proposed by someone), **Integrity** (each process decides at most once), and **Termination** (every correct process eventually decides). Agreement, Validity, and Integrity are **safety** properties (\"nothing bad ever happens\"), while Termination is **liveness** (\"something good eventually happens\"). Real protocols guarantee safety unconditionally and only guarantee liveness when the network behaves, they will pause rather than ever decide two different values, because a temporarily stuck system is annoying but a system that violated agreement is catastrophic."
+  },
+  {
+    "id": "26.2-consensus-and-replication-2",
+    "chapter": "26-Distributed-Systems/26.2-consensus-and-replication.md",
+    "prompt": "Give the FLP intuition (can't tell slow from dead) and the three escape hatches real systems use.",
+    "answer": "FLP's intuition: in a fully asynchronous system where even one process may crash, you can never distinguish a crashed process from a merely slow one, so at the decisive moment a protocol must either wait for a silent process (risking waiting forever) or proceed without it (risking that it was about to send a value that would change the outcome), and an adversary controlling message timing can exploit this to keep the system undecided forever, so no deterministic algorithm can guarantee termination. Real systems escape via three hatches: **timeouts** (assume partial synchrony and use timeouts to suspect crashed nodes, trading temporary liveness loss for never violating safety), **randomization** (random election timeouts or coin-flips so an adversary can't perfectly schedule against you, terminating with probability 1), and **failure detectors** (an oracle that eventually correctly suspects crashed processes, in practice just timeouts wearing a tuxedo)."
+  },
+  {
+    "id": "26.2-consensus-and-replication-3",
+    "chapter": "26-Distributed-Systems/26.2-consensus-and-replication.md",
+    "prompt": "Walk through single-decree Paxos (prepare/promise/accept) and explain *why* once a value is chosen it can never change (majority overlap forces re-proposal).",
+    "answer": "Single-decree Paxos runs in two phases among proposers, acceptors, and learners, each proposal carrying a unique, increasing number `n`. In **Phase 1 (Prepare/Promise)**, a proposer sends `Prepare(n)` to a majority of acceptors, and each acceptor that hasn't seen a higher number promises not to accept anything numbered below `n`, replying with the highest-numbered proposal it has already accepted, if any. In **Phase 2 (Accept/Accepted)**, if any promise reported a previously accepted value, the proposer must re-propose that highest-numbered reported value rather than its own; it sends `Accept(n, v)`, and once a majority accepts `(n, v)`, `v` is chosen. A value can never change once chosen because any later proposal must again gather promises from a majority, and two majorities always overlap, so at least one acceptor in the new majority already accepted `v` and reports it, forcing the new proposer to re-propose the same `v`, that majority-overlap-forces-resend argument is the whole safety proof."
+  },
+  {
+    "id": "26.2-consensus-and-replication-4",
+    "chapter": "26-Distributed-Systems/26.2-consensus-and-replication.md",
+    "prompt": "Explain Raft's three subproblems; describe leader election (terms, RequestVote, randomized timeouts) and log replication (AppendEntries, consistency check, majority commit).",
+    "answer": "Raft decomposes consensus into **leader election**, **log replication**, and **safety**. In leader election, time is divided into **terms**; a follower that hears no heartbeat within its randomized election timeout becomes a candidate, increments `currentTerm`, votes for itself, and sends **RequestVote** RPCs, a peer grants its vote only if the candidate's term is at least as high, it hasn't already voted this term, and the candidate's log is at least as up-to-date (the election restriction); a candidate with a majority of votes becomes leader, and randomized timeouts make split votes resolve quickly because one candidate almost always starts first. In log replication, the leader appends client commands to its own log and sends **AppendEntries** RPCs carrying the new entries plus a consistency check (`prevLogIndex`/`prevLogTerm`); a follower rejects entries that don't match at that point, causing the leader to decrement `nextIndex` and retry backward until logs match, and once an entry sits on a majority of nodes the leader marks it **committed**, applies it, and propagates the new `commitIndex`."
+  },
+  {
+    "id": "26.2-consensus-and-replication-5",
+    "chapter": "26-Distributed-Systems/26.2-consensus-and-replication.md",
+    "prompt": "State the two Raft safety rules (election restriction; current-term commit rule) and the State Machine Safety Property they yield.",
+    "answer": "The **election restriction** says a node only grants its vote if the candidate's log is at least as up-to-date, comparing last-entry term then length, guaranteeing a new leader's log already contains every committed entry. The **current-term commit rule** says a leader only marks an entry committed by replica-count if that entry is from its own current term; older-term entries become committed only indirectly, once a current-term entry above them commits, closing the hole where a majority-replicated old-term entry could later be overwritten after a leader change. Together these yield the **State Machine Safety Property**: if any node has applied a log entry at a given index, no other node will ever apply a different entry at that index, so every replica's state machine sees identical commands in identical order."
+  },
+  {
+    "id": "26.2-consensus-and-replication-6",
+    "chapter": "26-Distributed-Systems/26.2-consensus-and-replication.md",
+    "prompt": "Define state-machine replication and connect replicated logs to Kafka (control plane = consensus, data plane = leader+ISR).",
+    "answer": "**State-machine replication** models a service as a deterministic state machine, same starting state plus the same sequence of commands always yields the same resulting state, so if all replicas agree on one ordered log of commands, exactly what Raft/Paxos provide, and apply it in order, they end up in identical state; this requires the state machine to be deterministic, no `random()`, wall-clock reads, or unordered iteration. A **replicated log** is the append-only, ordered, durable substrate that makes this work, and Kafka shows the split in practice: the **control plane** (electing each partition's leader, storing metadata) is consensus, historically ZooKeeper's ZAB, now KRaft's Raft-based metadata quorum, while the **data plane** (the actual records) is **leader + ISR** replication, where the leader maintains an in-sync replica set and `acks` (`acks=1` vs `acks=all`) tunes the durability/latency trade."
+  },
+  {
+    "id": "26.2-consensus-and-replication-7",
+    "chapter": "26-Distributed-Systems/26.2-consensus-and-replication.md",
+    "prompt": "Compare 2PC (blocking, CP), 3PC (non-blocking *if* synchronous, unsafe under partition), and sagas (compensations, available, eventually consistent).",
+    "answer": "**2PC**: a coordinator asks all participants to prepare (durably lock and vote yes/no), then commits if all voted yes or aborts otherwise; it gives atomicity but **blocks**, if the coordinator crashes after participants voted yes but before the decision, they're stuck holding locks, unable to safely commit or abort, making 2PC **CP** (chooses consistency over availability). **3PC** adds a pre-commit phase so participants can time out and proceed safely without the coordinator, making it **non-blocking**, but only under the assumption of a synchronous, fail-stop-only network; under real partitions it can violate safety, which is why it's rarely used in practice. **Sagas** replace one atomic transaction with a sequence of local transactions, each with a **compensating transaction** that undoes it if a later step fails, trading atomicity and isolation for **availability and eventual consistency**, no distributed locks held, but requiring idempotent steps and careful handling of the partially-done window."
+  },
+  {
+    "id": "26.2-consensus-and-replication-8",
+    "chapter": "26-Distributed-Systems/26.2-consensus-and-replication.md",
+    "prompt": "Explain how Spanner/TrueTime use *bounded* clock uncertainty (commit wait) to do global linearizable transactions. ---",
+    "answer": "Spanner deploys GPS receivers and atomic clocks in every datacenter and exposes **TrueTime**, an API returning not a single timestamp but an interval `[earliest, latest]` guaranteed to contain the true time, with the uncertainty `ε` (typically a few milliseconds) made explicit rather than ignored. When committing a transaction, Spanner assigns a commit timestamp and then deliberately pauses for `ε`, the **commit wait**, so that by the time it proceeds the chosen timestamp is definitely in the past everywhere, which lets it provide **externally consistent (linearizable) globally-distributed transactions**. This makes Spanner **PC/EC** in PACELC terms: it pays the commit-wait latency for global strong consistency, an approach that only works because the clock uncertainty is bounded and quantified, not because physical clocks became trustworthy in general."
+  }
+]

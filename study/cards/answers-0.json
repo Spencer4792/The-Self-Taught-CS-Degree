@@ -1,0 +1,824 @@
+[
+ {
+  "id": "00.1-setup-and-tooling-1",
+  "chapter": "00-Orientation/00.1-setup-and-tooling.md",
+  "prompt": "What is a shell, and what does the `|` (pipe) actually do?",
+  "answer": "A **shell** is the program that reads what you type and runs it, `zsh` or `bash` on macOS/Linux, PowerShell on Windows. It's essentially a REPL for your whole computer: you type a command, the OS runs a program, and it prints output. The `|` pipe takes the output of one program and feeds it in as the input of the next, so small, specialized tools compose into bigger jobs. In `ls -la | grep \".py\" | wc -l`, `ls` lists files, `grep` filters to lines containing `.py`, and `wc -l` counts what's left, three dumb workers lined up on a conveyor belt."
+ },
+ {
+  "id": "00.1-setup-and-tooling-2",
+  "chapter": "00-Orientation/00.1-setup-and-tooling.md",
+  "prompt": "Why should you never `pip install` into the system Python? What does a virtual environment isolate?",
+  "answer": "The system Python is what the operating system depends on for its own internal tools, so installing packages into it or upgrading it can break the OS. It's also like one shared communal kitchen: if Project A needs version 1.0 of a library and Project B needs version 2.0, installing globally means they fight and one breaks. A **virtual environment** is a self-contained folder holding its own copy of Python and its own `site-packages`; activating it points `python` and `pip` inside that folder, isolating each project's dependencies like a private kitchen."
+ },
+ {
+  "id": "00.1-setup-and-tooling-3",
+  "chapter": "00-Orientation/00.1-setup-and-tooling.md",
+  "prompt": "What are the three \"places\" a file can live in git, and which command moves a change between each?",
+  "answer": "The three places are the **working directory** (the files you're actually editing), the **staging area/index** (a holding pen for changes you've marked with `git add`), and the **repository** (the committed history). `git add` moves a change from working directory to staging; `git commit` moves it from staging into the repository as a permanent snapshot. Think of it as a two-step airlock: you choose exactly what goes in the box (`git add`), then tape it shut and label it (`git commit -m \"...\"`)."
+ },
+ {
+  "id": "00.1-setup-and-tooling-4",
+  "chapter": "00-Orientation/00.1-setup-and-tooling.md",
+  "prompt": "What's the difference between stdout and stderr, and why keep them separate?",
+  "answer": "**stdout** (stream 1) is a process's normal output; **stderr** (stream 2) is its error output, separate from **stdin** (stream 0), the input. Keeping them separate is why you can pipe or redirect a program's results somewhere else while its errors still show up on screen instead of getting silently swallowed. For example, `python script.py > out.txt 2> err.txt` sends normal output to `out.txt` and errors to `err.txt` independently."
+ },
+ {
+  "id": "00.1-setup-and-tooling-5",
+  "chapter": "00-Orientation/00.1-setup-and-tooling.md",
+  "prompt": "What does a breakpoint let you do that a print statement doesn't?",
+  "answer": "A breakpoint freezes the running program at a specific line and opens a panel showing every variable's current value, letting you step over a line, step into a function call, and resume at will. A print statement only shows you the one thing you thought to print, at the moment you thought to print it. It's like hitting pause on a movie to study a single frame, versus print, which only shows you the frames you singled out in advance."
+ },
+ {
+  "id": "00.1-setup-and-tooling-6",
+  "chapter": "00-Orientation/00.1-setup-and-tooling.md",
+  "prompt": "In one breath, what's the loop: editor → file → interpreter → output, and where does the terminal fit?",
+  "answer": "You type code into an **editor**, save it as a `.py` file, and use the **terminal** to tell the **Python interpreter** to run that file; the interpreter reads the instructions and prints results or errors back to you. The terminal is the doorway in the loop: it's where you launch the interpreter on your file and where the output comes back. Every other tool in the chapter, virtual environments, git, the debugger, exists to make this same loop smoother and safer."
+ },
+ {
+  "id": "00.1-setup-and-tooling-7",
+  "chapter": "00-Orientation/00.1-setup-and-tooling.md",
+  "prompt": "You get `ModuleNotFoundError` right after a successful `pip install`. What's your first hypothesis and the one command you'd run to check it? If any of those are fuzzy, reread that section. If they're solid, your environment is ready. Next you'll learn the language in [Chapter 0.2: Programming Fundamentals](00.2-programming-fundamentals.md), then how to think through problems in [Chapter 0.3](00.3-problem-solving.md), before heading to [Part 1: how computers represent everything](../01-Foundations/01.1-data-representation.md). --- ### Checklist before continuing - [ ] You can open a terminal and navigate the filesystem confidently. - [ ] You understand the editor → `.py` file → interpreter → output loop. - [ ] You have a managed Python (via pyenv or python.org) and `python --version` (or `python3 --version`) shows what you expect. - [ ] You can create and activate a virtual environment, and you can tell when it's active. - [ ] PyCharm (or VS Code) is configured to use your project's `.venv`. - [ ] You've made at least one git commit. - [ ] `pytest` runs and you've written one passing test. - [ ] You've skimmed the Troubleshooting FAQ so you recognize the common failures when they hit.",
+  "answer": "The first hypothesis is that the virtual environment wasn't active when you ran `pip install`, so the package landed in a different Python than the one running your code. The one command to check: look for `(.venv)` at the start of your prompt, or run `which python` and `which pip` to see whether they both point inside `.venv` or diverge. If they don't both point inside the project's venv, `source .venv/bin/activate` and reinstall."
+ },
+ {
+  "id": "00.2-programming-fundamentals-1",
+  "chapter": "00-Orientation/00.2-programming-fundamentals.md",
+  "prompt": "What's the difference between `=` and `==`? Between `/` and `//`?",
+  "answer": "`=` is **assignment**, an arrow pointing right to left that makes a name refer to a value; `==` is **comparison**, which checks equality and produces a `bool`. `/` is regular division and always returns a float, even `4 / 2` gives `2.0`; `//` is **floor division**, which drops the remainder and rounds down to a whole number, like splitting cookies among friends and keeping only the whole-cookie count. Confusing `=` with `==` inside an `if` is a classic beginner trap, though Python protects you by refusing `=` in a condition."
+ },
+ {
+  "id": "00.2-programming-fundamentals-2",
+  "chapter": "00-Orientation/00.2-programming-fundamentals.md",
+  "prompt": "Why is `input()`'s result always a string, and what do you do about it?",
+  "answer": "`input()` always hands back a **string**, even if the user types `42`, you get the text `\"42\"`, not the number. This matters because doing math on that result directly fails, `\"25\" + 1` raises a `TypeError`. The fix is to convert right away with `int()` or `float()`, for example `age = int(input(\"Age? \"))`."
+ },
+ {
+  "id": "00.2-programming-fundamentals-3",
+  "chapter": "00-Orientation/00.2-programming-fundamentals.md",
+  "prompt": "Indexing starts at what number? What does slicing's \"stop is exclusive\" mean?",
+  "answer": "Indexing starts at **0**; the first character or element is 0 steps from the start. Slicing with `[start:stop]` grabs everything from `start` up to but not including `stop`, so `s[0:3]` returns indices 0, 1, and 2, never index 3. This \"stop is exclusive\" rule is consistent across strings, lists, and every sequential type in Python."
+ },
+ {
+  "id": "00.2-programming-fundamentals-4",
+  "chapter": "00-Orientation/00.2-programming-fundamentals.md",
+  "prompt": "When do you reach for a list vs a dict vs a set?",
+  "answer": "Reach for a **list** when you need an ordered, growable collection that can hold duplicates, an ordered row of items you'll add to or iterate over. Reach for a **dict** when you need to look things up by a key or name, mapping something like a person's name to their age with fast lookups. Reach for a **set** when you need unique items or fast \"have I seen this?\" membership checks, since sets automatically drop duplicates and test membership quickly. Ninety percent of everyday code is just lists and dicts."
+ },
+ {
+  "id": "00.2-programming-fundamentals-5",
+  "chapter": "00-Orientation/00.2-programming-fundamentals.md",
+  "prompt": "What does `return` do, and what does a function return if it has no `return`?",
+  "answer": "`return` hands a value back to whoever called the function and ends the function's work at that point. If a function has no `return` statement, it implicitly returns `None`, meaning it did something (like printing) but produced no value to hand back. This is why calling a function that only `print`s and assigning its result to a variable leaves that variable holding `None`."
+ },
+ {
+  "id": "00.2-programming-fundamentals-6",
+  "chapter": "00-Orientation/00.2-programming-fundamentals.md",
+  "prompt": "How do you read a traceback - which line do you look at first?",
+  "answer": "You read a traceback bottom-up: the **last line** first, since it names the error type (like `ZeroDivisionError`) and the message explaining what went wrong. The lines above show *where* it happened, the file and line number, along with the actual offending line of code. So the order is: what kind of error, what the message says, which line, then go look at that line with the message in mind."
+ },
+ {
+  "id": "00.2-programming-fundamentals-7",
+  "chapter": "00-Orientation/00.2-programming-fundamentals.md",
+  "prompt": "What does `if __name__ == \"__main__\":` accomplish? If any are fuzzy, reread that section and run the examples. Running beats rereading. ---",
+  "answer": "`if __name__ == \"__main__\":` makes a block only run when the file is executed directly, not when it's imported by another file. When you run a file directly, Python sets the hidden variable `__name__` to `\"__main__\"`; when another file imports it, `__name__` is set to the module's name instead. This lets you reuse a file's functions elsewhere without triggering its script logic (like calling `main()`) just from importing it."
+ },
+ {
+  "id": "00.3-problem-solving-1",
+  "chapter": "00-Orientation/00.3-problem-solving.md",
+  "prompt": "Name the four pillars of computational thinking and give a one-line example of each.",
+  "answer": "**Decomposition** is splitting a big, scary problem into small solvable ones, like breaking \"build a to-do app\" into add, list, complete, and remove. **Pattern recognition** is noticing a problem is a shape you've seen before, \"count word frequency\" and \"count product sales\" are both just tallying things into a dict. **Abstraction** is ignoring irrelevant detail and focusing on the essence, like realizing \"find duplicates\" only needs fast \"have I seen this?\" checks, a set problem regardless of whether the items are names or numbers. **Pseudocode/algorithms** means planning the precise steps in plain English before writing any Python, like sketching \"find the largest number\" as a loop before coding it."
+ },
+ {
+  "id": "00.3-problem-solving-2",
+  "chapter": "00-Orientation/00.3-problem-solving.md",
+  "prompt": "Recite the six framework steps (UEBOCT). Why is \"brute force before optimize\"?",
+  "answer": "The six steps are **U**nderstand, **E**xamples, **B**rute force, **O**ptimize, **C**ode, **T**est. Brute force comes before optimize because a working slow solution beats a broken clever one, always, and it gives you something correct to compare against once you do optimize. It also shows progress (useful in interviews) and keeps you from prematurely chasing an elegant solution to a problem you haven't even solved yet."
+ },
+ {
+  "id": "00.3-problem-solving-3",
+  "chapter": "00-Orientation/00.3-problem-solving.md",
+  "prompt": "Why work concrete examples *by hand* before coding? What do edge cases buy you?",
+  "answer": "Working concrete examples by hand confirms you actually understand the problem, and often the algorithm reveals itself: whatever you naturally do in your head to get the right answer is the algorithm. Edge cases, empty input, one element, duplicates, negatives, the biggest or smallest allowed, buy you correctness against the inputs that break naive solutions. The FizzBuzz walkthrough shows this directly: tracing 15 by hand exposes that the \"divisible by both 3 and 5\" case must be checked first, a trap you'd miss without hand-tracing."
+ },
+ {
+  "id": "00.3-problem-solving-4",
+  "chapter": "00-Orientation/00.3-problem-solving.md",
+  "prompt": "What's the debugging mantra, and what does \"bisect\" mean in debugging?",
+  "answer": "The debugging mantra is **\"don't guess, verify\"**, meaning you check what a value actually is with a `print` or breakpoint instead of assuming. **Bisect** means checking the middle of a long pipeline to see whether the data is still correct halfway through, which tells you whether the bug is in the first half or the second half. Repeating that narrows a 1000-line program down to a single line in about ten steps."
+ },
+ {
+  "id": "00.3-problem-solving-5",
+  "chapter": "00-Orientation/00.3-problem-solving.md",
+  "prompt": "What goes into a *good* question when you're stuck, the four parts?",
+  "answer": "A good question includes four parts: what you're trying to do (the goal), what you tried (the relevant code, kept minimal), what happened (the exact error or wrong output), and what you expected instead. Together these form a **minimal reproducible example**. Producing one is itself a form of debugging, since shrinking the problem down to its essentials often reveals the bug before you even post the question."
+ },
+ {
+  "id": "00.3-problem-solving-6",
+  "chapter": "00-Orientation/00.3-problem-solving.md",
+  "prompt": "In two-sum, what was the wasted work in brute force, and what data structure removed it? If you can do these, you don't just *know* Python, you know how to *use* it to think. That's the difference that gets hired. ---",
+  "answer": "The brute-force two-sum solution wastes work by rescanning the whole list for every number to find its complement, checking nearly every pair of indices. Recognizing that \"is this value present, and where?\" is a repeated lookup problem points to a **dict** mapping value to index, built in a single pass. Walking the list once and checking `target - number` against the dict as you go, recording the current number only after checking it, turns the double loop into one pass, and it handles the duplicate-values edge case correctly because the check happens before the recording."
+ },
+ {
+  "id": "05.1-memory-1",
+  "chapter": "05-Systems/05.1-memory.md",
+  "prompt": "**Why is a cache miss to RAM such a big deal, in CPU terms?** Because RAM is ~100x slower than L1 cache and the CPU stalls while waiting. On the \"1 cycle = 1 second\" scale, an L1 hit is ~3 seconds while a RAM fetch is ~5 minutes. So a code path full of cache misses spends most of its time *waiting*, not computing, which is why locality (spatial + temporal) often dominates raw operation count.",
+  "answer": "RAM is roughly 100x slower than L1 cache, so on a cache miss the CPU simply stalls, waiting for data instead of computing. On the chapter's \"1 cycle = 1 second\" scale, an L1 hit feels like about 3 seconds while a RAM fetch feels like about 5 minutes. A code path riddled with cache misses spends most of its time waiting, not computing, which is why **locality**, both spatial and temporal, often matters more for real performance than the raw number of operations an algorithm does."
+ },
+ {
+  "id": "05.1-memory-2",
+  "chapter": "05-Systems/05.1-memory.md",
+  "prompt": "**Draw the four main regions of a process's address space and say what each holds.** From high to low: **stack** (call frames/locals, grows down) → free space → **heap** (dynamic allocation, grows up) → **BSS** (zeroed globals) → **data** (initialized globals) → **text** (read-only code). Stack and heap grow toward each other through the shared free region.",
+  "answer": "From high addresses to low, a process's address space is laid out as **stack**, free space, **heap**, **BSS**, **data**, then **text**. The stack holds call frames and local variables and grows downward; the heap holds dynamically allocated memory and grows upward, toward the stack, through the shared free region in between. Below the heap, BSS holds zeroed, uninitialized globals, data holds initialized globals and statics, and text at the very bottom holds the read-only compiled instructions."
+ },
+ {
+  "id": "05.1-memory-3",
+  "chapter": "05-Systems/05.1-memory.md",
+  "prompt": "**What *is* a stack overflow, mechanically?** The stack is a small fixed-size region. Each un-returned call keeps a frame on it. Recursing too deep (or with no base case) pushes frames past the end of the region into a guard page, and the OS kills the process. CPython adds a software recursion limit (~1000) so you get a clean `RecursionError` first.",
+  "answer": "The stack is a small, fixed-size region of memory, and every function call that hasn't returned yet keeps its stack frame sitting on it. Recursing too deep, or recursing with no base case, keeps pushing new frames until they run past the end of that region into a guard page, at which point the OS kills the process. CPython softens this by adding its own recursion limit (`sys.getrecursionlimit()`, around 1000), so you get a clean, catchable `RecursionError` before the real hardware stack actually blows."
+ },
+ {
+  "id": "05.1-memory-4",
+  "chapter": "05-Systems/05.1-memory.md",
+  "prompt": "**Explain Python's \"pass by object reference\" using the mutate-vs-rebind distinction.** Python copies the *reference* (pointer), not the object. So **mutating** the passed object (`lst.append(...)`) reaches the shared object and the caller sees it; **rebinding** the parameter name (`lst = [...]`) only repoints the local copy of the arrow, so the caller doesn't see it. Slogan: *the reference is passed by value.*",
+  "answer": "Python copies the reference, not the object, when it passes an argument into a function. If the function **mutates** the object it received, such as `lst.append(...)`, that reaches the same shared object, so the caller sees the change. If the function instead **rebinds** the parameter name to something new, such as `lst = [...]`, it only repoints its own local copy of the reference, leaving the caller's binding untouched. The chapter's slogan for this is that the reference itself is passed by value."
+ },
+ {
+  "id": "05.1-memory-5",
+  "chapter": "05-Systems/05.1-memory.md",
+  "prompt": "**Why does CPython need both reference counting and a tracing GC?** Refcounting frees objects promptly when their count hits 0, which handles the common case cheaply and incrementally, but it *cannot* reclaim reference cycles (objects that point at each other keep each other's counts above 0). The generational tracing collector exists specifically to find and free those unreachable cycles, exploiting that most objects die young to keep pauses small.",
+  "answer": "**Reference counting** frees an object the instant its count reaches zero, which is prompt and cheap for the common case, but it has a structural blind spot: two objects that reference each other keep each other's counts above zero even after nothing else points to either, a reference cycle. CPython's generational **tracing collector** exists specifically to catch that case, it walks from known roots to find everything actually reachable and frees whatever isn't, including orphaned cycles. It scans young objects frequently and old ones rarely, on the assumption that most objects die young, which keeps its pauses small. The two mechanisms are complementary: refcounting handles the bulk of objects cheaply, and tracing mops up what refcounting structurally cannot."
+ },
+ {
+  "id": "05.1-memory-6",
+  "chapter": "05-Systems/05.1-memory.md",
+  "prompt": "**Can you leak memory in a garbage-collected language? Give an example.** Yes. The GC only frees what's *unreachable*; it can't free what you still (accidentally) hold a reference to. Classic leaks: an ever-growing global cache/list, never-unsubscribed event listeners, or a long-lived closure capturing a big object. These are *logical* leaks, the memory is still reachable, so the GC correctly leaves it alone.",
+  "answer": "Yes. The garbage collector only frees what's **unreachable**, it can't free memory you're still, even accidentally, holding a reference to. The chapter's examples are an ever-growing global cache or list that's never trimmed, event listeners that get registered but never unsubscribed, and a closure that captures a large object and stays alive. These are logical leaks: the memory is technically still reachable, so the GC is correctly leaving it alone even though the program no longer actually needs it."
+ },
+ {
+  "id": "05.2-concurrency-1",
+  "chapter": "05-Systems/05.2-concurrency.md",
+  "prompt": "**State the concurrency-vs-parallelism distinction in one precise sentence each.** Concurrency is *structuring* a program as independently progressing tasks that may be interleaved (dealing with many things at once); parallelism is *executing* multiple tasks literally simultaneously on multiple cores (doing many things at once). You can have concurrency without parallelism (async on one core).",
+  "answer": "**Concurrency** is structuring a program as independently progressing tasks that may be interleaved, dealing with many things at once. **Parallelism** is executing multiple tasks literally at the same instant on multiple cores, doing many things at once. You can have concurrency without parallelism, the chapter's example is async running on a single core, where tasks take turns but only one is ever actually executing at any given moment."
+ },
+ {
+  "id": "05.2-concurrency-2",
+  "chapter": "05-Systems/05.2-concurrency.md",
+  "prompt": "**Why is `count += 1` a race condition across threads, and how does a lock fix it?** `+=` is read-modify-write, three non-atomic steps; a context switch between read and write lets two threads both read the old value and both write the same increment, losing one. A lock makes the whole read-modify-write a critical section that only one thread enters at a time, serializing access.",
+  "answer": "`count += 1` looks like a single step but is really three non-atomic steps: read the value, add one, write it back. If a context switch lands between the read and the write, two threads can both read the same old value and both write back the same incremented result, silently losing one increment. A **lock** turns that whole read-modify-write sequence into a critical section that only one thread can be inside at a time, forcing the others to wait their turn and serializing access to the shared counter."
+ },
+ {
+  "id": "05.2-concurrency-3",
+  "chapter": "05-Systems/05.2-concurrency.md",
+  "prompt": "**List the four Coffman conditions and name the most practical one to break.** Mutual exclusion, hold-and-wait, no-preemption, circular-wait, all four must hold for deadlock. The most practical to break is **circular wait**, via a global **lock-ordering** rule (always acquire locks in the same order).",
+  "answer": "The four **Coffman conditions** are mutual exclusion (a resource can only have one holder), hold-and-wait (a thread holds one resource while waiting for another), no preemption (resources can't be forcibly taken away), and circular wait (a cycle of threads each waiting on the next). All four have to hold simultaneously for deadlock to happen. The most practical one to break is circular wait, enforced with a global **lock-ordering** rule, always acquire locks in the same fixed order, which the chapter shows makes a cycle impossible to form."
+ },
+ {
+  "id": "05.2-concurrency-4",
+  "chapter": "05-Systems/05.2-concurrency.md",
+  "prompt": "**What is the GIL and what does it imply for threads doing CPU-bound work?** The GIL is a single mutex in CPython that lets only one thread execute Python bytecode at a time (to keep refcounting thread-safe). So pure-Python CPU-bound work gets **no** parallelism from threads, it serializes (and may even slow down). CPU parallelism needs `multiprocessing` (separate interpreters, separate GILs).",
+  "answer": "The **GIL** (Global Interpreter Lock) is a single mutex in CPython that lets only one thread execute Python bytecode at a time, which is what keeps reference counting safe without locking every individual object. For pure-Python CPU-bound work this means threads give you no real parallelism, they just serialize through the interpreter, and contention can even make the threaded version slower than single-threaded code. Real CPU parallelism needs `multiprocessing`, since each process gets its own interpreter and its own GIL."
+ },
+ {
+  "id": "05.2-concurrency-5",
+  "chapter": "05-Systems/05.2-concurrency.md",
+  "prompt": "**When do threads still help in CPython despite the GIL?** For **I/O-bound** work. A thread blocked on network/disk I/O *releases the GIL*, letting other threads run, so the waiting overlaps. Fetching many URLs, reading many files, threads shine because the bottleneck is waiting, not computing.",
+  "answer": "Threads still help for **I/O-bound** work. When a thread blocks on network or disk I/O, it releases the GIL, letting another thread run while it waits, so the waiting overlaps instead of adding up sequentially. For something like fetching many URLs or reading many files, this makes threads genuinely effective even though only one thread ever executes Python bytecode at a time, because the actual bottleneck is time spent waiting, not time spent computing."
+ },
+ {
+  "id": "05.2-concurrency-6",
+  "chapter": "05-Systems/05.2-concurrency.md",
+  "prompt": "**How does the asyncio event loop achieve concurrency without threads or locks?** Coroutines run on one thread and **cooperatively yield** at `await` points (where they'd otherwise wait on I/O). The event loop runs ready tasks, parks ones that are waiting, and resumes them when their I/O completes. Because switches only happen at explicit `await`s, there's no mid-operation interleaving, so no locks are needed between coroutines. It wins for huge numbers of cheap, I/O-bound tasks; it's the wrong tool for CPU-bound work (a non-yielding coroutine starves the loop).",
+  "answer": "All coroutines run on a single thread and **cooperatively yield** control at `await` points, exactly where they'd otherwise block on I/O. The event loop runs whatever tasks are ready, parks the ones that are waiting, and resumes each one once its I/O completes. Because a switch only ever happens at an explicit `await`, code between two `await`s runs without interruption from other coroutines, so no locks are needed between them. This design wins for huge numbers of cheap, I/O-bound tasks, but it's the wrong tool for CPU-bound work, since a coroutine that never yields starves the entire loop."
+ },
+ {
+  "id": "05.3-operating-systems-1",
+  "chapter": "05-Systems/05.3-operating-systems.md",
+  "prompt": "**What is the kernel/user-space boundary, and how does a program cross it?** User mode is unprivileged (can't touch hardware or other processes' memory); kernel mode is privileged. A program crosses *only* via a **system call**, a controlled trap that switches to kernel mode at a fixed entry point, where the kernel validates the request, does the privileged work, and returns. Every file/network/process operation bottoms out in syscalls (watchable with `strace`/`dtruss`).",
+  "answer": "**User mode** is unprivileged, a program running there can't directly touch hardware or another process's memory. **Kernel mode** is privileged and is where the OS core runs. The only sanctioned way to cross from user mode into kernel mode is a **system call**, a controlled trap that switches the CPU to kernel mode at a fixed entry point, where the kernel validates the request, performs the privileged work, and returns. Every file, network, or process operation eventually bottoms out in syscalls, which you can watch directly with tools like `strace` or `dtruss`."
+ },
+ {
+  "id": "05.3-operating-systems-2",
+  "chapter": "05-Systems/05.3-operating-systems.md",
+  "prompt": "**What does \"preemptive scheduling\" mean and what hardware makes it possible?** A periodic **timer interrupt** forcibly returns control to the kernel, so no process can monopolize the CPU; the scheduler then picks the next ready process (e.g., round-robin time slices). Without the timer interrupt, a buggy infinite loop could freeze the whole machine.",
+  "answer": "**Preemptive scheduling** means the OS can forcibly take the CPU back from a running process instead of waiting for that process to voluntarily give it up. This is made possible by a periodic **timer interrupt**, which fires and hands control back to the kernel so the scheduler can pick the next ready process, for example handing out round-robin time slices. Without that timer interrupt, a single buggy infinite loop could monopolize the CPU and freeze the entire machine."
+ },
+ {
+  "id": "05.3-operating-systems-3",
+  "chapter": "05-Systems/05.3-operating-systems.md",
+  "prompt": "**Why does virtual memory exist, and what is a page fault?** It gives each process an isolated, contiguous-looking address space (so processes can't address each other's RAM), lets virtual pages map to scattered physical frames, and allows over-commit via swap. A **page fault** is a trap when a process accesses a virtual page not in a physical frame; the kernel loads it from disk (major) or maps a fresh frame (minor). An access to an *unmapped* address is a segfault, the kernel kills the process.",
+  "answer": "**Virtual memory** gives every process its own isolated, contiguous-looking address space, so one process physically cannot address another's RAM, and it lets virtual pages map onto scattered physical frames while letting the system over-commit memory through swap. A **page fault** is a trap that fires when a process accesses a virtual page that isn't currently sitting in a physical frame, the kernel then either loads it from disk (a major fault) or just maps a fresh zeroed frame (a minor fault). If the address isn't mapped at all, that's a segfault, and the kernel kills the process instead of trying to load anything."
+ },
+ {
+  "id": "05.3-operating-systems-4",
+  "chapter": "05-Systems/05.3-operating-systems.md",
+  "prompt": "**What's in an inode, and what's NOT?** An inode holds a file's metadata (type, permissions, owner, size, timestamps, link count) and pointers to its data blocks. It does **not** hold the file's name, names live in directories, which map names → inode numbers. This separation is what makes hard links (multiple names, one inode) possible.",
+  "answer": "An **inode** holds a file's metadata, its type, permissions, owner, size, timestamps, and link count, plus pointers to the data blocks that hold the actual bytes. What it does not hold is the file's name. Names live in **directories**, which are just files that map names to inode numbers, and that separation is exactly what makes hard links possible: multiple names pointing at the same inode."
+ },
+ {
+  "id": "05.3-operating-systems-5",
+  "chapter": "05-Systems/05.3-operating-systems.md",
+  "prompt": "**Decode `chmod 750` and explain what `x` means on a directory.** `750` = owner `rwx` (7), group `r-x` (5), others `---` (0). On a *directory*, `x` means permission to traverse into it / access its entries; without `x` you can't `cd` into it even if you can read the listing.",
+  "answer": "`chmod 750` sets owner permissions to `rwx` (7), group permissions to `r-x` (5), and others to `---` (0), no access at all. On a **directory** specifically, the `x` bit means permission to traverse into it or access its entries, not permission to read its contents. Without `x` you can't `cd` into a directory even if the `r` bit still lets you list the names inside it."
+ },
+ {
+  "id": "05.3-operating-systems-6",
+  "chapter": "05-Systems/05.3-operating-systems.md",
+  "prompt": "**Why must `cd` be a shell builtin instead of an external command?** Because the shell runs external commands by `fork`+`exec` in a *child* process. A child's `chdir` would only change the child's working directory, which dies with the child, leaving the shell's directory unchanged. So `cd` must run in the shell process itself. (Same reasoning applies to `exit`, `export`, etc.)",
+  "answer": "The shell runs external commands by `fork`ing and then `exec`ing inside a separate child process. If `cd` were an external command, the child's `chdir` call would only change that child's own working directory, and that change disappears the moment the child exits, leaving the shell's directory unchanged. So `cd` has to run inside the shell process itself to actually take effect, and the same reasoning is why `exit` and `export` are also builtins."
+ },
+ {
+  "id": "08.1-frontend-1",
+  "chapter": "08-Web/08.1-frontend.md",
+  "prompt": "Walk the critical rendering path from HTML bytes to on-screen pixels, naming each stage. At which stage does `display:none` exclude a node, and why?",
+  "answer": "The pipeline is: parse HTML into the **DOM**, parse CSS into the **CSSOM**, combine both into the **render tree**, run **layout** (compute the geometry of every box), **paint** (rasterize boxes into pixels on layers), then **composite** (combine layers respecting `z-index`/transforms/opacity and send to the screen). `display:none` is excluded at the render tree stage, since that tree only holds the *visible* nodes with their computed styles, so a `display:none` element never gets geometry, paint, or a layer at all."
+ },
+ {
+  "id": "08.1-frontend-2",
+  "chapter": "08-Web/08.1-frontend.md",
+  "prompt": "Why is animating `transform` smooth but animating `width` janky? Tie your answer to the layout/paint/composite stages.",
+  "answer": "`width` changes an element's geometry, so every frame triggers a full **layout** (reflow) that can cascade to other elements, followed by **paint**, before finally compositing, three expensive steps per frame. `transform` (and `opacity`) can be resolved purely at the **composite** stage on the GPU, skipping layout and paint entirely, so the browser just recombines existing layers each frame, which is why it stays smooth."
+ },
+ {
+  "id": "08.1-frontend-3",
+  "chapter": "08-Web/08.1-frontend.md",
+  "prompt": "Predict the output order of `console.log(\"a\"); setTimeout(()=>log(\"b\")); Promise.resolve().then(()=>log(\"c\")); console.log(\"d\");` and explain it via microtask vs. macrotask queues.",
+  "answer": "The output is `a`, `d`, `c`, `b`. Synchronous code on the call stack runs first and to completion, so `a` and `d` print immediately. Then the event loop drains the entire **microtask queue** (the resolved `Promise`'s `.then`, so `c`) before it ever touches the **macrotask queue**, and `setTimeout`'s callback is a macrotask, so `b` runs last."
+ },
+ {
+  "id": "08.1-frontend-4",
+  "chapter": "08-Web/08.1-frontend.md",
+  "prompt": "Explain *why* the virtual DOM exists, connecting it to the cost of direct DOM mutation and the idea of reconciliation. What problem does the list `key` prop solve?",
+  "answer": "Direct DOM mutation is slow (each change can trigger reflow/repaint) and hand-computing the minimal set of updates when state changes is error-prone. React's fix is to have components return a **virtual DOM**, a lightweight JS object tree describing the desired UI; on a state change it re-renders to a new virtual tree and **diffs** it against the previous one (**reconciliation**), then applies only the minimal batched real-DOM operations. The `key` prop gives list items a stable identity so the diff can match elements across renders by identity rather than position, so reordering or inserting doesn't wrongly reuse a node's state or recreate every item."
+ },
+ {
+  "id": "08.1-frontend-5",
+  "chapter": "08-Web/08.1-frontend.md",
+  "prompt": "For each of CSR, SSR, SSG, ISR, give a NYX page that fits and say why, citing freshness and SEO.",
+  "answer": "**CSR** fits a private, logged-in NYX portfolio dashboard: SEO doesn't matter behind a login, and the data is highly interactive and personal, so it's fine that first paint is slower. **SSR** fits a page needing fresh, per-request personalized data where SEO also matters, since it renders full HTML on the server for every request. **SSG** fits a public NYX marketing page or blog post: content rarely changes, so building it once at build time gives the fastest CDN delivery and best SEO. **ISR** fits something like a NYX \"market movers\" page that should refresh roughly every 60 seconds: it keeps SSG's static speed but rebuilds in the background on a `revalidate` interval for periodic freshness."
+ },
+ {
+  "id": "08.1-frontend-6",
+  "chapter": "08-Web/08.1-frontend.md",
+  "prompt": "In the dashboard card, why do we store `data` and `error` in state but compute `total` inline instead of storing it? What bug does the `alive` cleanup flag prevent?",
+  "answer": "`data` and `error` are the actual results of the fetch and can't be derived from anything else, so they must live in state. `total` is a pure derived value (`data.reduce(...)`) that can always be recomputed from `data`, so storing it separately would risk it drifting out of sync with `data`, the rule is derive, don't store. The `alive` flag prevents the classic \"set state after unmount\" bug: if `endpoint` changes or the component unmounts while a fetch is still in flight, the cleanup sets `alive = false` so the stale response's `setState` call is skipped instead of overwriting newer state or warning on an unmounted component."
+ },
+ {
+  "id": "08.2-backend-apis-1",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "Why is `POST` not idempotent while `PUT` and `DELETE` are, and what concrete bug does an idempotency key prevent on a flaky network?",
+  "answer": "`POST` creates a new resource on each call, so calling it twice produces two resources, while `PUT` (replace) and `DELETE` (remove) have the same end effect no matter how many times you call them. This matters for retries: if a client times out and retries a `PUT`, no harm is done, but retrying a `POST` could double-charge a customer. An **idempotency key** (a unique `Idempotency-Key` header) fixes this: the server stores the result for that key on first execution and replays the same stored response on retry instead of re-running the create, so a flaky network retry can't create a duplicate order or double a charge."
+ },
+ {
+  "id": "08.2-backend-apis-2",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "A client sends valid JSON but with `price: -5`. Which status code should you return and why, and how does FastAPI/Pydantic produce it without you writing an `if`?",
+  "answer": "Return `422 Unprocessable Entity`: the JSON is well-formed, but a value violates a business rule. You get this for free by declaring the constraint on the Pydantic model, e.g. `price: float = Field(gt=0)`, and FastAPI validates every request against the model before your handler code ever runs, automatically rejecting `-5` with a `422` and a field-level error message. No manual `if price <= 0: raise ...` is needed."
+ },
+ {
+  "id": "08.2-backend-apis-3",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "Contrast offset and cursor pagination on a 10-million-row table: which is fast on page 5000 and why? Connect it to the index discussion in Chapter 7.2.",
+  "answer": "**Cursor (keyset) pagination** stays fast: `WHERE id > :cursor ORDER BY id LIMIT n` is an index seek, the B-tree jumps straight to the first key past the cursor and reads the next batch, so the work is O(log n) to locate plus a constant number of reads, independent of how deep the page is. **Offset pagination** (`OFFSET 100000 LIMIT 20`) still has to walk past all 100,000 preceding rows before returning the next 20, even with an index on `id`, so latency grows linearly with page depth, making page 5000 far slower than page 1, and it can also skip or duplicate rows if data changes mid-paging."
+ },
+ {
+  "id": "08.2-backend-apis-4",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "Explain GraphQL's N+1 problem with a concrete `users → orders → customer` example, and describe how DataLoader-style batching fixes it.",
+  "answer": "For a user with 100 orders, a naive GraphQL query `user { orders { customer { name } } }` runs 1 query to fetch the orders, then a *separate* query per order inside the `customer` resolver to fetch that order's customer, 101 round trips total (1 + N) for data that lives in two tables. The **DataLoader** pattern fixes this by having each resolver *register* the customer id it wants instead of fetching immediately; the loader collects all ids requested within one tick of the event loop and fires a single batched `WHERE id IN (...)` query, then hands each resolver its row, deduping shared ids and caching within the request. That turns the same query into 2 total round trips regardless of whether there are 10 orders or 10,000."
+ },
+ {
+  "id": "08.2-backend-apis-5",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "Give two situations where you'd choose GraphQL over REST and two where REST is the better call, citing caching.",
+  "answer": "Choose **GraphQL** when clients have diverse data needs (mobile wants less data, web wants more) and you want to avoid over-/under-fetching, or when a screen needs to aggregate many resources in one round trip instead of a waterfall of separate REST calls. Choose **REST** when the API is simple and resource-shaped, or when you want easy HTTP caching: REST responses are cacheable by URL, while GraphQL usually funnels everything through one `POST /graphql`, so URL-based caching doesn't apply and you lose that benefit."
+ },
+ {
+  "id": "08.2-backend-apis-6",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "In the FastAPI service, what three things does declaring a Pydantic `response_model` buy you, and why should an unhandled exception return a generic `500` instead of the stack trace?",
+  "answer": "Declaring `response_model=Item` buys you: (1) automatic **serialization** into exactly the declared shape, stripping any extra fields your handler returns, (2) **validation** that guarantees the response matches the promised contract, and (3) auto-generated **OpenAPI docs** (`/docs`, `/redoc`) built straight from the same type. An unhandled exception should return a generic `500` because leaking a stack trace, SQL, or connection details is a gift to an attacker (and on a HIPAA-aligned product like Anneava, a compliance problem); the right pattern is to log the full trace server-side and return something like `{\"error\": \"internal_server_error\"}` to the client."
+ },
+ {
+  "id": "08.2-backend-apis-7",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "Using the restaurant analogy, explain to a non-engineer what an API is and why a client \"never enters the kitchen.\"",
+  "answer": "The menu is the set of endpoints, exactly what you're allowed to order, and you don't need to know how a dish is made to order it. The waiter is the API contract: you hand over a precise request and get back exactly the agreed shape, which is the promise that lets frontend and backend teams work independently. The kitchen is the backend logic, the database, business rules, and secrets, and the client (browser, app, another service) is never allowed behind the counter to grab a row directly or read the chef's recipes; everything passes through the menu and the waiter. That boundary is what keeps the system safe and swappable: the kitchen can replace its stove entirely, and as long as the salmon comes out the same, the customer never notices."
+ },
+ {
+  "id": "08.2-backend-apis-8",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "Walk through a raw HTTP request and response for creating an order, naming the request line, the status line, and three headers that matter.",
+  "answer": "The request starts with the **request line** `POST /v1/orders HTTP/1.1` (method, path, version), followed by headers and a blank line, then the JSON body. Three headers that matter: `Authorization: Bearer ...` carries the caller's identity on every request (since the server keeps no session, statelessness), `Idempotency-Key` ensures a retried `POST` can't create a duplicate order, and `Content-Type: application/json` tells the server how to parse the body. The response opens with the **status line** `HTTP/1.1 201 Created`, then headers including `Location: /v1/orders/1001` pointing at the newly created resource, then the JSON body of the created order."
+ },
+ {
+  "id": "08.2-backend-apis-9",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "Name four of the common API mistakes from the Common Mistakes box and give the right version of each.",
+  "answer": "**Verbs in URLs** (`POST /createOrder`) should instead be a noun path with the HTTP method as the verb (`POST /orders`). **Returning `200 OK` for errors** with a `{\"success\": false}` body should instead return the real status code (`404`, `422`, `409`) so the status line carries the truth. **Leaking stack traces** in a `500` response should instead log the trace server-side and return a generic `{\"error\": \"internal_server_error\"}`. **Offset pagination on huge tables** should instead use cursor/keyset pagination (`WHERE id > :cursor ORDER BY id LIMIT n`), which stays fast at any depth because it rides the index."
+ },
+ {
+  "id": "08.2-backend-apis-10",
+  "chapter": "08-Web/08.2-backend-apis.md",
+  "prompt": "In the second mini-project, how did we keep a single error envelope across *both* HTTP errors and validation errors, and which two exception handlers made that work?",
+  "answer": "Every error response, regardless of cause, is shaped into the same envelope: `{\"error\": {\"code\", \"message\", \"details\"}}`. This is done by overriding two exception handlers: `@app.exception_handler(HTTPException)` reshapes explicit `raise HTTPException(...)` errors (like a `409` on a duplicate email) into the envelope, and `@app.exception_handler(RequestValidationError)` reshapes Pydantic's automatic `422` validation failures into the same envelope while preserving the field-level `details` from `exc.errors()`. Together, a `409 Conflict` and a `422` validation failure come back in an identical shape a client can handle with one error parser."
+ },
+ {
+  "id": "08.3-auth-and-permissions-1",
+  "chapter": "08-Web/08.3-auth-and-permissions.md",
+  "prompt": "Distinguish AuthN from AuthZ, and map each to the `401` and `403` status codes with an Anneava example.",
+  "answer": "**Authentication (AuthN)** answers \"who are you?\", proving identity via a password or token; **authorization (AuthZ)** answers \"what are you allowed to do?\", checking permissions for that now-known identity, and it runs on every action, not just once at login. `401 Unauthorized` maps to an AuthN failure: an Anneava nurse whose request has no valid token at all. `403 Forbidden` maps to an AuthZ failure: that same nurse is logged in (authenticated) but tries to sign a prescription, an action reserved for clinicians, so the request is denied even though identity is known."
+ },
+ {
+  "id": "08.3-auth-and-permissions-2",
+  "chapter": "08-Web/08.3-auth-and-permissions.md",
+  "prompt": "Why is `SHA-256(password)` an unsafe way to store passwords? Explain what *salting* and a *slow/memory-hard* hash each defend against.",
+  "answer": "`SHA-256(password)` is unsafe for two separate reasons: it has no salt, so identical passwords hash identically, letting attackers use precomputed rainbow tables and letting one cracked hash crack every user who reused that password; and SHA-256 is a *fast* hash, designed for speed, so a GPU can compute billions of guesses per second and brute-force short passwords quickly. **Salting** (a unique random value per password) defends against rainbow tables and cross-user pattern leakage by making identical passwords hash differently, forcing each one to be attacked individually. A **slow, memory-hard hash** like bcrypt or Argon2 defends against brute force by making each individual guess expensive (e.g. ~250ms), invisible to a real login but devastating across billions of attempts, with a tunable cost factor you raise as hardware improves."
+ },
+ {
+  "id": "08.3-auth-and-permissions-3",
+  "chapter": "08-Web/08.3-auth-and-permissions.md",
+  "prompt": "A JWT's payload is Base64, anyone can read it. Why is that not a vulnerability, and what *would* be compromised if your HS256 secret leaked?",
+  "answer": "A JWT's payload is **signed, not encrypted**, so Base64-decoding it and reading the claims is expected and by design; the security model isn't \"you can't read it,\" it's \"you can't *change* it\" without invalidating the signature, since the signature is an HMAC over the header and payload bytes. If the HS256 secret leaked, that whole guarantee breaks: because HS256 uses the same shared secret to both sign and verify, an attacker who has it can forge arbitrary claims (say, bump their own `role` to `admin`) and produce a signature the server will accept as authentic, giving them the ability to impersonate any user or escalate privileges."
+ },
+ {
+  "id": "08.3-auth-and-permissions-4",
+  "chapter": "08-Web/08.3-auth-and-permissions.md",
+  "prompt": "Walk through Authorization Code + PKCE and explain precisely what attack PKCE prevents that plain authorization-code flow doesn't, for a SPA.",
+  "answer": "The client first generates a random `code_verifier` and computes `code_challenge = SHA256(code_verifier)`, then redirects the user to the auth server's `/authorize` endpoint with that challenge. After the user authenticates and consents, the auth server redirects back with a short-lived authorization code, which the app's backend exchanges at `/token` by sending both the code and the original `code_verifier`; the server hashes the verifier and checks it matches the stored challenge before issuing tokens. This closes the **authorization code interception attack**: since a public client like a SPA can't keep a client secret, the code alone could otherwise be intercepted (e.g. via a malicious app or redirect) and exchanged for tokens by an attacker; PKCE binds the code to the client that started the flow, so an intercepted code is useless without the verifier that only the legitimate client holds."
+ },
+ {
+  "id": "08.3-auth-and-permissions-5",
+  "chapter": "08-Web/08.3-auth-and-permissions.md",
+  "prompt": "Compare RBAC and ABAC, and say which layer of Anneava's auth each handles in your design.",
+  "answer": "**RBAC** attaches permissions to roles and roles to users (\"nurses can write notes, admins can delete\"), simple and auditable, the default for most apps, but coarse when you need finer distinctions. **ABAC** computes decisions from attributes of the user, resource, action, and context (\"allow if the user's tenant matches the resource's tenant and the clinician is assigned to this patient\"), more expressive and dynamic, at the cost of being harder to reason about and audit. In Anneava's design, RBAC handles the broad-strokes role gating like \"role = nurse\" via the `require_role` dependency, while the ABAC-flavored check, tenant match plus patient assignment, is enforced down at the database layer via Postgres Row-Level Security."
+ },
+ {
+  "id": "08.3-auth-and-permissions-6",
+  "chapter": "08-Web/08.3-auth-and-permissions.md",
+  "prompt": "Show a `SELECT * FROM patients` (no WHERE) that still can't leak another tenant's rows, and explain *why* enforcing tenant isolation in Postgres RLS is safer than relying on the application to add the filter.",
+  "answer": "With Row-Level Security enabled and a policy like `CREATE POLICY tenant_isolation ON patients USING (tenant_id = current_setting('app.current_tenant')::bigint)`, and the app setting `SELECT set_config('app.current_tenant', :tenant_id, true)` right after authenticating a request, a plain `SELECT * FROM patients` with no `WHERE` clause at all still only returns the current tenant's rows, because Postgres silently rewrites the query to inject the policy predicate. This is safer than relying on the application because isolation no longer depends on every developer remembering `WHERE tenant_id = ?` on every query; a forgotten filter or even a SQL injection that strips the `WHERE` clause still can't cross tenants, since the database itself is the non-bypassable backstop, provided the app connects as a non-superuser and the table has `FORCE ROW LEVEL SECURITY` set."
+ },
+ {
+  "id": "13.1-observability-1",
+  "chapter": "13-Observability/13.1-observability.md",
+  "prompt": "**Distinguish the three pillars by the question each answers, and describe the metric → trace → log debugging flow during an incident.**",
+  "answer": "Logs answer \"what exactly happened in this request or at this moment?\", discrete timestamped events, high volume and expensive. Metrics answer \"how much, how often, how fast, over time?\", numeric time series, cheap and low cardinality, good for trends and alerting. Traces answer \"where did the time go, or where did it fail, across services?\", a causal chain of spans, medium cost, usually sampled. During an incident you walk them in that order: a **metric** alert tells you something's wrong, a **trace** tells you which service or operation is slow, and **logs** tell you exactly what happened there, the error and the params."
+ },
+ {
+  "id": "13.1-observability-2",
+  "chapter": "13-Observability/13.1-observability.md",
+  "prompt": "**Show a bad vs good version of the same log line, and explain what a correlation/request id (and a trace_id) buys you across a distributed request.**",
+  "answer": "Bad: `logging.info(f\"User {user_id} failed to transfer {amount} to {dest}: insufficient funds\")`, a prose sentence you can't query without regex misery, with fields that break if the wording changes. Good: structured JSON, `logger.info(\"transfer_failed\", extra={\"event\": \"transfer_failed\", \"reason\": \"insufficient_funds\", \"user_id\": 42, \"request_id\": \"req-abc123\"})`, which lets you query `event:transfer_failed AND user_id:42` in Elasticsearch or Splunk and aggregate counts. A `request_id` on every log line for a request lets you reconstruct that request's whole journey, and a `trace_id` extends this across service boundaries; stamping the trace_id into logs is what lets you jump from a trace straight to its matching log lines, the logs-to-traces bridge."
+ },
+ {
+  "id": "13.1-observability-3",
+  "chapter": "13-Observability/13.1-observability.md",
+  "prompt": "**Name the four metric types and pick the right one for: total requests, queue depth, request latency. Then state RED vs USE and when each applies.**",
+  "answer": "The four types are **counter** (monotonically increasing total, e.g. `http_requests_total`, read via `rate()`), **gauge** (a value that goes up and down, a snapshot like queue depth), **histogram** (buckets observations to compute distributions and quantiles server-side), and **summary** (like a histogram but computes quantiles client-side, harder to aggregate across instances). Total requests uses a counter, queue depth uses a gauge, request latency uses a histogram. **RED** (Rate, Errors, Duration) is the user-facing view for request-driven services like APIs; **USE** (Utilization, Saturation, Errors) is the infrastructure view for resources like CPU or disk; USE tells you a resource is the bottleneck, RED tells you the user impact."
+ },
+ {
+  "id": "13.1-observability-4",
+  "chapter": "13-Observability/13.1-observability.md",
+  "prompt": "**Write the PromQL for p95 latency from a histogram and explain why `le` must stay in the `by()` and why you `rate()` before you `sum()`.**",
+  "answer": "`histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))`. The `le` label must stay in the `by()` clause because `histogram_quantile` needs the bucket boundaries to interpolate the quantile from; drop it and the function has nothing to interpolate over, giving nonsense. You `rate()` before you `sum()` because `rate()` is reset-aware per series and needs to see each counter's individual resets; `sum()` collapses series first and hides those resets, so `rate(sum(...))` produces wrong numbers on restarts. The correct order is always rate the per-series counters, then aggregate."
+ },
+ {
+  "id": "13.1-observability-5",
+  "chapter": "13-Observability/13.1-observability.md",
+  "prompt": "**Explain how a single trace stays connected across three services - name the header and the inject/extract instrumentation - and why the trace_id belongs in your logs.**",
+  "answer": "Every span in a trace shares a `trace_id` and links via parent span ids into a causal tree; the W3C `traceparent` header (`version-trace_id-parent_span_id-flags`) carries that trace_id on each outbound HTTP call. The outbound client instrumentation (e.g. `HTTPXClientInstrumentor`) injects the header into calls leaving a service, and the receiving server instrumentation (e.g. `FastAPIInstrumentor`) extracts it and continues the same trace with a new child span rather than starting a fresh one, which is how the trace crosses process boundaries. The trace_id belongs in logs because it completes the metric-to-trace-to-log flow: an alert points you to a trace, and the trace_id lets you jump straight to that request's exact log lines across every service it touched."
+ },
+ {
+  "id": "13.1-observability-6",
+  "chapter": "13-Observability/13.1-observability.md",
+  "prompt": "**Derive the error budget and allowed downtime for a 99.9% SLO over 30 days, then derive a 14.4× fast-burn alert and explain why multi-window/multi-burn beats a static threshold.**",
+  "answer": "error_budget_fraction = 1 - 0.999 = 0.001 (0.1%); over 30 days = 43,200 minutes, so allowed downtime = 43,200 × 0.001 = 43.2 minutes. Burn rate is defined as current error rate divided by (1 - SLO); a burn rate of 14.4 corresponds to an error rate of 0.0144 (1.44%), which would exhaust the 30-day budget in about 30/14.4 ≈ 2 days while consuming roughly 2% of the budget in a 1-hour window, urgent enough to page but not so twitchy it fires on a blip. A single static threshold either misses a fast burn (if the window is long) or flaps on harmless spikes (if the window is short); multi-window requires the burn to be high over both a long window (confirms it's real) and a short window (recovers fast once it stops) simultaneously, and multi-burn-rate runs several such alerts at different sensitivities, fast burn pages, slow burn tickets, so urgency matches the actual threat."
+ },
+ {
+  "id": "13.1-observability-7",
+  "chapter": "13-Observability/13.1-observability.md",
+  "prompt": "**Why \"alert on symptoms, not causes,\" and how does that connect to alert fatigue? Give a concrete example where a cause alert misleads.**",
+  "answer": "Symptom alerts page on what the user experiences, error rate up, latency up, the SLO burning, while cause alerts page on internal signals like high CPU or a full disk that may not even affect users; symptom alerts catch problems you didn't predict, cause alerts produce noise and miss novel failures. This connects to alert fatigue because too many non-actionable pages train people to ignore alerts, so the one real page gets missed, every alert must be actionable and urgent or it belongs on a dashboard, not a page. Concrete example: CPU at 90% while every request is still served fine is not an emergency, but CPU at 30% with errors spiking is the real problem, a CPU-threshold cause alert would mislead you in exactly that case."
+ },
+ {
+  "id": "13.1-observability-8",
+  "chapter": "13-Observability/13.1-observability.md",
+  "prompt": "**Explain the SLI/SLO/SLA relationship and why the SLO is set below 100% and above the SLA - what decision does a healthy vs exhausted error budget drive?**",
+  "answer": "The **SLI** is the measured number, usually a ratio of good events to total events (e.g. successful requests / total requests). The **SLO** is the internal target for that SLI over a window (e.g. 99.9% over 30 days). The **SLA** is the customer-facing contract with penalties, set looser than the SLO (e.g. SLA 99.5% vs SLO 99.9%) so an SLO breach warns you internally before you ever breach the contract. The SLO sits below 100% because 100% is impossibly expensive and leaves no room to ship, and above the SLA to leave that buffer; a healthy error budget means you can ship fast and take risks, while an exhausted budget means you freeze risky changes and prioritize reliability work, turning \"are we reliable?\" into a spendable number instead of a feeling."
+ },
+ {
+  "id": "16.1-statistics-and-probability-1",
+  "chapter": "16-Data/16.1-statistics-and-probability.md",
+  "prompt": "**Derive the standard error `σ/√n` and explain why halving uncertainty costs 4× the data.** (Var of the mean = σ²/n via \"variances of independent things add\"; SE is its root; the √n means precision scales with the square root of sample size.)",
+  "answer": "The standard error is the standard deviation of the sample mean. Using \"variances of independent things add,\" `Var(X̄) = Var((1/n)ΣXᵢ) = (1/n²)ΣVar(Xᵢ) = (1/n²)·nσ² = σ²/n`, and taking the square root gives `SE = σ/√n`. Because precision scales with the square root of `n`, cutting the SE in half requires quadrupling the sample size, not doubling it. That's why the jump from 100 to 10,000 users matters a lot but 10,000 to 10,100 barely moves the needle."
+ },
+ {
+  "id": "16.1-statistics-and-probability-2",
+  "chapter": "16-Data/16.1-statistics-and-probability.md",
+  "prompt": "**State the Central Limit Theorem and explain why it's the backbone of inference.** (Sample mean of *any* finite-variance distribution → normal with mean μ, variance σ²/n. It's the backbone because every t-test and CI assumes the sample mean is normal, the CLT grants that even for non-normal raw data.)",
+  "answer": "The Central Limit Theorem says the sample mean of *any* distribution with finite variance, however skewed or lumpy, approaches a normal distribution with mean `μ` and variance `σ²/n` as `n` grows. It's the backbone of inference because every confidence interval and t-test assumes the sample mean is approximately normal, and the CLT grants that assumption even when the raw data itself, exponential latencies, a bimodal mix, gas fees, is nothing like normal. Without it, you'd need to know the population's exact distribution before you could build any interval or test."
+ },
+ {
+  "id": "16.1-statistics-and-probability-3",
+  "chapter": "16-Data/16.1-statistics-and-probability.md",
+  "prompt": "**A colleague says \"the 95% CI means there's a 95% chance the true value is in it.\" Correct them precisely.** (Frequentist μ is fixed, not random; \"95%\" is the long-run coverage of the *procedure* across repeated samples. The probability-about-the-parameter statement is a Bayesian credible interval and needs a prior.)",
+  "answer": "In the frequentist framework `μ` is a fixed, unknown constant, not a random variable, so once an interval is computed it either contains `μ` or it doesn't; there's no probability left to assign to it. What \"95% confidence\" actually means is that the *procedure* generating the interval traps the true value 95% of the time across repeated samples, the randomness lives in the interval, not the parameter. A direct probability statement about the parameter, \"95% chance μ is in here,\" is a Bayesian credible interval, and that requires choosing a prior."
+ },
+ {
+  "id": "16.1-statistics-and-probability-4",
+  "chapter": "16-Data/16.1-statistics-and-probability.md",
+  "prompt": "**Define a p-value correctly and list two things it is NOT.** (P(data at least this extreme | H₀ true). NOT P(H₀ true); NOT the probability the result is due to chance; NOT a measure of effect size.)",
+  "answer": "A p-value is `P(test statistic at least as extreme as observed | H₀ is true)`, a conditional probability of the data given the null. It is NOT the probability that `H₀` is true, that would be the reversed conditional and requires Bayesian machinery, and it is NOT a measure of effect size, since a tiny, practically meaningless difference can hit `p < 0.001` with a large enough sample."
+ },
+ {
+  "id": "16.1-statistics-and-probability-5",
+  "chapter": "16-Data/16.1-statistics-and-probability.md",
+  "prompt": "**Walk through designing an A/B test for 80% power and explain why power matters.** (Pick α, the minimum detectable effect, and target power; solve for sample size *before* collecting data. Power = 1−β = chance of catching a real effect; underpowered tests yield uninformative \"no effect\" results, Type II errors.)",
+  "answer": "Designing for 80% power means picking `α` (usually 0.05), agreeing on the minimum detectable effect worth shipping, and setting a target power, then solving for the required sample size *before* collecting any data. Power, `1 − β`, is the probability of catching a real effect if one exists; underpowered tests produce Type II errors, a \"no effect\" result that really just means \"not enough data to detect the effect that exists.\" That's the most common way real A/B programs go wrong, so power is computed up front rather than discovered after the fact."
+ },
+ {
+  "id": "16.1-statistics-and-probability-6",
+  "chapter": "16-Data/16.1-statistics-and-probability.md",
+  "prompt": "**Explain why correlation isn't causation and why randomized experiments fix it.** (Reverse causation, confounding, coincidence can all create correlation without causation. Randomization balances all confounders, known and unknown, across groups on average, isolating the treatment's effect. That's exactly what an A/B test is.)",
+  "answer": "Correlation can show up without causation through reverse causation (Y actually causes X), confounding (a third variable drives both, like summer heat driving both ice-cream sales and drownings), or plain coincidence. A randomized controlled experiment fixes this because randomly assigning units to treatment and control balances every confounder, known and unknown, across the two groups on average, isolating the treatment's own effect. That balancing act is exactly what an A/B test is, which is why it's the gold-standard way to establish causation from data."
+ },
+ {
+  "id": "16.1-statistics-and-probability-7",
+  "chapter": "16-Data/16.1-statistics-and-probability.md",
+  "prompt": "**Contrast frequentist and Bayesian inference, and say when you'd reach for each.** (Frequentist: fixed parameters, probability = long-run frequency, p-values/CIs. Bayesian: parameters are random, prior × likelihood → posterior, gives direct \"P(B>A)\" statements. Frequentist for cheap default reporting; Bayesian when you have real prior info or stakeholders keep misreading CIs/p-values.)",
+  "answer": "Frequentist inference treats parameters as fixed unknown constants and probability as long-run frequency, which is what produces p-values and confidence intervals whose meaning is about a procedure's behavior over repeated samples. Bayesian inference treats parameters as random variables with a distribution, combining a prior with the likelihood via Bayes' rule into a posterior, which lets you make a direct statement like `P(variant B > variant A) = 0.97`. Reach for frequentist methods as the cheap default reporting everyone already understands, and reach for Bayesian when you have real prior information to incorporate or stakeholders keep misreading CIs and p-values as probability statements about the parameter itself."
+ },
+ {
+  "id": "16.2-data-wrangling-pandas-numpy-1",
+  "chapter": "16-Data/16.2-data-wrangling-pandas-numpy.md",
+  "prompt": "**Why is a NumPy array faster than a Python list for numeric work?** (Contiguous typed memory - no per-element boxed objects - so it's cache-friendly; operations run once in compiled C instead of per-element in the interpreter; enables SIMD. List = pointers to scattered boxed ints.)",
+  "answer": "A NumPy array stores its elements as one contiguous block of a single type, so the CPU streams it through cache efficiently and can use SIMD, while a Python list is an array of pointers to separate boxed integer objects scattered across memory. Vectorized operations dispatch once into compiled C that walks the contiguous buffer, instead of paying Python's per-element interpreter tax, bytecode dispatch, boxing and unboxing, on every iteration. The chapter's timed proof shows this difference is routinely a 100-200x speedup for the same arithmetic."
+ },
+ {
+  "id": "16.2-data-wrangling-pandas-numpy-2",
+  "chapter": "16-Data/16.2-data-wrangling-pandas-numpy.md",
+  "prompt": "**State the broadcasting rules and work an example.** (Align shapes from the right; dims must be equal or one is 1; size-1 dims stretch without copying. E.g. `(4,3) - (3,)` works by treating the vector as `(1,3)` and stretching to 4 rows; `(4,3) - (4,)` fails until reshaped to `(4,1)`.)",
+  "answer": "Broadcasting aligns array shapes from the right, and two dimensions are compatible if they're equal or one of them is 1, in which case the size-1 dimension is virtually stretched to match without copying data. For a `(4,3)` matrix minus a `(3,)` vector, the vector is treated as `(1,3)` and stretched to 4 rows, so it broadcasts cleanly. A `(4,3)` matrix minus a `(4,)` vector fails instead, since aligned from the right that's `3` vs `4` with neither dimension equal to 1, and it only works once you reshape the vector to `(4,1)` with `keepdims=True`."
+ },
+ {
+  "id": "16.2-data-wrangling-pandas-numpy-3",
+  "chapter": "16-Data/16.2-data-wrangling-pandas-numpy.md",
+  "prompt": "**Settle `axis=0` vs `axis=1` once and explain the output shape.** (`axis` names the dimension that collapses: `axis=0` collapses rows → one value per column; `axis=1` collapses columns → one per row. Output shape drops the named axis.)",
+  "answer": "`axis` names the dimension that gets collapsed, not the one you keep. `axis=0` collapses the rows, leaving one value per column; `axis=1` collapses the columns, leaving one value per row. The output shape simply drops the axis you named, so summing a `(2,3)` array over `axis=0` gives shape `(3,)` and over `axis=1` gives shape `(2,)`."
+ },
+ {
+  "id": "16.2-data-wrangling-pandas-numpy-4",
+  "chapter": "16-Data/16.2-data-wrangling-pandas-numpy.md",
+  "prompt": "**Views vs. copies - give the rule and why it causes bugs.** (Basic slices are views sharing memory, so writes mutate the original; fancy/boolean indexing returns copies. Bugs: surprise mutations, or assignments that don't \"stick\" through a chained copy. `.copy()` when unsure; assign via one `.loc`.)",
+  "answer": "Basic slicing, like `a[2:5]`, returns a view that shares memory with the original array, so writing through the slice mutates the source; fancy indexing (an integer array) and boolean indexing both return copies instead. This causes two classic bugs: surprise mutations of data you assumed was independent, and chained assignments like `df[mask]['col'] = 0` that silently fail to \"stick\" because they write to a throwaway copy. The fix is to call `.copy()` explicitly when you need independence, and to assign through one `.loc[mask, 'col'] = ...` rather than chaining indexers."
+ },
+ {
+  "id": "16.2-data-wrangling-pandas-numpy-5",
+  "chapter": "16-Data/16.2-data-wrangling-pandas-numpy.md",
+  "prompt": "**Explain split-apply-combine and the difference between `agg` and `transform`.** (Split rows into groups by a key, apply a function per group, combine results. `agg` collapses each group to one row; `transform` returns a same-length result broadcast back to the original rows - used for \"share of group total\" without a join.)",
+  "answer": "`groupby` implements split-apply-combine: split the rows into groups by a key, apply a function to each group, then combine the results back into one structure. `agg` collapses each group down to a single row, like total volume per symbol, while `transform` returns a result the same length as the input, broadcast back onto the original rows, which is how you compute something like each row's share of its group's total without doing a separate join."
+ },
+ {
+  "id": "16.2-data-wrangling-pandas-numpy-6",
+  "chapter": "16-Data/16.2-data-wrangling-pandas-numpy.md",
+  "prompt": "**Walk through turning irregular time-series ticks into a leakage-free forecasting feature set.** (Sort by time; `resample` irregular ticks to a regular grid/OHLC; build past-only features with `rolling`/`ewm`/`shift(+k)`; build the target with `shift(-1)`; drop edge NaNs; scale on the chronological training split only. Leakage = any future info reaching past rows.)",
+  "answer": "Sort by time first, then `resample` the irregular ticks onto a regular grid or into OHLC bars, then build features using only past information: `rolling`/`ewm` windows and `shift(+k)` for lag features. The target is built with `shift(-1)` since it's the one thing allowed to reach into the future, then you drop the edge NaNs that rolling and shifting create, and finally scale using statistics fit only on the chronological training split. Leakage is any future information reaching a past row, whether from a centered window, global scaling across the whole series, or a random rather than chronological train/test split."
+ },
+ {
+  "id": "16.2-data-wrangling-pandas-numpy-7",
+  "chapter": "16-Data/16.2-data-wrangling-pandas-numpy.md",
+  "prompt": "**What is the curse of dimensionality and what three tools fight it?** (As features grow: data sparsifies exponentially, distances concentrate so neighbors lose meaning, and overfitting gets easier. Fight it with feature selection, dimensionality reduction (PCA), and strong regularization (L1) - all reduce the effective dimension.)",
+  "answer": "As the number of features grows, the data needed to cover the space at constant density grows exponentially so the data sparsifies, distances between the nearest and farthest points concentrate so distance-based methods like k-NN lose discriminative power, and overfitting gets easier since there are more ways to fit noise. Three tools fight it by all reducing the effective dimension: feature selection to drop useless columns, dimensionality reduction such as PCA, and strong regularization like L1/Lasso to zero out uninformative features."
+ },
+ {
+  "id": "16.3-data-visualization-1",
+  "chapter": "16-Data/16.3-data-visualization.md",
+  "prompt": "**State the Cleveland-McGill channel ranking and use it to justify \"sorted bars beat a pie.\"** (Position > length > angle > area > color for magnitude. A pie asks for angle-judging (#4); a sorted bar upgrades the reader to length (#3) and adds a position-along-common-scale ordering. More accurate perception, same data.)",
+  "answer": "Cleveland and McGill's ranked list of how accurately people read magnitude off a channel runs, best to worst: position on a common scale, position on non-aligned scales, length, angle/slope, area, volume, and color. A pie chart asks the reader to judge angle, rank 4, while sorting the same numbers into a bar chart upgrades the reader to judging length, rank 3, along a common position baseline, so it's read more accurately even though it encodes the identical data."
+ },
+ {
+  "id": "16.3-data-visualization-2",
+  "chapter": "16-Data/16.3-data-visualization.md",
+  "prompt": "**Explain the grammar of graphics and decompose a bubble chart and a pie chart into its parts.** (Data + aesthetics/encodings + geom + scales + stats + facets + coords. Bubble = `geom_point` with size mapped; pie = `geom_bar` + `coord_polar`. Charts are compositions, not menu items.)",
+  "answer": "The grammar of graphics builds a chart from independent layers: data (a tidy table), aesthetics mapping columns to channels, geometries (the marks, like point, line, bar, area), scales, statistical transforms, facets, and a coordinate system. A bubble chart is `geom_point` with a `size` aesthetic mapped to a variable; a pie chart is `geom_bar` wrapped in polar coordinates, `coord_polar`, which is why swapping that one layer back to Cartesian turns a pie into a stacked bar. Charts are compositions of these layers, not items picked off a menu."
+ },
+ {
+  "id": "16.3-data-visualization-3",
+  "chapter": "16-Data/16.3-data-visualization.md",
+  "prompt": "**Walk through D3's enter/update/exit on a whiteboard and explain the key function.** (Join data array against current DOM selection → enter = create, update = modify, exit = remove. The key `d => d.id` makes the join track *identity* not index, so elements transition smoothly and don't teleport.)",
+  "answer": "D3's data-join answers one question by joining a data array against the DOM elements currently on screen: which data points have no matching element yet and need to be created (enter), which already have a matching element and need modifying (update), and which elements have no data left and should be removed (exit). The key function, like `d => d.id`, makes the join track identity rather than array index, so a given element keeps its identity across updates and animates smoothly to its new value, instead of teleporting whatever data lands at the same index onto it."
+ },
+ {
+  "id": "16.3-data-visualization-4",
+  "chapter": "16-Data/16.3-data-visualization.md",
+  "prompt": "**When do you pick Chart.js vs Recharts vs D3, and why?** (Highest-level tool that expresses the chart. Chart.js = quick vanilla canvas; Recharts = declarative SVG in React, wired to app state (NYX); D3 = bespoke/novel/custom, the only tool deep enough for the unusual. Canvas = fast/many points; SVG = stylable/interactive/fewer elements.)",
+  "answer": "The rule is to use the highest-level tool that can express the chart. Chart.js is the quick option for a standard chart in plain JS rendered to canvas, fast with lots of points but not stylable per-element; Recharts is declarative SVG built as React components, so each chart piece takes props and re-renders with app state, which is why it's the default for a React dashboard. D3 is the low-level tool reserved for anything truly bespoke or novel, a custom network layout or a pixel-perfect interaction, the only one deep enough for the unusual case, but it costs the most effort since it draws nothing for you by default."
+ },
+ {
+  "id": "16.3-data-visualization-5",
+  "chapter": "16-Data/16.3-data-visualization.md",
+  "prompt": "**Contrast PCA, t-SNE, and UMAP for visualizing high-dimensional data, including what each *lies* about.** (PCA: linear, fast, global distances meaningful, only linear structure. t-SNE: nonlinear, great clusters, but global distances/gaps meaningless and stochastic. UMAP: nonlinear, faster, keeps more global structure, modern default. Always caption which you used.)",
+  "answer": "PCA is linear, fast, and deterministic, with global distances that are actually meaningful, but it can only capture linear structure and leaves a curled-up manifold curled up. t-SNE is nonlinear and excellent at revealing clusters, but it lies about global distances, cluster gaps and sizes carry no real meaning, and it's stochastic, so a different seed gives a different picture. UMAP is also nonlinear, runs faster than t-SNE, and preserves more global structure, making it the modern default; whichever you use, always caption which one, since each tells a different lie about the data."
+ },
+ {
+  "id": "16.3-data-visualization-6",
+  "chapter": "16-Data/16.3-data-visualization.md",
+  "prompt": "**Give three ways to make a chart honest and three to make it accessible.** (Honest: zero baseline for bars, no dual axes, Lie Factor ≈ 1 / no area-for-1D. Accessible: never color alone (add shape/label), colorblind-safe palette like viridis, real alt/title/ARIA text and sufficient contrast.)",
+  "answer": "To make a chart honest: start bar charts at a zero baseline since bar length is the encoding, avoid dual y-axes which let you manufacture correlations by sliding scales independently, and keep the Lie Factor, size of effect shown divided by size of effect in the data, close to 1, never encoding a one-dimensional quantity as area. To make it accessible: never encode meaning by color alone, pair it with shape or a direct label since roughly 8% of men have color vision deficiency, use a colorblind-safe, perceptually uniform palette like `viridis` instead of rainbow/`jet`, and give the chart real `alt`, title, and ARIA text with sufficient contrast."
+ },
+ {
+  "id": "16.4-performance-optimization-1",
+  "chapter": "16-Data/16.4-performance-optimization.md",
+  "prompt": "**State the optimization workflow and explain why \"measure first\" is non-negotiable.** (Target → baseline → profile to find the hot path → hypothesize the cause → cheapest fix → re-measure → repeat until target. Humans guess the bottleneck wrong almost always; the profiler is ground truth, and Amdahl says effort off the hot path is capped.)",
+  "answer": "The workflow is: set a target, measure a baseline, profile to find the actual hot path, form a hypothesis for why it's slow, apply the cheapest fix, then re-measure and repeat until you hit the target. Measuring first is non-negotiable because humans are consistently wrong about where a program spends its time, the slow part is almost never where you'd guess, and Amdahl's law means any effort spent off the true hot path is capped in how much it can possibly help."
+ },
+ {
+  "id": "16.4-performance-optimization-2",
+  "chapter": "16-Data/16.4-performance-optimization.md",
+  "prompt": "**Derive Amdahl's law and state the ceiling for a 90%-parallel program.** (`Speedup = 1/((1-p)+p/s)`; as `s→∞` it's `1/(1-p)`. For p=0.9, max speedup = 10×, even with infinite cores, the serial 10% is a wall.)",
+  "answer": "If a fraction `p` of the runtime can be sped up by factor `s` and the rest, `(1-p)`, is inherently serial, the new time relative to an original time of 1 is `(1-p) + p/s`, so `Speedup = 1 / ((1-p) + p/s)`. Taking `s` to infinity, the ceiling is `1/(1-p)`, a hard wall set entirely by the serial fraction. For a program that's 90% parallel (`p = 0.9`), the maximum possible speedup is `1/0.1 = 10x`, no matter how many cores you add, because the serial 10% can never be sped up."
+ },
+ {
+  "id": "16.4-performance-optimization-3",
+  "chapter": "16-Data/16.4-performance-optimization.md",
+  "prompt": "**Contrast algorithmic vs micro optimization, and state the order.** (Algorithmic changes the big-O, O(n²)→O(n log n), and dominates for large n; micro speeds up the constant factor, vectorize, cache, native. Always fix the algorithm first, then the constant factor.)",
+  "answer": "Algorithmic optimization changes the complexity class, like turning an O(n²) loop into O(n log n) or an O(n) linear scan into an O(1) set lookup, and it dominates as `n` grows large. Micro optimization keeps the same algorithm but speeds up the constant factor, through vectorizing, caching, or dropping to native code. The order matters: always exhaust algorithmic wins first, since no amount of micro-tuning saves a quadratic algorithm on a million-item input, and only chase the constant factor once the big-O is already right."
+ },
+ {
+  "id": "16.4-performance-optimization-4",
+  "chapter": "16-Data/16.4-performance-optimization.md",
+  "prompt": "**Walk the Python profiling toolbox from coarse to surgical.** (cProfile = function-level map, `tottime` is self-time; line_profiler = which line; py-spy = sample a *running* process with no code change; tracemalloc/memray = memory. snakeviz visualizes the call tree.)",
+  "answer": "cProfile is the first tool to run on a slow script, giving a function-level map where `tottime` is time spent inside the function itself and `cumtime` includes everything it calls. `line_profiler` narrows that down further to the exact slow line inside a function, and `py-spy` is a sampling profiler that can attach to an already-running process, including production, with no code changes and low overhead. `tracemalloc` and `memray` do the equivalent job for memory instead of time, and `snakeviz` visualizes a cProfile output as a call tree so the hot path is obvious at a glance."
+ },
+ {
+  "id": "16.4-performance-optimization-5",
+  "chapter": "16-Data/16.4-performance-optimization.md",
+  "prompt": "**Explain I/O-bound vs CPU-bound and the right tool for each, including the GIL's role.** (I/O-bound waits on network/disk, use asyncio/threads, GIL released during the wait. CPU-bound is busy computing, the GIL blocks parallel Python threads, so use multiprocessing or native code that releases the GIL.)",
+  "answer": "I/O-bound work spends its time waiting on network or disk, so the CPU sits idle during that wait; `asyncio` or threads work well here because a thread blocked on I/O releases the GIL, letting other work run in the gap. CPU-bound work keeps the CPU busy computing, and the GIL means Python threads can't execute bytecode in parallel, so threading gives essentially no speedup there. The right tool for CPU-bound work is `multiprocessing`, separate processes with separate interpreters, or native code such as NumPy, Numba, or Cython that releases the GIL."
+ },
+ {
+  "id": "16.4-performance-optimization-6",
+  "chapter": "16-Data/16.4-performance-optimization.md",
+  "prompt": "**When do you actually need HPC, and what's the order of escalation?** (Only when the problem truly doesn't fit a single beefy machine, large model training, simulation, terabyte data. Escalate: vectorize/SIMD → multi-core → GPU → multi-machine (Slurm/MPI/Dask). Scale *up* before *out*; distributed adds network + coordination overhead with its own Amdahl tax.)",
+  "answer": "You actually need HPC only when a problem truly doesn't fit on a single beefy machine, large-scale model training, scientific simulation, or terabyte-scale data; most \"slow\" problems are solved by Amdahl's law plus a profiler plus vectorization plus one good index, not a cluster. The order of escalation is to scale up before scaling out: vectorize with SIMD first, then use multiple cores, then a GPU, and only then reach for multi-machine tools like Slurm, MPI, or Dask. Distributed compute has its own Amdahl tax, network communication and coordination overhead, so it's the last resort, not the first."
+ },
+ {
+  "id": "16.5-beyond-python-languages-1",
+  "chapter": "16-Data/16.5-beyond-python-languages.md",
+  "prompt": "**State the six questions for reading any new language fast, and why this beats memorizing syntax.** (Declare variables/functions? loop/branch? collections? error handling? memory management? how to run? Answering these maps the language onto concepts you already own, syntax is lookup-able, concepts are universal.)",
+  "answer": "The six questions are: how do you declare a variable and a function, how do you loop and branch, what are the collection types, how are errors handled, how is memory managed, and how do you run the code, interpreted, compiled, or a build step. This beats memorizing syntax because variables, loops, dicts, and error handling are universal concepts every language just spells differently, so answering these six maps a new language onto ideas you already own, and the syntax itself is just something you look up as needed."
+ },
+ {
+  "id": "16.5-beyond-python-languages-2",
+  "chapter": "16-Data/16.5-beyond-python-languages.md",
+  "prompt": "**Explain Go's goroutines-and-channels model and contrast it with Python threads.** (Goroutines = cheap, runtime-scheduled concurrent functions; channels pass messages, \"share memory by communicating.\" They run in parallel across cores; Python threads are serialized by the GIL for CPU work.)",
+  "answer": "A goroutine is a cheap, runtime-scheduled concurrent function, you can spin up hundreds of thousands of them, and goroutines coordinate by passing messages over channels instead of sharing memory and locking: \"don't communicate by sharing memory, share memory by communicating.\" Because the Go runtime multiplexes goroutines across multiple OS threads with no global lock, CPU-bound goroutines actually run in parallel across cores, whereas Python threads are serialized by the GIL for CPU-bound work and get no parallelism at all."
+ },
+ {
+  "id": "16.5-beyond-python-languages-3",
+  "chapter": "16-Data/16.5-beyond-python-languages.md",
+  "prompt": "**Explain Node's event loop: why it's great for I/O and bad for CPU.** (Single thread, non-blocking, registers callbacks on I/O and serves other work during the wait, so thousands of concurrent connections; but CPU-heavy work blocks the one thread and freezes everything. async/await over Promises.)",
+  "answer": "Node runs JavaScript on a single thread with an event loop: when it hits an I/O operation it registers a callback and moves on to serve other work rather than blocking, then comes back when the I/O completes, so one thread can juggle thousands of concurrent connections. That makes it great for I/O-bound web work but bad for CPU-bound work, because a heavy computation runs on that same single thread and never yields, freezing every other request until it finishes. The modern syntax for this model is async/await built on top of Promises."
+ },
+ {
+  "id": "16.5-beyond-python-languages-4",
+  "chapter": "16-Data/16.5-beyond-python-languages.md",
+  "prompt": "**What is RAII in C++, and what does it buy you over a garbage collector?** (Resource lifetime tied to object scope; the destructor frees it automatically at end of scope. Deterministic, immediate cleanup with no GC pauses and no forgotten `delete`, `unique_ptr`/`shared_ptr` implement it.)",
+  "answer": "RAII, Resource Acquisition Is Initialization, ties a resource's lifetime to an object's scope, so its destructor frees the resource automatically the instant the object goes out of scope. That buys deterministic, immediate cleanup with no garbage-collector pauses and no forgotten `delete`; `std::unique_ptr` and `std::shared_ptr` implement it, which is why modern C++ code rarely needs raw `new`/`delete` at all."
+ },
+ {
+  "id": "16.5-beyond-python-languages-5",
+  "chapter": "16-Data/16.5-beyond-python-languages.md",
+  "prompt": "**Why is R so good for data work, name two language-level reasons.** (Everything is a vector so operations vectorize with no loops; the data frame and formula/stats syntax (`lm(y ~ x)`) plus the tidyverse/ggplot2 make modeling and grammar-of-graphics plots native, not bolt-ons. Plus first-class `NA` for missing data.)",
+  "answer": "In R there are no scalars, every value is a vector, so arithmetic operators apply element-wise across vectors with no explicit loop, `c(1,2,3) * 2` just works. R also has the data frame and formula/stats syntax like `lm(y ~ x)` plus the tidyverse and ggplot2 built into the language rather than bolted on as a library, making modeling and grammar-of-graphics plotting native. A first-class `NA` for missing data is a third reason it handles messy real-world data so well."
+ },
+ {
+  "id": "16.5-beyond-python-languages-6",
+  "chapter": "16-Data/16.5-beyond-python-languages.md",
+  "prompt": "**Give the decision framework for picking a language, and the \"start high, drop down\" rule.** (Match the *shape* of the problem: data→Python, stats→R, fast service/CLI→Go, max perf→C++, full-stack web→Node. Start in the highest-level language that fits, and drop to a lower one only where measurement proves a bottleneck, plus weigh team and ecosystem.)",
+  "answer": "Match the language to the shape of the problem: Python for data analysis, ML, and glue work; R for heavy statistics and modeling; Go for a small fast network service or CLI; C++ for maximum performance and control; Node/TypeScript for a full-stack web app where I/O concurrency matters more than raw CPU. The \"start high, drop down\" rule says to begin in the highest-level language that fits, usually Python, and only drop to a lower-level one where measurement proves a real bottleneck, while also weighing what your team and its ecosystem can actually maintain."
+ },
+ {
+  "id": "23.1-automata-and-languages-1",
+  "chapter": "23-Theory-of-Computation/23.1-automata-and-languages.md",
+  "prompt": "**Why a theory of computation exists:** to answer, *permanently*, \"what kinds of problems can a machine with this much memory solve?\", and the Chomsky hierarchy ranks machines by power, from finite automata (no memory) to Turing machines (everything).",
+  "answer": "A theory of computation exists to answer, permanently, what problems a machine with a given amount of memory can solve, not a question of a fast machine versus a slow one, but a hard limit: a finite automaton, no matter how many states it has, physically cannot check whether `(((...)))` is balanced, because that requires counting to an unbounded depth. The **Chomsky hierarchy** orders machines by memory and power: finite automata (no memory beyond their states) recognize regular languages, pushdown automata (one stack) recognize context-free languages, and Turing machines (an unbounded tape) capture everything computable. Each rung is a proven theorem, the way physics proves no engine beats the Carnot limit, not an engineering shortfall that better hardware could fix."
+ },
+ {
+  "id": "23.1-automata-and-languages-2",
+  "chapter": "23-Theory-of-Computation/23.1-automata-and-languages.md",
+  "prompt": "**DFA (5-tuple `(Q, Σ, δ, q₀, F)`):** finite states, a deterministic transition `δ`, run by applying δ symbol-by-symbol and checking if you end in `F`. Recognizes exactly the **regular languages**.",
+  "answer": "A DFA is the 5-tuple `M = (Q, Σ, δ, q₀, F)`: a finite set of states `Q`, an alphabet `Σ`, a transition function `δ: Q × Σ → Q` that returns exactly one next state, a start state `q₀`, and accept states `F`. It runs by starting in `q₀` and applying `δ` to each input symbol in turn, extended to whole strings as `δ̂`, and it accepts `w` iff `δ̂(q₀, w) ∈ F`. The set of languages recognizable this way is exactly the **regular languages**; the \"even number of 1s\" DFA needs only two states because parity of 1s seen so far is the only fact about the prefix that matters."
+ },
+ {
+  "id": "23.1-automata-and-languages-3",
+  "chapter": "23-Theory-of-Computation/23.1-automata-and-languages.md",
+  "prompt": "**NFA = DFA in power, not just convenience:** nondeterminism + ε-moves mean \"explore all paths at once / accept if some path works.\" The **subset construction** determinizes any NFA (DFA states = sets of NFA states), at up to exponential blowup.",
+  "answer": "An NFA adds nondeterminism (`δ` can return a set of states) and ε-transitions that consume no input, and it accepts a string if some path through the machine, exploring all branches at once, ends in an accept state. This makes NFAs much easier to design, you can \"guess\" where a suffix like `01` starts, but it adds no recognizing power: the **subset construction** converts any NFA into an equivalent DFA by making each DFA state a set of NFA states, with the start state `ε-closure({q₀})` and accept states being any set that contains an NFA accept state. The cost is that the resulting DFA can blow up to `2^|Q|` states in the worst case, though usually only the subsets actually reachable from the start end up mattering."
+ },
+ {
+  "id": "23.1-automata-and-languages-4",
+  "chapter": "23-Theory-of-Computation/23.1-automata-and-languages.md",
+  "prompt": "**Kleene's theorem:** DFA ≡ NFA ≡ regex, three notations for the regular languages. **Thompson's construction** builds an NFA from a regex with ε-glue; that's how real regex engines and lexers work.",
+  "answer": "Kleene's theorem says DFAs, NFAs, and regular expressions all describe exactly the same class of languages, the regular languages, three notations for one idea built from union, concatenation, and Kleene star. **Thompson's construction** is the constructive proof of the regex-to-NFA direction: it builds an NFA recursively from the structure of the regex, gluing fragments with ε-transitions, concatenation links one fragment's accept state to the next's start, union branches from a new start into both fragments and merges their accepts, star loops the fragment back on itself and offers a zero-copy skip. This is literally how real regex engines and lexers compile a pattern: regex → parse → Thompson's construction → NFA → simulate or determinize → match."
+ },
+ {
+  "id": "23.1-automata-and-languages-5",
+  "chapter": "23-Theory-of-Computation/23.1-automata-and-languages.md",
+  "prompt": "**Closure properties:** regular languages survive union, concat, star, complement (swap accept states of a complete DFA), and intersection (product construction).",
+  "answer": "Regular languages are closed under union, concatenation, and Kleene star, each built directly from Thompson's construction on the matching regex operator. They're also closed under complement, take a complete DFA and swap accept and non-accept states, which only works cleanly for a DFA because each input follows exactly one path, and under intersection via the **product construction**, running two DFAs in lockstep on state pairs `(state₁, state₂)` and accepting only when both accept. These closures aren't just bookkeeping, a tool that matches \"this pattern but not that one\" is leaning on complement and intersection under the hood."
+ },
+ {
+  "id": "23.1-automata-and-languages-6",
+  "chapter": "23-Theory-of-Computation/23.1-automata-and-languages.md",
+  "prompt": "**Pumping lemma:** finite memory ⇒ long strings force a state-repeat ⇒ a pumpable loop. Used to *prove non-regularity* (e.g. `aⁿbⁿ`) by the adversarial xyz argument. The limit: finite automata can't count unboundedly.",
+  "answer": "Because a DFA has only finitely many states, say `p`, any accepted string longer than `p` must revisit some state by the pigeonhole principle, and the input read between the two visits forms a loop that can be repeated any number of times while the string stays accepted. Formally, for a regular `L` there is a pumping length `p` such that every `s ∈ L` with `|s| ≥ p` splits as `s = xyz` with `|y| ≥ 1`, `|xy| ≤ p`, and `xyⁱz ∈ L` for all `i ≥ 0`. It's used adversarially to prove non-regularity: for `L = {aⁿbⁿ}`, choosing `s = aᵖbᵖ` forces the pumped piece `y` to lie entirely inside the a-block, so pumping it (`i = 2`) breaks the a-count against the b-count, a contradiction that proves no finite automaton can count unboundedly."
+ },
+ {
+  "id": "23.1-automata-and-languages-7",
+  "chapter": "23-Theory-of-Computation/23.1-automata-and-languages.md",
+  "prompt": "**CFGs/CFLs (rung 2):** add a stack (PDA). Grammars with productions/derivations/parse trees describe nesting (`aⁿbⁿ`, balanced parens, arithmetic). Watch for **ambiguity**; fix it with precedence layering. CFGs power parsers, straight into [compilers](../24-Compilers/24.1-lexing-parsing-asts.md).",
+  "answer": "To recognize `{aⁿbⁿ}`, which needs unbounded counting, you add one stack, giving a **pushdown automaton**, and the languages PDAs recognize are the **context-free languages**, usually described by a **context-free grammar** `(V, Σ, R, S)` with productions like `S → aSb | ε`, whose recursive depth stands in for the count a DFA couldn't track. Derivations build **parse trees**, and a grammar where some string has more than one parse tree is **ambiguous**, for example `num + num * num` under a flat `E → E+E | E*E` grammar; the fix is layering precedence into separate nonterminals (`E → E+T | T`, `T → T*F | F`) so each string gets a unique tree. CFGs are the front end of every compiler, feeding straight into parsing real programming languages."
+ },
+ {
+  "id": "23.1-automata-and-languages-8",
+  "chapter": "23-Theory-of-Computation/23.1-automata-and-languages.md",
+  "prompt": "**The mini-project:** you compiled a regex to an NFA to a DFA and matched lines with it, *you built the core of grep*, and you understand why DFA engines are immune to the catastrophic backtracking that bites PCRE. Next: lift the ceiling entirely. Give the machine an unbounded tape, and you get the **Turing machine**, and the questions become \"what can be computed *at all*?\" and \"what's *efficiently* computable?\" That's [Chapter 23.2](23.2-computability-and-complexity.md).",
+  "answer": "The mini-project wired the regex parser, Thompson's construction, the NFA simulator, and the subset construction into one pipeline: compile a pattern to an NFA, determinize it to a DFA, then match by running the DFA over the text, effectively building the core of `grep`. Because this engine is DFA-based, Thompson/Pike-style like Go's `regexp` and RE2, it runs in linear time per character and is immune to the **catastrophic backtracking** that afflicts PCRE-style engines (Python's `re`, Perl, JS) on adversarial patterns like `(a+)+$`, since those support extra features like backreferences by backtracking instead of simulating states. The next step lifts the ceiling entirely: give the machine an unbounded tape and you get the **Turing machine**, where the questions become what's computable at all and what's efficiently computable."
+ },
+ {
+  "id": "23.2-computability-and-complexity-1",
+  "chapter": "23-Theory-of-Computation/23.2-computability-and-complexity.md",
+  "prompt": "**Turing machine** `(Q, Σ, Γ, δ, q₀, q_acc, q_rej)`: finite control + infinite read/write tape + a head that moves L/R. That tape is the unbounded memory that makes it strictly more powerful than a PDA: it can compute `aⁿbⁿ`, arithmetic, *anything computable*.",
+  "answer": "A Turing machine is the 7-tuple `(Q, Σ, Γ, δ, q₀, q_accept, q_reject)`: finite states `Q`, input alphabet `Σ`, tape alphabet `Γ` (including a blank symbol), and a transition function `δ: Q × Γ → Q × Γ × {L,R}` that reads a symbol, writes a symbol, and moves the head left or right, plus a start state and two halting states. The unbounded read/write tape is what makes it strictly more powerful than a PDA's single stack, it can store and revisit intermediate results, so it computes `aⁿbⁿ` (by crossing off matched a's and b's), binary arithmetic (ripple-carry increment), and, per the Church-Turing thesis, anything computable at all."
+ },
+ {
+  "id": "23.2-computability-and-complexity-2",
+  "chapter": "23-Theory-of-Computation/23.2-computability-and-complexity.md",
+  "prompt": "**Church-Turing thesis:** \"computable\" = \"Turing-computable\"; every reasonable model is Turing-equivalent. **Universal TM:** one machine simulates any machine (the stored-program idea, your CPU and your Python interpreter).",
+  "answer": "The Church-Turing thesis states that \"computable\" means \"Turing-computable\": every reasonable model of mechanical computation, lambda calculus, register machines, your programming language, has been shown Turing-equivalent, computing exactly the same class of functions. It isn't a provable theorem, since \"effective procedure\" is informal, but it holds up because every proposed upgrade to a TM (multiple tapes, a two-way-infinite tape, nondeterminism) adds zero computability power, only speed. A **universal Turing machine** takes a description of any machine `M` plus an input `w` and simulates `M` on `w`, the theoretical seed of the stored-program computer: your CPU and the Python interpreter are both universal machines running other machines as data."
+ },
+ {
+  "id": "23.2-computability-and-complexity-3",
+  "chapter": "23-Theory-of-Computation/23.2-computability-and-complexity.md",
+  "prompt": "**Decidable** (halts always, right answer) vs **recognizable** (accepts yes-instances, may loop on no-instances). The gap is where undecidability lives; a counting argument (countably many programs, uncountably many languages) guarantees undecidable problems exist.",
+  "answer": "A TM **decides** a language if it halts on every input and answers correctly, the everyday sense of \"algorithm.\" It **recognizes** a language if it accepts every yes-instance eventually but may reject or loop forever on no-instances. Every decidable language is recognizable, but not every recognizable language is decidable, and that gap, halts always versus might run forever, is exactly where undecidability lives. A counting argument guarantees undecidable problems exist independent of any specific example: programs are finite strings, so there are only countably many of them, but languages are arbitrary subsets of `Σ*`, which are uncountably many, so most languages cannot be decided by any program at all."
+ },
+ {
+  "id": "23.2-computability-and-complexity-4",
+  "chapter": "23-Theory-of-Computation/23.2-computability-and-complexity.md",
+  "prompt": "**Halting problem is undecidable**, proved by **diagonalization**: assume an oracle `H`, build a contrarian `D` that does the opposite of `H`'s prediction about itself; `D(⟨D⟩)` makes `H` wrong → contradiction.",
+  "answer": "The halting problem, `HALT = {⟨M,w⟩ : M halts on w}`, is undecidable, no TM `H` can always correctly decide it. The proof assumes such an `H` exists and builds a contrarian machine `D` that, on input `⟨M⟩`, asks `H` whether `M` halts on `⟨M⟩` and then does the opposite, loops if `H` says halt, halts if `H` says loop; running `D` on its own description `⟨D⟩` forces `H` to be wrong about `D(⟨D⟩)` either way, a contradiction, so no correct `H` can exist. This is **diagonalization**, the same shape as \"this sentence is false\": `D` is engineered to disagree with the oracle's prediction about itself, and `HALT` turns out to be recognizable (just simulate `M` on `w`) while its complement, machines that loop, is not even recognizable."
+ },
+ {
+  "id": "23.2-computability-and-complexity-5",
+  "chapter": "23-Theory-of-Computation/23.2-computability-and-complexity.md",
+  "prompt": "**Reductions** (`A ≤ B`: \"B is at least as hard as A\") spread undecidability; **Rice's theorem** says *every non-trivial semantic property of programs is undecidable*, which is why perfect program analyzers can't exist.",
+  "answer": "A mapping reduction `A ≤_m B` is a computable translation from instances of `A` to instances of `B` that preserves membership, so if `A` is undecidable and `A ≤_m B`, then `B` must be undecidable too, a decider for `B` would give you one for `A`. This lets undecidability spread without redoing diagonalization each time, for example reducing `HALT` to \"does this machine accept nothing?\" by wrapping the halting question inside a machine. **Rice's theorem** generalizes this into a big hammer: every non-trivial semantic property of what a program computes (does it ever output 42, do two programs compute the same function) is undecidable, which is why no tool can be a perfect, general program analyzer, compilers and linters must approximate instead."
+ },
+ {
+  "id": "23.2-computability-and-complexity-6",
+  "chapter": "23-Theory-of-Computation/23.2-computability-and-complexity.md",
+  "prompt": "**P** = solvable in poly time; **NP** = *verifiable* in poly time (certificate/witness). P ⊆ NP. **NP-complete** = in NP and everything in NP reduces to it; **SAT** is the founding one (Cook-Levin); reductions like **3-SAT → Vertex Cover** chart the rest.",
+  "answer": "**P** is the class of decision problems solvable by a deterministic TM in polynomial time. **NP** is the class where a proposed solution, a certificate or witness, can be *verified* in polynomial time even if finding one seems hard, and `P ⊆ NP` trivially since solving fast implies verifying fast (just ignore the certificate and solve). **NP-complete** means a problem is in NP and every other NP problem reduces to it in polynomial time, so an efficient algorithm for one would solve all of NP; **SAT** is the founding NP-complete problem via the Cook-Levin theorem, which encodes an NP machine's accepting computation as one giant Boolean formula, and reductions like **3-SAT → Vertex Cover** (via variable gadgets and clause-triangle gadgets) chart the rest of the NP-complete landscape."
+ },
+ {
+  "id": "23.2-computability-and-complexity-7",
+  "chapter": "23-Theory-of-Computation/23.2-computability-and-complexity.md",
+  "prompt": "**P vs NP**: does easy-to-check ⟹ easy-to-solve? Open, believed *no*. It's the bedrock under cryptography and the wall around exact optimization. **NP-hard ⊇ NP-complete** (NP-hard need not be in NP, e.g. halting).",
+  "answer": "P vs NP asks whether every problem that's easy to check is also easy to solve, whether `P = NP`; it's open, and almost everyone believes the answer is no. It's the bedrock under modern cryptography, since RSA and ECC rest on problems easy to verify but believed hard to solve (factoring, discrete log), so `P = NP` would collapse them, and it's the wall around exact optimization for problems like scheduling, routing, and chip layout. **NP-hard** is the broader class of \"everything in NP reduces to this\" without requiring membership in NP, so `NP-hard ⊇ NP-complete`: the halting problem is NP-hard in that sense but not in NP at all, since it's undecidable."
+ },
+ {
+  "id": "23.2-computability-and-complexity-8",
+  "chapter": "23-Theory-of-Computation/23.2-computability-and-complexity.md",
+  "prompt": "**Coping with NP-hardness:** approximation (2-approx Vertex Cover), heuristics, SAT/ILP solvers, restricted inputs, exponential-but-pruned (DPLL/branch-and-bound). And in code you **built a TM simulator, a brute-force and a DPLL SAT solver, and solved coloring / vertex-cover by reducing them to SAT**, the real-world face of this whole theory. That closes the theory-of-computation arc: [23.1](23.1-automata-and-languages.md) mapped the machines weaker than a computer; this chapter reached the universal machine, found the cliff edge of the uncomputable, and then surveyed what's *efficiently* computable on this side of it. From here, the front end of a real compiler ([Part 24](../24-Compilers/24.1-lexing-parsing-asts.md)) is just these automata and grammars put to work.",
+  "answer": "Since NP-hard problems are believed intractable to solve exactly and fast, engineers cope with several tools: approximation algorithms with provable guarantees (a greedy 2-approximation for Vertex Cover), heuristics with no guarantee but strong practical performance, SAT/ILP solvers, restricting the input to special structure like trees or bounded treewidth, and exponential-but-pruned search such as DPLL or branch-and-bound. In code, this meant building a TM simulator, a brute-force SAT solver, and a DPLL solver with unit propagation, then solving graph coloring and vertex cover by reducing them to SAT and handing them to that generic solver, the real-world face of the theory: encode your problem as SAT and let a solver rip. This closes the theory-of-computation arc, from the machines weaker than a computer in 23.1, through the universal machine and the cliff edge of the uncomputable, to what's efficiently computable on this side of it."
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-1",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "Why is \"code is read far more than it's written\" the root justification for every clean-code rule?",
+  "answer": "You write code once but read it a hundred times, so the real cost of software is *understanding* it well enough to change it safely, not typing it out. Every clean-code rule, naming, small functions, comments, is really a rule about future reading and future changing. The chapter's own framing is code as a letter to a colleague who happens to be a computer: the computer runs anything syntactically valid, but the human colleague needs names that mean things and structure that matches how they think, so clean code serves the colleague without lying to the computer."
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-2",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "What does \"a function does one thing\" mean, and how do *levels of abstraction* relate to it?",
+  "answer": "A function should do one thing, do it well, and do it at one level of abstraction, if you have to scroll to read it, or you catch yourself mentally inserting \"...and then...\", it's too big. Levels of abstraction is the companion idea: in the `process_order` example, the coordinator talks in business steps (`validate_order`, `order_total_with_tax`, `charge_card`, `send_receipt`) while each helper talks in one specific concern like HTTP or SMTP. The original messy version mixed validation, computation, HTTP, and SMTP in a single function at three different abstraction levels at once, which is exactly what \"does one thing\" rules out."
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-3",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "State each SOLID letter in one sentence and give the smell each one cures.",
+  "answer": "**S**ingle Responsibility: a class should have one reason to change, owned by one actor, cures divergent change (multiple unrelated teams editing the same class). **O**pen/Closed: entities should be open for extension but closed for modification, cures \"switch on type\" (a growing if/elif chain that every new case forces you to edit). **L**iskov Substitution: subtypes must be substitutable for their base type without breaking the program's behavioral contract, cures false IS-A relationships like `Square` extending `Rectangle`. **I**nterface Segregation: don't force clients to depend on methods they don't use, cures fat interfaces that make classes fake-implement methods with `NotImplementedError`. **D**ependency Inversion: high- and low-level modules should both depend on abstractions, cures a high-level class being welded to a concrete low-level detail (like `OrderService` hard-coding `PostgresOrderRepo`) so it can't be tested or swapped."
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-4",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "Why is Singleton usually a bad idea, and what's the better default?",
+  "answer": "Singleton is \"a global variable wearing a costume\": it hides dependencies (callers reach for the global instead of receiving it), makes tests order-dependent and hard to isolate since shared mutable state leaks between tests, and fights the Dependency Inversion Principle because you can't inject a fake in its place. The better default is to create one instance at your composition root and inject it, getting the \"one instance\" benefit without the global-state pain. The rule to remember: prefer \"one instance, injected\" over \"one instance, globally reachable.\""
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-5",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "Explain composition over inheritance, when is inheritance actually the right call?",
+  "answer": "Inheritance models IS-A and shares implementation down a hierarchy, but it's the tightest coupling there is (a subclass depends on the parent's internals), it's fixed at class-definition time, and deep hierarchies get rigid, as the `FileLoggerWithTimestampAndJson` combinatorial-explosion example shows. Composition models HAS-A, assembling behavior from small interchangeable parts (like `Logger` composed with a `Sink`) that can be mixed and matched at runtime with no class explosion. Inheritance is the right call only for a genuine IS-A relationship with true substitutability (Liskov holds); if you catch yourself subclassing just to reuse a method, that's the tell to compose instead."
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-6",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "Pick three patterns (one creational, one structural, one behavioral) and explain *when* you'd use each and one way each is abused.",
+  "answer": "**Factory** (creational): use when the type to create is data- or config-driven, like `make_notifier(channel)` mapping a string to a `Notifier` subclass; abused when the factory only ever makes one class, which is pure ceremony over just calling the constructor. **Decorator** (structural): use for cross-cutting concerns like timing, caching, retry, or auth that you want to add and remove independently, stacking `@timed`/`@retry` around a function; abused when you stack five decorators on one function, making it hard to debug, so keep the stack shallow. **Strategy** (behavioral): use when you have multiple interchangeable algorithms chosen at runtime, like pluggable discount rules passed into `final_price`; abused as a \"golden hammer\", making everything a Strategy class when a plain function or dict lookup would do."
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-7",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "Which GoF patterns are largely subsumed by Python's own features, and by what features?",
+  "answer": "**Iterator** is subsumed by `__iter__`/`__next__` and generators, a generator using `yield` (like the `fibonacci()` example) *is* the Iterator pattern, so you almost never implement it by hand. **Decorator** the pattern is directly implemented by Python's `@decorator` syntax itself, function decorators like `@timed` are literal instances of the Decorator pattern (Python's syntax is even named after it). More broadly, `typing.Protocol` and duck typing give you structural typing that does Interface Segregation \"by default\" without needing a formal interface hierarchy."
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-8",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "Give the precise definition of refactoring. Why is \"without changing behavior\" the load-bearing clause?",
+  "answer": "Refactoring (Fowler's definition) is changing the internal structure of code to make it easier to understand and cheaper to modify, **without changing its observable behavior**. That clause is load-bearing because it's what separates refactoring from rewriting or adding features, if behavior is allowed to change, a red test no longer tells you whether you broke something or intentionally changed something, so the tests can't function as a safety net. Preserving behavior is exactly what lets you \"improve the code and provably didn't break it.\""
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-9",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "What are the four disciplines that make refactoring safe?",
+  "answer": "(1) Have tests first, tests are the safety net that prove behavior didn't change, and if there are none you write characterization tests before touching anything. (2) Take small steps, extract one function, run the tests, rename one variable, run the tests, so if something goes red you know exactly which tiny step caused it. (3) Separate refactoring from feature work, wear the \"refactoring hat\" (structure changes, tests stay green) or the \"feature hat\" (behavior changes, new tests go red then green), never both at once. (4) Commit often, each green step is a commit point you can reset to instead of falling back into the swamp."
+ },
+ {
+  "id": "27.1-clean-code-and-design-patterns-10",
+  "chapter": "27-Software-Engineering/27.1-clean-code-and-design-patterns.md",
+  "prompt": "Name three code smells and the refactoring that cures each. If you can teach those to an intern with a runnable example for each, and, just as importantly, talk them *out* of over-engineering, you own this chapter. Next up (27.2): how we *prove* code works and *structure* whole systems, testing deeply, architecture, and the engineering practices that hold a team together.",
+  "answer": "**Long function** (scrolling to read it) is cured by **Extract Function**, the most common refactoring. **Long parameter list** (4+ args) is cured by **Introduce Parameter Object**, bundling the clump of arguments that always travel together (like `origin`, `destination`, `depart_date`) into a single named type. **Switch on type** (an `if kind == \"a\" ... elif kind == \"b\"` chain repeated across the code) is cured by **Replace Conditional with Polymorphism**, turning it into a class hierarchy where each type owns its own behavior, which is also Open/Closed in action."
+ },
+ {
+  "id": "27.2-testing-and-architecture-1",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "Draw the test pyramid and explain why the shape is what it is. What's the ice-cream-cone anti-pattern?",
+  "answer": "The pyramid (Mike Cohn) has many fast, isolated **unit tests** at the base (milliseconds, one unit at a time, pinpoint exactly what broke), some slower **integration tests** in the middle (real collaborators like a DB or HTTP route, catch wiring bugs units miss), and few slow **E2E tests** at the top (drive the whole system, slowest and most brittle, so reserved for critical user journeys like login or checkout). The shape follows directly from cost and speed: cheap, fast, precise tests should dominate, and expensive, slow, flaky ones should be rare. The **ice-cream-cone** anti-pattern is the inverted shape, mostly slow E2E tests and few units, which makes the suite take an hour, be flaky, and give you no idea where a failure actually is."
+ },
+ {
+  "id": "27.2-testing-and-architecture-2",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "What does FIRST stand for, and why is each property necessary?",
+  "answer": "**F**ast (milliseconds, no network or sleeps, otherwise it's not really a unit test), because a slow suite is a suite people skip. **I**solated/Independent (no test depends on another's state or order), because shared mutable state between tests is a top source of flakiness. **R**epeatable/Deterministic (same result every run, no dependence on clock, network, randomness, or timezone), because flaky tests are worse than no test, they train the team to ignore red. **S**elf-validating (the test asserts pass/fail itself, not a human reading output), so results don't require manual judgment. **T**imely (written close to, ideally before, the code), because tests bolted on months later miss edge cases you've already forgotten."
+ },
+ {
+  "id": "27.2-testing-and-architecture-3",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "Walk through red-green-refactor on a small example. What does TDD give you *besides* tests?",
+  "answer": "Using the `BankAccount` example: **Red**, write `test_new_account_starts_at_zero` before `BankAccount` even exists and watch it fail (a `NameError`). **Green**, write the simplest code that passes, just `self.balance = 0` in `__init__`. **Refactor**, once green and safe, clean up, for example extracting the shared `_require_positive` guard used by both `deposit` and `withdraw`, with the tests staying green as proof behavior didn't change. Besides tests, TDD gives **design pressure**: writing the test first means you experience your API as a caller before you build it, which is what pushed edge cases like negative deposits and overdraft to get specified as tests before the code existed, rather than discovered in production."
+ },
+ {
+  "id": "27.2-testing-and-architecture-4",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "Name the four test doubles and the one distinction that separates them into two groups.",
+  "answer": "The four (Gerard Meszaros's taxonomy) are **Stub** (provides canned answers), **Mock** (pre-programmed with expectations, verifies interactions), **Fake** (a working but lightweight implementation), and **Spy** (records calls for later assertion). The distinction: **stubs and fakes feed the unit data** and you assert on the result, state verification, while **mocks and spies record interactions** and you assert on the calls made, behavior verification."
+ },
+ {
+  "id": "27.2-testing-and-architecture-5",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "What is over-mocking and how do you avoid it?",
+  "answer": "Over-mocking is when a test mocks everything, so it ends up testing that your code calls the mocks the way you told the mocks to expect, a tautology that passes even when the real integration is broken and breaks on every refactor. You avoid it by mocking only at the boundaries, network, DB, time, external services, and using real objects for your own domain logic. The chapter's guidance is to prefer fakes over mocks when you can, since fakes are more realistic and less brittle; a test that's all mocks is usually testing the wrong thing."
+ },
+ {
+  "id": "27.2-testing-and-architecture-6",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "State the Dependency Rule. How do hexagonal/clean architecture enforce it, and what does it buy you?",
+  "answer": "The Dependency Rule: source-code dependencies point *inward*, toward the domain, and inner layers know nothing about outer layers. Hexagonal (ports & adapters) and Clean Architecture enforce it by putting the domain at the center depending on nothing, defining **ports** (interfaces like `OrderRepository`) that the application needs, and pushing concrete **adapters** (a Postgres repo, a Stripe gateway, a FastAPI controller) to the outer ring, so the database implements the domain's interface rather than the domain importing the database. This buys business logic that's testable with zero infrastructure by injecting fakes for the ports, and lets you swap Postgres for DynamoDB or FastAPI for a CLI by writing a new adapter while the core never changes."
+ },
+ {
+  "id": "27.2-testing-and-architecture-7",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "Explain dependency injection vs dependency inversion, and what a \"composition root\" is.",
+  "answer": "Dependency Inversion is the *principle*: depend on abstractions, not concrete details. Dependency Injection is the *technique* for achieving it: a component receives its dependencies from outside, usually through the constructor, instead of constructing them itself, as with `TokenIssuer` receiving a `Clock` port rather than calling `time.time()` directly. A **composition root** is the single place in the app, the app factory or `main.py`, where all the concrete adapters get wired to the abstractions, production code builds `TokenIssuer(SystemClock())` there while tests build `TokenIssuer(FixedClock(...))`; the rule is construct nothing deep inside, receive everything, wire only at the edge."
+ },
+ {
+  "id": "27.2-testing-and-architecture-8",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "Monolith vs modular monolith vs microservices, give the tradeoff and your default, with reasons.",
+  "answer": "A **monolith** is simplest to build, deploy, and debug, one transaction and fast local dev, but its boundaries erode into a \"big ball of mud\" over time. A **modular monolith** is still one deployable but with strong internal module boundaries (each module owns its data, talks through interfaces), giving the monolith's simplicity plus enforced boundaries you can later split. **Microservices** give independent scaling, deploy, and fault isolation, but cost real distributed-systems pain: network failures, eventual consistency, distributed transactions, and harder debugging. The chapter's default is to start with a well-structured modular monolith and only move to microservices when there's a real scaling or organizational reason plus the ops maturity to handle it, since premature microservices are called out as the most expensive over-engineering there is."
+ },
+ {
+  "id": "27.2-testing-and-architecture-9",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "What's in an ADR, and why is it worth writing?",
+  "answer": "An ADR (Architecture Decision Record) is a short markdown doc capturing a significant decision through four parts: the **context**, the **decision**, the **alternatives considered**, and the **consequences**. It's worth writing because it answers the question that haunts every codebase, \"why did we do it this way?\", so six months later a team doesn't relitigate a settled decision or, worse, reverse it without knowing why it was made in the first place. They're cheap to write and, per the chapter, enormously valuable."
+ },
+ {
+  "id": "27.2-testing-and-architecture-10",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "Define technical debt (prudent vs reckless) and how the boy-scout rule pays it down.",
+  "answer": "Technical debt is the implied cost of future rework caused by choosing an easy-now solution over a better-but-slower one, Ward Cunningham's financial metaphor: you borrow speed now and pay interest later in slower changes and more bugs. **Prudent** debt is deliberate, \"we'll ship the hack to hit the deadline and fix it next sprint,\" and it's fine if you actually pay it back; **reckless** debt is inadvertent, like not knowing what layering is. The **boy-scout rule**, leaving code cleaner than you found it through small opportunistic refactors as you pass through, pays debt down continuously, especially when applied to the high-churn, high-risk areas where the friction (interest) actually hurts, rather than everywhere."
+ },
+ {
+  "id": "27.2-testing-and-architecture-11",
+  "chapter": "27-Software-Engineering/27.2-testing-and-architecture.md",
+  "prompt": "You join a team and inherit a large untested codebase. What's your playbook for changing it safely? If you can teach those, and *demonstrate* them by building a real feature TDD-style in clean layers with a proper test pyramid and an ADR, you've crossed from \"writes code that works\" to \"engineers software a team can live with.\" That's the difference that gets you trusted, promoted, and relied on.",
+  "answer": "Read the tests first, since they're an executable spec of intended behavior; change one small thing and run the tests to learn the feedback loop; trace one request end to end to learn the layers. Don't rewrite what you don't understand, Chesterton's Fence, don't remove a thing until you know why it's there. Before changing untested code, add a characterization test to pin its current behavior so you have a safety net (the same move used on the smelly `legacy_report` module in 27.1). Ask \"why\" before \"this is wrong,\" respecting that the people before you had context you don't."
+ }
+]

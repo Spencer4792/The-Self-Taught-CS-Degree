@@ -1,0 +1,782 @@
+[
+ {
+  "id": "01.1-data-representation-1",
+  "chapter": "01-Foundations/01.1-data-representation.md",
+  "prompt": "**Why does two's complement make the top bit have weight −2^(n−1), and why does that let one adder handle both signed and unsigned addition?** (Hint: everything is mod 2^n; negation is `2^n − x`.)",
+  "answer": "In an n-bit two's complement system the top bit is defined to carry weight -2^(n-1) instead of +2^(n-1); that single sign flip is the whole design. Because all arithmetic is done mod 2^n, negation of x is just `2^n - x`, and adding x and -x produces 2^n, which is congruent to 0 mod 2^n (the carry simply falls off the register). Since the same binary addition circuit produces correct results whether you interpret the bits as unsigned or as two's complement signed, hardware needs only one adder for both; overflow detection differs but the addition itself never changes."
+ },
+ {
+  "id": "01.1-data-representation-2",
+  "chapter": "01-Foundations/01.1-data-representation.md",
+  "prompt": "**Convert `0xB4` to binary and to decimal in your head, and explain the binary↔hex nibble shortcut.**",
+  "answer": "`0xB4` in binary is `1011 0100`: B=1011, 4=0100. In decimal that's 11×16 + 4 = 176 + 4 = 180. The shortcut works because 16 = 2^4, so each hex digit maps to exactly one nibble (4 bits); converting hex to binary is just writing out each digit's 4-bit pattern side by side, no arithmetic needed, and converting back is grouping bits into fours from the right."
+ },
+ {
+  "id": "01.1-data-representation-3",
+  "chapter": "01-Foundations/01.1-data-representation.md",
+  "prompt": "**Walk through, bit by bit, why `0.1 + 0.2 != 0.3`**, what is the implied leading 1, what does the exponent bias do, and why is 0.1 not exactly representable?",
+  "answer": "IEEE 754 doubles store a value as `(-1)^sign × 1.fraction × 2^(exponent-1023)`. The implied leading 1 means normalized binary scientific notation always starts with a `1.` before the point, so that bit is never stored, giving 53 bits of precision from 52 stored mantissa bits. The exponent bias (1023) lets an 11-bit field represent both positive and negative exponents while still sorting correctly under a plain unsigned compare. `0.1` in binary is a repeating fraction (like 1/3 in decimal) because its denominator (10) has a prime factor of 5, not just 2, so it must be rounded to fit 52 bits; the same happens to 0.2. Those two independent roundings don't cancel, and the sum lands on a double that isn't the same double as the literal `0.3`."
+ },
+ {
+  "id": "01.1-data-representation-4",
+  "chapter": "01-Foundations/01.1-data-representation.md",
+  "prompt": "**Encode `€` (U+20AC) into UTF-8 bytes by hand**, and explain how a decoder knows a byte is a continuation byte.",
+  "answer": "`€` is U+20AC = `0010 0000 1010 1100`, which falls in the 3-byte UTF-8 range (`U+0800`-`U+FFFF`), pattern `1110xxxx 10xxxxxx 10xxxxxx`. Splitting the 16 code-point bits into 4+6+6 gives `1110 0010`, `1000 0010`, `1010 1100`, i.e. bytes `E2 82 AC`. A decoder recognizes a continuation byte because it always starts with the bit pattern `10`, which never appears as a lead byte (lead bytes start `0`, `110`, `1110`, or `11110`), so the decoder can always resync even if it drops into the middle of a stream."
+ },
+ {
+  "id": "01.1-data-representation-5",
+  "chapter": "01-Foundations/01.1-data-representation.md",
+  "prompt": "**Give three real, deliberate uses of bitwise operators** (not tricks for tricks' sake) and explain `x & (x-1)`.",
+  "answer": "Three deliberate uses: packing multiple boolean flags into one integer (Unix file permissions, feature flags), using `|=`/`&`/`&= ~`/`^=` to set, test, clear, and toggle bits; masking to extract fields, like pulling RGBA channels out of a packed pixel with `(x >> 8) & 0xFF`; and fast multiply/divide by powers of two with `<<`/`>>` in performance-sensitive code. `x & (x-1)` clears the lowest set bit: subtracting 1 flips that lowest 1 to 0 and flips every 0 below it to 1, so ANDing with the original x wipes out exactly that one bit and leaves everything else unchanged, which is why looping `x &= x-1` counts set bits in one iteration per 1-bit."
+ },
+ {
+  "id": "01.1-data-representation-6",
+  "chapter": "01-Foundations/01.1-data-representation.md",
+  "prompt": "**What is endianness, when does it actually matter, and how do you force a byte order when reading a binary file in Python?** If you can teach all six cleanly, you own this chapter. Next up: [Boolean Logic & Digital Foundations](01.2-boolean-logic.md), where these bits start computing.",
+  "answer": "Endianness is the byte order used to store a multi-byte value in memory: big-endian puts the most significant byte first (network byte order), little-endian puts the least significant byte first (x86/ARM). It only matters at boundaries, reading binary files, network packets, or sharing memory across machines; within a single machine it's invisible. In Python you force byte order with `struct`'s format characters, `>` for big-endian and `<` for little-endian, e.g. `struct.pack(\">I\", n)` versus `struct.pack(\"<I\", n)`."
+ },
+ {
+  "id": "01.2-boolean-logic-1",
+  "chapter": "01-Foundations/01.2-boolean-logic.md",
+  "prompt": "**Why is NAND functionally complete?** Build NOT, AND, and OR from NAND on a whiteboard and explain why that proves completeness.",
+  "answer": "NAND is functionally complete because NOT, AND, and OR can all be built from it alone: `NOT A = NAND(A,A)`, `AND(A,B) = NOT(NAND(A,B))`, and `OR(A,B) = NAND(NOT A, NOT B)` (by De Morgan). Since `{AND, OR, NOT}` is already complete (any truth table can be written in sum-of-products form) and each of those three is expressible using only NAND, NAND itself must be able to build any Boolean function. That's why chip fabs can build an entire computer by mass-producing one gate type and tiling it billions of times."
+ },
+ {
+  "id": "01.2-boolean-logic-2",
+  "chapter": "01-Foundations/01.2-boolean-logic.md",
+  "prompt": "**Derive the half-adder** (sum = a⊕b, carry = a∧b) straight from the 2-bit addition truth table, then extend to the full-adder's two equations.",
+  "answer": "From the 2-bit addition truth table, the output column for the low bit is 1 exactly when the inputs differ (that's XOR), and the carry column is 1 exactly when both inputs are 1 (that's AND); so `sum = a⊕b` and `carry = a∧b` is the half-adder, read straight off the table. Extending to a full-adder that also accepts a carry-in: `sum = a⊕b⊕cin` (the sum bit is 1 when an odd number of the three inputs are 1) and `cout = (a∧b) ∨ (cin∧(a⊕b))` (a carry out happens if both a and b are 1, or if exactly one of them is 1 and a carry came in)."
+ },
+ {
+  "id": "01.2-boolean-logic-3",
+  "chapter": "01-Foundations/01.2-boolean-logic.md",
+  "prompt": "**State De Morgan's two laws and give the intuition**, then describe how you'd *prove* an equivalence with truth tables (and how the `equivalent()` helper automates it).",
+  "answer": "De Morgan's laws are `¬(A∧B) = ¬A∨¬B` (\"not both\" means \"at least one is missing\") and `¬(A∨B) = ¬A∧¬B` (\"not either\" means \"both are missing\"). You prove an equivalence by building both expressions' truth tables over every input combination and checking the output columns match row for row; exhaustive checking works because there are only finitely many cases. The `equivalent()` helper automates this by looping `itertools.product((0,1), repeat=arity)` over all input combinations and returning False the moment the two functions disagree on any one."
+ },
+ {
+  "id": "01.2-boolean-logic-4",
+  "chapter": "01-Foundations/01.2-boolean-logic.md",
+  "prompt": "**Explain how a ripple-carry adder works and where overflow \"comes from.\"** What is the carry-out and what happens if you drop it?",
+  "answer": "A ripple-carry adder chains n full-adders so the carry-out of bit i feeds directly into the carry-in of bit i+1, exactly like carrying left in grade-school addition; the carry \"ripples\" from least significant to most significant bit. The carry-out of the final bit is a 5th bit beyond the register width; keeping it gives the true sum, but dropping it (because the register is fixed-width) is exactly what overflow is, the result wraps around mod 2^n with no separate error signal."
+ },
+ {
+  "id": "01.2-boolean-logic-5",
+  "chapter": "01-Foundations/01.2-boolean-logic.md",
+  "prompt": "**How does an ALU do subtraction without a subtractor circuit?** (Two's complement: invert b, carry-in 1, tie it back to Chapter 1.1.)",
+  "answer": "The ALU computes `a - b` as `a + (¬b) + 1`, reusing the same adder: invert every bit of b and feed the carry-in as 1. This works because two's complement defines `-b` as `¬b + 1` (Chapter 1.1's invert-and-add-1 trick), so `a - b = a + (-b) = a + ¬b + 1`. No separate subtractor hardware is needed; subtraction is just addition with the second operand negated first."
+ },
+ {
+  "id": "01.2-boolean-logic-6",
+  "chapter": "01-Foundations/01.2-boolean-logic.md",
+  "prompt": "**Sketch the path from a single NAND gate to \"a CPU that computes.\"** Where do muxes, the opcode, and status flags fit in? Nail these and you've built a computer's arithmetic from first principles. Next: [Discrete Math for Programmers](01.3-discrete-math.md), the math backbone everything else leans on.",
+  "answer": "A single NAND gate builds NOT/AND/OR (functional completeness), which combine into half-adders and full-adders, which chain into a ripple-carry adder that does real arithmetic. Bitwise gate arrays computing AND/OR/XOR run in parallel alongside the adder, and a multiplexer, itself built from AND/OR/NOT, selects among these candidate results based on the opcode; that selection plus the arithmetic is the ALU. The ALU also emits status flags (zero, carry, negative, overflow) that control logic and branch instructions read, and with a register file for storage and a control unit driving the opcode/operand wires each cycle, you have the spine of a processor, nothing hidden beyond gates."
+ },
+ {
+  "id": "01.3-discrete-math-1",
+  "chapter": "01-Foundations/01.3-discrete-math.md",
+  "prompt": "**Write a full induction proof** that `1+2+…+n = n(n+1)/2`, and explain why proving a recursive function correct is \"the same shape\" as induction.",
+  "answer": "Base case n=1: LHS=1, RHS=1·2/2=1, they match. Inductive step: assume `1+...+k = k(k+1)/2`, then `1+...+k+(k+1) = k(k+1)/2 + (k+1) = (k+1)(k/2+1) = (k+1)(k+2)/2`, exactly the formula for n=k+1, so by induction it holds for all n≥1. Proving a recursive function correct has the same shape because the base case of induction mirrors the function's base case, and the inductive step (assume P(k), derive P(k+1)) mirrors the recursive call assuming the smaller call is correct and building the next result from it; recursion is induction made executable."
+ },
+ {
+  "id": "01.3-discrete-math-2",
+  "chapter": "01-Foundations/01.3-discrete-math.md",
+  "prompt": "**State and apply Bayes' theorem** to the 1%-disease / 99%-test problem, and explain *why* the answer is only 50%.",
+  "answer": "Bayes' theorem is `P(A|B) = P(B|A)P(A)/P(B)`. With P(disease)=0.01, P(+|disease)=0.99, and P(+|no disease)=0.01 (false positive rate), the law of total probability gives P(+) = 0.99×0.01 + 0.01×0.99 = 0.0198, so P(disease|+) = 0.0099/0.0198 = 0.5. The answer is only 50% because the disease is rare: out of 10,000 people, 100 have it and 99 test positive, but among the 9,900 healthy people 1% (99 people) also test positive, so true positives and false positives are roughly equal even though the test is \"99% accurate.\" Base rates dominate when the condition is rare."
+ },
+ {
+  "id": "01.3-discrete-math-3",
+  "chapter": "01-Foundations/01.3-discrete-math.md",
+  "prompt": "**Derive `C(n,r)` from `P(n,r)`** (why divide by r!?) and state Pascal's identity with its \"pick one element\" intuition.",
+  "answer": "`C(n,r) = P(n,r)/r!` because every unordered combination of r items corresponds to exactly r! different ordered arrangements (permutations) of those same r items, so dividing the ordered count by r! collapses all those equivalent orderings into one. Pascal's identity is `C(n,r) = C(n-1,r-1) + C(n-1,r)`: pick one specific element; either it's in your chosen group (then choose r-1 more from the remaining n-1) or it isn't (choose all r from the remaining n-1), and these two mutually exclusive cases add up."
+ },
+ {
+  "id": "01.3-discrete-math-4",
+  "chapter": "01-Foundations/01.3-discrete-math.md",
+  "prompt": "**Explain the difference between ∀ and ∃**, how to negate each, and why this means testing inputs can disprove but not prove a \"for all\" claim.",
+  "answer": "`∀x P(x)` means \"for all x, P holds\" and is disproved by a single counterexample; `∃x P(x)` means \"there exists an x with P\" and is proved by a single witness. Negating flips the quantifier: `¬(∀x P(x)) ≡ ∃x ¬P(x)` (\"not all\" means \"some don't\") and `¬(∃x P(x)) ≡ ∀x ¬P(x)` (\"none exist\" means \"all fail\"). Because a \"for all\" claim requires every case to hold, testing a finite set of inputs can never establish it, but finding one input that fails immediately disproves it; that asymmetry is why tests can catch bugs but never prove correctness."
+ },
+ {
+  "id": "01.3-discrete-math-5",
+  "chapter": "01-Foundations/01.3-discrete-math.md",
+  "prompt": "**What is `a ≡ b (mod n)`**, why can you reduce mod n at each step of a computation, and where does this show up in hashing and crypto?",
+  "answer": "`a ≡ b (mod n)` means a and b have the same remainder when divided by n, equivalently n divides `a - b`; it's clock arithmetic on a circle of size n. You can reduce mod n at each step because modular arithmetic distributes over addition and multiplication: `(a+b) mod n = ((a mod n)+(b mod n)) mod n` and similarly for multiplication, so intermediate values never need to grow unbounded, which is essential for big-number crypto to stay fast. It shows up in hashing (`hash(key) mod table_size` picks a bucket) and in crypto (RSA and Diffie-Hellman live entirely in modular exponentiation, `a^b mod n`)."
+ },
+ {
+  "id": "01.3-discrete-math-6",
+  "chapter": "01-Foundations/01.3-discrete-math.md",
+  "prompt": "**Define a graph and a tree precisely**, state the handshake lemma and \"tree on n vertices has n−1 edges,\" and give the intuition for each.",
+  "answer": "A graph `G = (V, E)` is a set of vertices and a set of edges connecting them; a tree is a connected, acyclic undirected graph. The handshake lemma states `Σ deg(v) = 2|E|`, because each edge contributes to exactly two vertices' degree counts, so summing everyone's degree double-counts every edge. A tree on n vertices has exactly n-1 edges: every vertex except the root has exactly one edge connecting it to its parent, so n vertices need n-1 such links, and this fact plus connectivity is a clean, executable test for \"is this a tree.\""
+ },
+ {
+  "id": "01.3-discrete-math-7",
+  "chapter": "01-Foundations/01.3-discrete-math.md",
+  "prompt": "**Explain why the Monty Hall simulation and the analytic 2/3 agree** (name the theorem). Own these and the rest of the book has solid ground under it. Next: [Algorithmic Complexity & Big-O](01.4-complexity-and-big-o.md), which is induction + summations turned into a tool for predicting how code scales.",
+  "answer": "They agree because of the law of large numbers, which says the empirical frequency of an event converges to its true probability as the number of trials grows. The Monty Hall simulation literally samples the sample space many times and the proportion of wins estimates P(win) directly, so as trials increase the simulated result converges toward the analytic 2/3 (your initial pick is right 1/3 of the time, and the host's reveal concentrates the remaining 2/3 onto the one other unopened door). The simulation and the proof validate each other: the simulation catches errors in reasoning, and the proof confirms the simulation isn't a fluke."
+ },
+ {
+  "id": "01.4-complexity-and-big-o-1",
+  "chapter": "01-Foundations/01.4-complexity-and-big-o.md",
+  "prompt": "State the formal definition of `f = O(g)` (the c, n₀ version) and prove `3n²+5n+2 = O(n²)` by exhibiting a specific c and n₀.",
+  "answer": "`f(n) = O(g(n))` iff there exist constants c>0 and n₀>0 such that `0 ≤ f(n) ≤ c·g(n)` for all n≥n₀. For all n≥1, `5n ≤ 5n²` and `2 ≤ 2n²`, so `3n²+5n+2 ≤ 3n²+5n²+2n² = 10n²`; taking c=10 and n₀=1 satisfies the definition, so `3n²+5n+2 = O(n²)`."
+ },
+ {
+  "id": "01.4-complexity-and-big-o-2",
+  "chapter": "01-Foundations/01.4-complexity-and-big-o.md",
+  "prompt": "Explain the difference between O, Ω, Θ, and little-o. When is `n = O(n²)` true but `n = Θ(n²)` false, and why is `n = o(n²)` but `n ≠ o(n)`?",
+  "answer": "O is an upper bound (grows no faster than), Ω is a lower bound (grows at least as fast), Θ is a tight bound (both O and Ω), and little-o is a strict upper bound (grows strictly slower, ratio goes to 0). `n = O(n²)` is true because `n ≤ 1·n²` for n≥1, but `n = Θ(n²)` is false because n is not also `Ω(n²)`, it doesn't grow as fast as n². `n = o(n²)` holds because `n/n² → 0`, but `n ≠ o(n)` because `n/n → 1 ≠ 0`; little-o requires the ratio to vanish, and a function is never strictly smaller than itself."
+ },
+ {
+  "id": "01.4-complexity-and-big-o-3",
+  "chapter": "01-Foundations/01.4-complexity-and-big-o.md",
+  "prompt": "Solve `T(n) = 2T(n/2) + n` three ways (unroll, recursion tree, Master Theorem) and get Θ(n log n) each time.",
+  "answer": "Recursion tree: each of the log n levels contributes cn total work (the subproblem sizes at each level sum back to n), and there are log₂n+1 levels, so total work is `cn(log₂n+1) = Θ(n log n)`. Unrolling gives the same result by expanding the recurrence level by level and summing. Master Theorem: a=2, b=2, f(n)=n, so `c_crit = log₂2 = 1` and `f(n) = Θ(n^1)` matches c_crit, landing in Case 2, giving `Θ(n^c_crit · log n) = Θ(n log n)`. All three methods agree because they're the same computation viewed differently, mergesort's exact recurrence."
+ },
+ {
+  "id": "01.4-complexity-and-big-o-4",
+  "chapter": "01-Foundations/01.4-complexity-and-big-o.md",
+  "prompt": "State the Master Theorem's three cases and apply it to binary search and mergesort, identifying a, b, f(n), and c_crit.",
+  "answer": "For `T(n) = aT(n/b) + f(n)`, let `c_crit = log_b(a)`. Case 1: `f(n) = O(n^(c_crit-ε))` gives `Θ(n^c_crit)` (branching dominates). Case 2: `f(n) = Θ(n^c_crit)` gives `Θ(n^c_crit · log n)` (balanced, every level costs the same). Case 3: `f(n) = Ω(n^(c_crit+ε))` gives `Θ(f(n))` (per-call work dominates). Binary search: a=1, b=2, f(n)=O(1), c_crit=log₂1=0, matches Case 2, giving Θ(log n). Mergesort: a=2, b=2, f(n)=n, c_crit=log₂2=1, matches Case 2, giving Θ(n log n)."
+ },
+ {
+  "id": "01.4-complexity-and-big-o-5",
+  "chapter": "01-Foundations/01.4-complexity-and-big-o.md",
+  "prompt": "Give the dynamic-array doubling argument for why `append` is amortized O(1), and name the geometric series that makes it work.",
+  "answer": "When a dynamic array doubles capacity on resize, resizes happen at sizes 1, 2, 4, 8, ..., n, and copying at each costs the current size, so total copy cost over n appends is `1+2+4+...+n = 2n-1`, a geometric series, which is O(n) total. Spreading that O(n) total cost over n appends gives O(1) amortized per append, even though any single append that triggers a resize costs O(n) in isolation. Growing by a fixed amount instead gives an arithmetic series costing O(n²) total, which is why real dynamic arrays multiply capacity rather than add a constant."
+ },
+ {
+  "id": "01.4-complexity-and-big-o-6",
+  "chapter": "01-Foundations/01.4-complexity-and-big-o.md",
+  "prompt": "Distinguish worst/best/average case from Big-O, and explain why quicksort is \"O(n log n) average but O(n²) worst\" and still preferred.",
+  "answer": "Worst/best/average case describe which input you're analyzing; Big-O/Ω/Θ bound the running-time function once you've picked that input, so the two are orthogonal. Quicksort is O(n log n) on average (over random pivots/inputs) but O(n²) in the worst case (already-sorted input with a naive pivot); it's still preferred because the worst case is rare with good pivot selection (random or median-of-three) and its constant factors and in-place behavior make it faster than guaranteed-O(n log n) alternatives like mergesort on typical data."
+ },
+ {
+  "id": "01.4-complexity-and-big-o-7",
+  "chapter": "01-Foundations/01.4-complexity-and-big-o.md",
+  "prompt": "Describe how the empirical checker classifies complexity (the log-log slope trick) and why you still derive the answer analytically afterward. If you can teach all seven, you can look at any piece of code and predict, and justify, how it scales. This closes out the Foundations; everything from data structures onward leans on these four chapters: [data representation](01.1-data-representation.md), [boolean logic](01.2-boolean-logic.md), [discrete math](01.3-discrete-math.md), and complexity.",
+  "answer": "The checker times a function across growing input sizes and fits a line to log(time) versus log(n); if `T = c·n^p`, then `log T = log c + p·log n`, a straight line whose slope is the exponent p, so the fitted slope classifies the polynomial degree. You still derive the answer analytically afterward because a log factor (like n log n) isn't a clean power law, it shows up only as slight curvature that's easy to miss by eyeballing a noisy slope, and measurement can be confounded by constants, hardware, and noise where proof cannot; measurement proposes a classification, proof disposes of it for certain."
+ },
+ {
+  "id": "07.1-relational-and-sql-1",
+  "chapter": "07-Databases/07.1-relational-and-sql.md",
+  "prompt": "Why is a SQL table technically a *bag* and not a true relation, and name one practical consequence of that gap.",
+  "answer": "A true relation is a set: no duplicate tuples and no inherent ordering. SQL tables are actually bags (multisets), they can contain duplicate rows unless you add a constraint, and the engine returns rows in whatever order it likes unless you specify `ORDER BY`. The practical consequence: assuming \"the first row\" means something without an explicit `ORDER BY` is a bug, the engine is free to return rows in a different order after an index change or a vacuum, so any query that cares about order must say so explicitly."
+ },
+ {
+  "id": "07.1-relational-and-sql-2",
+  "chapter": "07-Databases/07.1-relational-and-sql.md",
+  "prompt": "Rewrite `A INNER JOIN B ON A.x = B.y` in terms of relational algebra operators, and explain why a LEFT JOIN can't be expressed with just product + selection.",
+  "answer": "`A INNER JOIN B ON A.x = B.y` is `σ(A.x = B.y)(A × B)`, a Cartesian product followed by a selection that keeps only matching rows. A LEFT JOIN can't be expressed with just product and selection because those two operators only ever keep or drop existing rows, they can't manufacture new rows with NULLs for the unmatched side; LEFT JOIN needs to keep every row from A regardless of a match and pad in NULLs for B's columns, which is an operation beyond basic relational algebra."
+ },
+ {
+  "id": "07.1-relational-and-sql-3",
+  "chapter": "07-Databases/07.1-relational-and-sql.md",
+  "prompt": "The query `WHERE total_spent > 100` fails when `total_spent` is a `SELECT` alias, but `ORDER BY total_spent` works. Explain why, using the logical evaluation order.",
+  "answer": "SQL's logical evaluation order is `FROM → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT`. Because `WHERE` runs before `SELECT`, the alias `total_spent` doesn't exist yet when `WHERE` is evaluated, it hasn't been computed. `ORDER BY` runs after `SELECT`, so by that point the alias is available and can be referenced directly."
+ },
+ {
+  "id": "07.1-relational-and-sql-4",
+  "chapter": "07-Databases/07.1-relational-and-sql.md",
+  "prompt": "You need \"the highest-paying customer in each country\" *and* you want to keep every customer's row visible for a separate report. Which tool, `GROUP BY` or a window function, fits each, and why?",
+  "answer": "`GROUP BY` fits \"the highest-paying customer in each country\" because it collapses rows into one summary row per group, exactly what you need for a single answer per country. A window function fits \"keep every customer's row visible\" because it computes a value (like a rank) across a partition without collapsing the rows, so you can filter to `rn=1` per country while still seeing every customer's row if you want. The two combine in the \"GROUP BY then window-rank then filter rn=1\" pattern for top-N-per-group."
+ },
+ {
+  "id": "07.1-relational-and-sql-5",
+  "chapter": "07-Databases/07.1-relational-and-sql.md",
+  "prompt": "Why does `WHERE ended_at = NULL` return zero rows, and what's the correct predicate? What is NULL's three-valued-logic value when compared with `=`?",
+  "answer": "`WHERE ended_at = NULL` returns zero rows because NULL means \"unknown,\" and any comparison with `=` against NULL evaluates to unknown, not true, so `WHERE` (which only keeps rows evaluating to true) filters everything out. The correct predicate is `WHERE ended_at IS NULL`. In three-valued logic, comparisons with `=`, `<`, `<>` against NULL always yield \"unknown,\" a third truth value alongside true and false."
+ },
+ {
+  "id": "07.1-relational-and-sql-6",
+  "chapter": "07-Databases/07.1-relational-and-sql.md",
+  "prompt": "Give a concrete case where `UNION ALL` is both correct and meaningfully faster than `UNION`.",
+  "answer": "`UNION` deduplicates (costing a sort or hash) while `UNION ALL` just concatenates results, so `UNION ALL` is correct and faster whenever you know the two queries can't produce overlapping rows. For example, combining `orders WHERE status='paid'` user IDs with `events WHERE event_type='login'` user IDs when you know the sets are disjoint by construction, or stacking monthly partitions that can't share rows by definition, `UNION ALL` gives the same result as `UNION` without paying for a dedupe you don't need."
+ },
+ {
+  "id": "07.2-design-indexing-transactions-1",
+  "chapter": "07-Databases/07.2-design-indexing-transactions.md",
+  "prompt": "Give a concrete table that satisfies 2NF but violates 3NF, name the offending dependency, and show the fix.",
+  "answer": "`employees(emp_id PK, emp_name, dept_id, dept_name, dept_budget)` satisfies 2NF (the key is a single column, so no partial dependency is possible) but violates 3NF because of the transitive dependency `emp_id → dept_id → dept_name, dept_budget`: the department attributes depend on `dept_id`, a non-key column, not directly on `emp_id`. The fix is to split into `employees(emp_id PK, emp_name, dept_id FK)` and `departments(dept_id PK, dept_name, dept_budget)`."
+ },
+ {
+  "id": "07.2-design-indexing-transactions-2",
+  "chapter": "07-Databases/07.2-design-indexing-transactions.md",
+  "prompt": "Explain in your own words why a B-tree lookup is O(log n) and connect the *fan-out* of a node to the *number of disk reads* for a billion-row table.",
+  "answer": "A B-tree is a balanced multi-way tree where each node holds many sorted keys sized to a disk page, so its height is `log_b(n)` where b is the fan-out (often ~250 keys per node). With fan-out ~250 and a billion rows, that's `log_250(10^9) ≈ 4` levels, meaning about 4 disk reads to find one row among a billion instead of scanning the whole table. Higher fan-out means a shallower tree and fewer disk reads per lookup, which is the entire O(log n) guarantee made concrete."
+ },
+ {
+  "id": "07.2-design-indexing-transactions-3",
+  "chapter": "07-Databases/07.2-design-indexing-transactions.md",
+  "prompt": "You add an index and a `SELECT` gets faster but the table's bulk `INSERT` job gets slower. Why? What's the underlying trade?",
+  "answer": "An index is a second, separately sorted data structure, so every INSERT that touches an indexed column must also update the index (rebalance nodes, possibly split them), which is real extra write work. The trade is fundamental: indexes buy read speed at the cost of write speed and disk space, so a write-heavy table pays a \"tax\" on every index it carries while a read-heavy table benefits from more of them."
+ },
+ {
+  "id": "07.2-design-indexing-transactions-4",
+  "chapter": "07-Databases/07.2-design-indexing-transactions.md",
+  "prompt": "You have `CREATE INDEX ON orders (user_id, created_at)`. Which of these queries can use it, and which can't: (a) `WHERE user_id=5`, (b) `WHERE created_at > '...'`, (c) `WHERE user_id=5 AND created_at > '...'`? State the rule.",
+  "answer": "The leftmost-prefix rule governs this: an index on `(user_id, created_at)` is sorted by `user_id` first, so it serves (a) `WHERE user_id=5` (leading column) and (c) `WHERE user_id=5 AND created_at > '...'` (equality on the leading column plus a range on the second), but not (b) `WHERE created_at > '...'` alone, since the index isn't globally sorted by `created_at`. The rule: a composite index only helps queries that constrain a left prefix of its columns."
+ },
+ {
+  "id": "07.2-design-indexing-transactions-5",
+  "chapter": "07-Databases/07.2-design-indexing-transactions.md",
+  "prompt": "Walk through the money-transfer example and say which ACID letter each part guarantees, including what role the WAL plays.",
+  "answer": "Wrapping the two balance updates in `BEGIN...COMMIT` guarantees atomicity (both updates happen or neither does, a mid-transaction failure rolls back everything). The `CHECK (balance >= 0)` constraint enforces consistency (the database never persists a state violating its own rules). Isolation ensures concurrent transfers don't step on each other, to the degree the isolation level promises. Durability means once committed, the transfer survives a crash, and Postgres achieves this by writing changes to the write-ahead log on disk before acknowledging the commit, so a crash can replay the log to recover."
+ },
+ {
+  "id": "07.2-design-indexing-transactions-6",
+  "chapter": "07-Databases/07.2-design-indexing-transactions.md",
+  "prompt": "Describe a non-repeatable read with two concrete transactions, and name the lowest isolation level that prevents it. Then explain how MVCC lets a reader avoid blocking on a concurrent writer.",
+  "answer": "T1 reads a row, T2 updates and commits a change to that row, then T1 reads the row again within the same transaction and gets a different value, that's a non-repeatable read. The lowest isolation level that prevents it is Repeatable Read, which gives a transaction a stable snapshot taken at its start so both reads see the same value regardless of what other transactions commit. MVCC lets a reader avoid blocking: instead of overwriting a row, an UPDATE writes a new version and marks the old one dead, so each transaction reads from a consistent snapshot without ever needing to wait on a writer's lock."
+ },
+ {
+  "id": "07.3-nosql-dynamodb-sqlite-1",
+  "chapter": "07-Databases/07.3-nosql-dynamodb-sqlite.md",
+  "prompt": "CAP forces a choice only *during a partition*. Explain why P isn't really optional, and what an AP vs. a CP system does when nodes can't talk.",
+  "answer": "In a real distributed system, network partitions will happen, so partition tolerance isn't a design choice, it's a fact of operating over a network. That means the actual trade-off only bites during a partition, when two nodes can't talk: a CP system refuses to answer (or blocks) on the side that can't confirm it has the latest data, sacrificing availability to stay consistent, while an AP system answers from whatever node you reached even if the data might be stale, sacrificing consistency to stay available. When there's no partition, a system can have both."
+ },
+ {
+  "id": "07.3-nosql-dynamodb-sqlite-2",
+  "chapter": "07-Databases/07.3-nosql-dynamodb-sqlite.md",
+  "prompt": "What does PACELC add that CAP misses, and why does strong consistency cost latency even with a healthy network?",
+  "answer": "CAP only describes behavior during a partition; PACELC adds that even during normal operation you trade latency against consistency (\"if Partition, trade Availability/Consistency; Else, trade Latency/Consistency\"). Strong consistency costs latency even with a healthy network because guaranteeing every read sees the latest write requires coordination, waiting for replicas to agree, and that coordination round-trip takes time regardless of whether anything is partitioned."
+ },
+ {
+  "id": "07.3-nosql-dynamodb-sqlite-3",
+  "chapter": "07-Databases/07.3-nosql-dynamodb-sqlite.md",
+  "prompt": "In DynamoDB, what's the difference between a partition key and a sort key, and how does single-table design use them to avoid JOINs?",
+  "answer": "The partition key (hash key) determines which physical partition an item lives on, controlling data distribution; the sort key orders items within a partition and enables range queries and storing many related items under one partition key. Single-table design co-locates multiple entity types (like a user and all their orders) under the same partition key, so a single `Query(PK=\"USER#42\")` returns the whole related object graph in one round trip, pre-joining data at write time instead of needing a JOIN at read time, which DynamoDB doesn't have."
+ },
+ {
+  "id": "07.3-nosql-dynamodb-sqlite-4",
+  "chapter": "07-Databases/07.3-nosql-dynamodb-sqlite.md",
+  "prompt": "What is a hot partition, what causes it, and how do you avoid one when choosing a partition key?",
+  "answer": "A hot partition is a physical partition that receives a disproportionate share of traffic, saturating its capacity while other partitions sit idle; it's caused by a low-cardinality or skewed partition key, like keying by today's date so all of today's writes land on one partition. You avoid it by choosing a high-cardinality, evenly-distributed partition key (like `user_id` or `order_id`), or by sharding a naturally-skewed key across N suffixes and querying all shards when needed."
+ },
+ {
+  "id": "07.3-nosql-dynamodb-sqlite-5",
+  "chapter": "07-Databases/07.3-nosql-dynamodb-sqlite.md",
+  "prompt": "Give two workloads where you'd choose SQLite and two where you'd refuse it, citing its concurrency model.",
+  "answer": "SQLite fits local app storage, mobile/desktop apps, CLI tools, and test fixtures, or any single-writer, embedded workload where running a server is overkill. Refuse it for high write concurrency from many processes (SQLite uses file-level write locking, only one writer at a time) or client-server access over a network, both of which fight its embedded, single-file design."
+ },
+ {
+  "id": "07.3-nosql-dynamodb-sqlite-6",
+  "chapter": "07-Databases/07.3-nosql-dynamodb-sqlite.md",
+  "prompt": "You modeled an app in DynamoDB and the product team asks for \"all orders over $100 last month.\" Why is this hard, and what are your two options?",
+  "answer": "This is hard because DynamoDB queries only work efficiently against a partition key (or an index built ahead of time); \"all orders over $100 last month\" filters on an attribute you likely didn't design a key around, so it either requires a full-table Scan (reads and bills for everything, ruinous at scale) or a GSI you planned in advance keyed by something like month and sorted by amount. The two options are: build a Global Secondary Index with a key shaped for this query before you need it, or accept it's a rare analytics query and run it off-hours via a Scan or export the data to a system built for ad-hoc queries."
+ },
+ {
+  "id": "07.4-sharding-partitioning-replication-1",
+  "chapter": "07-Databases/07.4-sharding-partitioning-replication.md",
+  "prompt": "Contrast vertical and horizontal scaling, and name the specific guarantees you risk losing the moment you scale out.",
+  "answer": "Vertical scaling means a bigger single machine (more CPU/RAM/disk), simple with no app changes but with a hard ceiling and a single point of failure. Horizontal scaling means more machines working together, effectively unlimited but requiring the data to be distributed. The moment you scale out you risk losing cheap JOINs, easy cross-row transactions, and strong consistency, guarantees a single relational box gives you almost for free but that become expensive or disappear once data lives on multiple servers."
+ },
+ {
+  "id": "07.4-sharding-partitioning-replication-2",
+  "chapter": "07-Databases/07.4-sharding-partitioning-replication.md",
+  "prompt": "You shard by `hash(key) % N`. Walk through what happens to existing keys when you grow from 8 to 9 shards, and quantify roughly how bad it is.",
+  "answer": "Growing from 8 to 9 shards under `hash(key) % N` changes the modulus, so a key only stays on the same shard if `hash % 8 == hash % 9`, which is rare, roughly `N/(N+1)` of keys move, about 89% here. That means almost every key gets remapped and needs to physically move to a different shard, a near-total reshuffle that's effectively an outage-causing event for a live system."
+ },
+ {
+  "id": "07.4-sharding-partitioning-replication-3",
+  "chapter": "07-Databases/07.4-sharding-partitioning-replication.md",
+  "prompt": "Derive consistent hashing from that problem: how does mapping nodes and keys onto a ring limit how many keys move when a node joins? What do virtual nodes fix?",
+  "answer": "Consistent hashing maps both nodes and keys onto the same circular hash space (a ring) instead of onto node indices directly, and assigns each key to the next node clockwise from its position. Adding a new node only steals the keys in the arc between it and the previous node clockwise, roughly `1/(N+1)` of all keys, because every other key's nearest clockwise node is unchanged. A single physical node at only one ring position can get an unfairly large or small arc; virtual nodes (placing each physical node at many ring positions, e.g. ~150) smooth the distribution and spread a departing node's keys across many neighbors instead of dumping them all on one."
+ },
+ {
+  "id": "07.4-sharding-partitioning-replication-4",
+  "chapter": "07-Databases/07.4-sharding-partitioning-replication.md",
+  "prompt": "Give three properties of a good shard key and one example of a bad one for a real workload, explaining the failure mode.",
+  "answer": "A good shard key is high cardinality (many distinct values so data spreads), evenly distributed (no single value dominates), and aligned with access patterns (queries should ideally target one shard). A bad example is sharding an e-commerce `orders` table by `order_status` (only ~4 values), which fails on cardinality and distribution: most orders pile into one or two statuses creating a hot shard, and a row would have to physically migrate shards every time its status changes."
+ },
+ {
+  "id": "07.4-sharding-partitioning-replication-5",
+  "chapter": "07-Databases/07.4-sharding-partitioning-replication.md",
+  "prompt": "Contrast synchronous and asynchronous replication in terms of latency, durability on leader failure, and where each sits on the PACELC trade.",
+  "answer": "Synchronous replication makes the leader wait for a follower to confirm before acking the client, guaranteeing no data loss if the leader then dies, at the cost of higher write latency and stalling if a follower is slow. Asynchronous replication acks immediately and ships changes in the background, fast, but a leader crash before replication completes loses that write and followers can serve stale reads. On the PACELC trade, sync leans toward consistency at the cost of latency/availability, while async leans toward latency/availability at the cost of consistency."
+ },
+ {
+  "id": "07.4-sharding-partitioning-replication-6",
+  "chapter": "07-Databases/07.4-sharding-partitioning-replication.md",
+  "prompt": "What is replication lag, what user-visible bug does it cause, and name two ways to give a user read-your-own-writes consistency despite it?",
+  "answer": "Replication lag is the delay between a write committing on the leader and its becoming visible on an async follower. It causes a read-after-write anomaly: a user updates their profile, gets routed to a lagging replica for the very next read, and sees stale data, looking like the save failed. Two fixes: route that user's reads to the leader for a short window after their write (read-your-writes routing), or track a logical write position (an LSN) and only read from a replica that's caught up past it."
+ },
+ {
+  "id": "12.1-cryptography-1",
+  "chapter": "12-Security/12.1-cryptography.md",
+  "prompt": "**Why does encryption alone (e.g., AES-CBC) not protect integrity, and what primitive fixes it?** (Hint: bit-flipping; AEAD/GCM with its auth tag.)",
+  "answer": "Plain encryption like AES-CBC only gives confidentiality, an attacker can flip ciphertext bits without ever reading the plaintext, and the receiver has no way to detect the tampering. The fix is authenticated encryption (AEAD), like AES-GCM, which simultaneously computes an authentication tag over the ciphertext; if the tag doesn't verify at decrypt time, decryption fails closed instead of silently returning tampered data."
+ },
+ {
+  "id": "12.1-cryptography-2",
+  "chapter": "12-Security/12.1-cryptography.md",
+  "prompt": "**Walk the Diffie-Hellman exchange with `p=23, g=5, a=4, b=3`. What's the shared secret, and what hard problem stops an eavesdropper?** (Compute it; discrete log.)",
+  "answer": "`A = 5^4 mod 23 = 625 mod 23 = 4` and `B = 5^3 mod 23 = 125 mod 23 = 10`. The shared secret is `B^a mod 23 = 10^4 mod 23 = 18`, which matches `A^b mod 23 = 4^3 mod 23 = 18`. An eavesdropper sees p, g, A, and B but to recover the shared secret would need to compute the exponent a or b from `A = g^a mod p`, the discrete logarithm problem, believed hard for large primes."
+ },
+ {
+  "id": "12.1-cryptography-3",
+  "chapter": "12-Security/12.1-cryptography.md",
+  "prompt": "**Derive why RSA decryption recovers the message** - which theorem makes `m^{ed} ≡ m (mod n)` work, and why is `d` hard to find without `p, q`?",
+  "answer": "Encrypt as `c = m^e mod n`; decrypt as `c^d = m^(ed) mod n`. Because `e·d ≡ 1 (mod φ(n))`, we can write `ed = 1 + k·φ(n)`, so `m^(ed) = m·(m^φ(n))^k`, and Euler's theorem says `m^φ(n) ≡ 1 (mod n)` when gcd(m,n)=1, making the whole expression collapse to `m·1^k = m`. Finding d without knowing p and q is hard because d requires computing `φ(n) = (p-1)(q-1)`, and getting φ(n) requires factoring n, believed computationally infeasible for large moduli."
+ },
+ {
+  "id": "12.1-cryptography-4",
+  "chapter": "12-Security/12.1-cryptography.md",
+  "prompt": "**Why must password hashing be slow and salted, while a file-integrity hash should be fast?** Name the right tool for each.",
+  "answer": "Password hashing must be slow because an attacker with a leaked database can otherwise try billions of guesses per second on a GPU against a fast hash; salting (a unique random value per password) defeats precomputed rainbow tables and ensures identical passwords hash differently. A file-integrity check just needs to detect accidental corruption or tampering quickly, and there's no adversary trying to reverse a specific value cheaply, so speed is a feature there, not a liability. Use Argon2id or bcrypt for passwords, and SHA-256 for file integrity."
+ },
+ {
+  "id": "12.1-cryptography-5",
+  "chapter": "12-Security/12.1-cryptography.md",
+  "prompt": "**What's the one rule you must never break with AES-GCM, and what catastrophe happens if you do?** (Nonce reuse → keystream + auth-key recovery.)",
+  "answer": "Never reuse a (key, nonce) pair with AES-GCM. Reusing a nonce under the same key recovers the XOR of the two keystreams (breaking confidentiality for both messages) and also recovers the GHASH authentication key, which lets an attacker forge valid authentication tags on arbitrary messages, breaking both confidentiality and integrity at once."
+ },
+ {
+  "id": "12.1-cryptography-6",
+  "chapter": "12-Security/12.1-cryptography.md",
+  "prompt": "**In the vault project, what three things does passing the header as AAD actually protect against?**",
+  "answer": "Passing the header (magic bytes, version, salt, nonce) as associated data (AAD) authenticates it without encrypting it, and it protects against three things: an attacker swapping the salt (which would silently derive the wrong key), downgrading the version to exploit weaker parameters, or splicing a header from one vault file onto ciphertext from another. Because AAD is bound into the authentication tag, any tampering with the header causes decryption to fail closed, just like tampering with the ciphertext itself."
+ },
+ {
+  "id": "12.2-network-security-1",
+  "chapter": "12-Security/12.2-network-security.md",
+  "prompt": "**Why is \"default-deny\" strictly better than \"block known-bad,\" and how does it relate to least privilege?**",
+  "answer": "Default-deny denies everything and explicitly allows only what's needed, while \"block known-bad\" tries to enumerate every bad thing, which is impossible since you can never list every attack in advance. Default-deny means a service you forgot about isn't exposed by default; you have to consciously open each port. This is least privilege applied to the network: every path gets the minimum access it needs, nothing more, so a mistake or oversight fails safe instead of failing open."
+ },
+ {
+  "id": "12.2-network-security-2",
+  "chapter": "12-Security/12.2-network-security.md",
+  "prompt": "**Explain stateful vs stateless firewalls - what does tracking connection state let you avoid writing, and why is egress filtering worth the hassle?**",
+  "answer": "A stateless firewall inspects each packet in isolation and can't tell a legitimate reply from an unsolicited packet, forcing you to write rules for both directions of every connection. A stateful firewall tracks the TCP handshake and established connections in a state table, so you only write rules for new inbound connections; replies to your own outbound traffic are automatically allowed back in. Egress filtering is worth the hassle because if a server is compromised, it limits what an attacker can do, exfiltrate data, pull a second-stage payload, or beacon to a command-and-control server, all require an outbound path that a locked-down egress policy denies."
+ },
+ {
+  "id": "12.2-network-security-3",
+  "chapter": "12-Security/12.2-network-security.md",
+  "prompt": "**A user reports the site's cert \"works in my browser but not on their phone.\" What misconfiguration is the prime suspect, and how do you verify it with `openssl`?**",
+  "answer": "The prime suspect is a missing intermediate certificate, the server sent only the leaf cert, which \"worked\" in the first browser because it had already cached the intermediate from another site, but fails elsewhere. Verify with `openssl s_client -connect host:443 -servername host -showcerts`, and look at the certificate chain: if only entry 0 (the leaf) appears and entry 1 (the intermediate) is missing, along with a `Verify return code: 20 (unable to get local issuer certificate)`, that confirms it; the fix is to serve the full chain (`fullchain.pem`)."
+ },
+ {
+  "id": "12.2-network-security-4",
+  "chapter": "12-Security/12.2-network-security.md",
+  "prompt": "**Walk the TLS 1.3 handshake step by step, and explain what `CertificateVerify` proves that simply presenting the certificate does not.**",
+  "answer": "ClientHello (proposes versions/ciphers, sends SNI and an ephemeral ECDHE key_share) → ServerHello (picks version/cipher, sends its own key_share, both sides derive the shared secret) → messages from here on are encrypted → Certificate (server sends its leaf plus intermediate chain) → CertificateVerify (server signs the handshake transcript with its private key) → Finished (a MAC over the whole transcript) on both sides → application data flows under an AEAD cipher. `CertificateVerify` proves the server actually holds the private key matching the certificate's public key; merely presenting a certificate file only proves you have a copy of it, while signing the transcript proves possession of the corresponding private key, defeating an attacker who just replays a stolen certificate."
+ },
+ {
+  "id": "12.2-network-security-5",
+  "chapter": "12-Security/12.2-network-security.md",
+  "prompt": "**What property does DNSSEC provide, what property does DoH provide, and why are they different?**",
+  "answer": "DNSSEC provides authenticity and integrity, it signs DNS records so a resolver can verify a response wasn't forged, defending against cache poisoning and spoofing. DoH (DNS over HTTPS) provides confidentiality, it encrypts the query between client and resolver so an on-path observer can't see or alter your lookups. They're different properties because one proves the data is genuine while the other hides the data from eavesdroppers; you may want both."
+ },
+ {
+  "id": "12.2-network-security-6",
+  "chapter": "12-Security/12.2-network-security.md",
+  "prompt": "**Where should secrets live (and not live), and how do you rotate a signing key with zero downtime?**",
+  "answer": "Secrets should live in a secrets manager (Vault, AWS Secrets Manager, GCP Secret Manager) and be injected at runtime, never hardcoded in source, committed `.env` files, baked into Docker image layers, or echoed in CI logs. Rotating a signing key with zero downtime uses overlap-then-revoke: generate the new key, publish both public keys (a JWKS with two `kid`s) so verifiers accept either, start signing new tokens with the new key while still verifying old ones, then once all old tokens have expired, revoke the old key."
+ },
+ {
+  "id": "12.2-network-security-7",
+  "chapter": "12-Security/12.2-network-security.md",
+  "prompt": "**Classify a SYN flood vs an HTTP login-flood by OSI layer, and give the right mitigation for each (tie one to rate limiting).**",
+  "answer": "A SYN flood is a protocol-layer (L4) attack, half-open TCP connections exhaust the connection table; it's mitigated with SYN cookies and connection limits. An HTTP login-flood is an application-layer (L7) attack, it looks like real traffic hammering an expensive endpoint; the right mitigation is rate limiting per IP/account plus caching and autoscaling, since the flood can't be distinguished from legitimate traffic by packet inspection alone."
+ },
+ {
+  "id": "12.2-network-security-8",
+  "chapter": "12-Security/12.2-network-security.md",
+  "prompt": "**Walk the defense-in-depth layers a single NYX Finance login request passes through, and for each say what failing open would expose - what does \"blast radius\" mean if the web server is compromised?**",
+  "answer": "A login request passes through CDN/WAF (absorbs floods, blocks obvious bad patterns) → TLS termination (confidentiality/integrity in transit) → rate limiter (throttles credential stuffing) → app authentication/authorization (server-side checks) → the app server in a private subnet reachable only from the load balancer → a least-privilege DB user on an isolated data tier with no internet route → encryption at rest → audit logging. Failing open at any single layer is contained by the others, e.g. if TLS were misconfigured the DB still has no public IP. \"Blast radius\" means how far a single compromise can reach: if the web server is compromised, least privilege and network segmentation should mean the attacker still can't reach the database directly, containing the damage to that one layer."
+ },
+ {
+  "id": "12.3-web-app-security-1",
+  "chapter": "12-Security/12.3-web-app-security.md",
+  "prompt": "**SQL injection: show the malicious `username` that bypasses a login built with an f-string query, and explain why parameterized queries defeat it (data vs code).**",
+  "answer": "With `q = f\"SELECT * FROM users WHERE name='{username}' AND pw='{pw}'\"`, the username `admin' --` produces `...WHERE name='admin' --' AND pw=...`, and the `--` comments out the rest of the query, logging in as admin with no valid password needed. Parameterized queries defeat this because the query structure is sent to the database separately from the data values, the driver binds the data as literal values and never interprets it as SQL syntax, so the injected `'` and `--` are just characters inside a string, not query-breaking code."
+ },
+ {
+  "id": "12.3-web-app-security-2",
+  "chapter": "12-Security/12.3-web-app-security.md",
+  "prompt": "**What's IDOR, and why is a database-level RLS policy a stronger defense than an app-level ownership check alone?**",
+  "answer": "IDOR (Insecure Direct Object Reference) is when a user can access another user's object just by changing an ID in the request, because the server fetches by ID without checking ownership. A database-level RLS policy is stronger than an app-level check alone because it's a second, independent wall: even if a developer forgets or bugs out the app-level `WHERE owner_id = ?` check, the database itself physically cannot return another tenant's rows, defense in depth rather than relying on one place to get it right every time."
+ },
+ {
+  "id": "12.3-web-app-security-3",
+  "chapter": "12-Security/12.3-web-app-security.md",
+  "prompt": "**Compare stored, reflected, and DOM XSS. What's the *primary* defense (point-of-use), and what does CSP add on top?**",
+  "answer": "Stored XSS saves malicious script server-side (like a comment) and serves it to every viewer; reflected XSS bounces script off a URL parameter back into the response; DOM-based XSS happens client-side when JS writes untrusted data unsafely into the DOM (like `innerHTML = location.hash`). The primary defense for all three is context-aware output encoding at the point of use (escaping HTML special characters, keeping template autoescape on), which stops injected markup from being interpreted as executable script. CSP adds a second layer by restricting where scripts can load from and blocking inline script, so even if encoding is missed somewhere, an injected script often still can't execute."
+ },
+ {
+  "id": "12.3-web-app-security-4",
+  "chapter": "12-Security/12.3-web-app-security.md",
+  "prompt": "**Why is a token-auth API using `Authorization: Bearer` inherently more CSRF-resistant than cookie sessions, and what two defenses protect cookie sessions?**",
+  "answer": "A Bearer-token API is inherently more CSRF-resistant because browsers don't auto-attach `Authorization` headers to cross-site requests the way they auto-attach cookies, so a malicious site can't forge a request carrying the victim's token. Cookie sessions need two explicit defenses: `SameSite=Strict/Lax` cookies (blocking the cookie from being sent on cross-site requests in the common case), and a synchronizer anti-CSRF token that the server requires in a header or field on state-changing requests, which a cross-origin attacker can't read due to the same-origin policy."
+ },
+ {
+  "id": "12.3-web-app-security-5",
+  "chapter": "12-Security/12.3-web-app-security.md",
+  "prompt": "**Explain SSRF: why can the server reach things the attacker can't, and what's the canonical high-value target on a cloud VM?**",
+  "answer": "SSRF happens when the app fetches a URL the attacker controls, and the server has network access the attacker doesn't, it's inside the perimeter, able to reach internal-only services and cloud infrastructure that aren't exposed to the public internet. The canonical high-value target is the cloud metadata endpoint `169.254.169.254`, which on many cloud VMs serves IAM credentials to anything running locally; hitting it via SSRF can hand an attacker the server's own cloud permissions."
+ },
+ {
+  "id": "12.3-web-app-security-6",
+  "chapter": "12-Security/12.3-web-app-security.md",
+  "prompt": "**`allow_origins=[\"*\"]` with `allow_credentials=True`, why is this dangerous, and what does it effectively undo?**",
+  "answer": "This combination is dangerous (and disallowed by the CORS spec) because it would let any website read authenticated responses from your API on behalf of a logged-in victim, since credentials (cookies or auth headers) would be sent along with a request from literally any origin. It effectively undoes the browser's Same-Origin Policy, the core protection that a page can't read responses from a different origin; the fix is an explicit allowlist of trusted origins."
+ },
+ {
+  "id": "12.4-burp-suite-1",
+  "chapter": "12-Security/12.4-burp-suite.md",
+  "prompt": "**Why is testing only against a self-owned local target (and using a signed scope for anything else) non-negotiable, and what makes Juice Shop in Docker the right practice target?**",
+  "answer": "Testing a system you don't own or have explicit written authorization to test can be a crime under laws like the US Computer Fraud and Abuse Act, even if nothing was technically \"broken,\" so the only safe and legal targets are ones you own or have signed scope for. OWASP Juice Shop in Docker is the right practice target because it runs entirely on your own machine, you own it outright, there's no other person's data or system involved, and it's deliberately built with realistic vulnerabilities to practice recognizing and fixing."
+ },
+ {
+  "id": "12.4-burp-suite-2",
+  "chapter": "12-Security/12.4-burp-suite.md",
+  "prompt": "**Why does intercepting HTTPS require installing Burp's CA cert, which trust store does each browser use, and what real-world defense (in your own apps) makes this kind of interception hard for an actual attacker?**",
+  "answer": "To intercept HTTPS, Burp has to decrypt the TLS in transit, which means acting as a consented, local man-in-the-middle, and browsers only trust certificates signed by a CA in their trust store, so you must install Burp's CA cert to make the browser accept its on-the-fly certificates. Firefox uses its own internal trust store (Settings → Certificates → Authorities), while Chrome, Edge, and Safari use the OS trust store (macOS Keychain, Windows Trusted Root store, Linux's `update-ca-certificates`). In your own apps, the real defense that makes this kind of interception hard for an actual attacker is that they'd need to already control the victim's device or trick them into installing their own CA; HSTS and certificate pinning further resist downgrade and substitution attacks."
+ },
+ {
+  "id": "12.4-burp-suite-3",
+  "chapter": "12-Security/12.4-burp-suite.md",
+  "prompt": "**Client-side form validation looks fine in the browser, but an intercepting proxy bypasses it. What does this prove about where security must be enforced?**",
+  "answer": "This proves that security must be enforced on the server, never trusted from the client alone. Client-side JavaScript validation is UX, not security, since it's fully under the attacker's control; an intercepting proxy sends the server whatever raw HTTP a malicious client would send, bypassing the browser's checks entirely, so if the server still accepts an invalid or malicious value, the \"protection\" was never real."
+ },
+ {
+  "id": "12.4-burp-suite-4",
+  "chapter": "12-Security/12.4-burp-suite.md",
+  "prompt": "**Walk the Proxy→Repeater→Decoder→Comparer pipeline on the Juice Shop login/basket flow, and for each tool name the 12.3 defense the observation pointed to.**",
+  "answer": "Proxy captured the raw `POST /rest/user/login` and showed the token comes back in the response body with no visible rate limit, pointing to A07 (add rate limiting/lockout on auth). Repeater replayed the login with edits, resending it rapidly with no throttle confirmed the missing rate limit, again A07. Decoder Base64-decoded the JWT's middle segment and showed readable claims including `role`, pointing to A02/A07 (verify the signature server-side, never trust a client-changed role claim). Comparer diffed an authorized basket response against a tampered-ID basket response and the difference proved cross-user data access, pointing to A01 broken access control (fix with server-side ownership scoping plus RLS)."
+ },
+ {
+  "id": "12.4-burp-suite-5",
+  "chapter": "12-Security/12.4-burp-suite.md",
+  "prompt": "**Walk the Repeater workflow for confirming an IDOR, and state the exact server-side fix (and the defense-in-depth DB control).**",
+  "answer": "Log in as user A, capture the request that loads A's own basket, send it to Repeater and confirm a baseline 200 with A's data, then change the basket ID in the path to a neighboring value while keeping A's token, and resend. If the server returns a different basket that isn't A's, that's confirmed IDOR. The exact fix is scoping the query server-side to the authenticated owner, `WHERE id = :basket_id AND owner_id = :current_user`, returning 404 otherwise, with Postgres Row-Level Security as the defense-in-depth database control that makes cross-tenant reads physically impossible even if the app-level check has a bug."
+ },
+ {
+  "id": "12.4-burp-suite-6",
+  "chapter": "12-Security/12.4-burp-suite.md",
+  "prompt": "**How would you turn your manual Burp checks into an automated, unattended guarantee, what runs in CI, and what stays interactive, and why?**",
+  "answer": "You turn manual checks into automated regressions by scripting them: hit your own app directly with `httpx`/pytest to assert 401 on missing auth, 404 on IDOR attempts, presence of security headers like CSP and HSTS, and that CORS doesn't reflect an arbitrary Origin, or write a mitmproxy addon that asserts the same properties over real HTTP traffic. What runs in CI is that pytest/mitmproxy assertion suite, wired to fail the build the moment a security regression appears. What stays interactive is exploratory testing in Burp itself, manually probing new features or unusual inputs, because that's where you discover the checks worth automating in the first place."
+ },
+ {
+  "id": "12.4-burp-suite-7",
+  "chapter": "12-Security/12.4-burp-suite.md",
+  "prompt": "**You decode an auth token and can read a `role: user` claim. Why is that fine *if* one thing is true server-side, and what's the dangerous assumption that turns it into a vulnerability?**",
+  "answer": "A readable `role: user` claim is fine as long as the server actually verifies the JWT's signature before trusting any claim in it, since JWTs are signed, not encrypted, so being readable doesn't by itself compromise anything. The dangerous assumption that turns it into a vulnerability is the server trusting a client-supplied or client-tampered `role` claim without checking the signature, or accepting an `alg: none` token, which lets an attacker rewrite `role` to `admin`, re-encode it, and get treated as an administrator with no valid signature required."
+ },
+ {
+  "id": "18.1-calculus-for-cs-1",
+  "chapter": "18-Math/18.1-calculus-for-cs.md",
+  "prompt": "**Derive the derivative of `x²` from the limit definition**, explaining why the `0/0` resolves.",
+  "answer": "`f'(x) = lim_{h→0} ((x+h)² - x²)/h`. Expanding gives `(x² + 2xh + h² - x²)/h = (2xh + h²)/h`, and factoring h from the numerator and canceling (legal because h≠0 while approaching, not equal to it) leaves `2x + h`. Only now, with no h in the denominator, can you safely let h→0, getting `f'(x) = 2x`. The `0/0` resolves because the limit only cares about what the ratio approaches as h sneaks toward 0, not what happens exactly at h=0; algebraic cancellation removes the problematic h from the denominator before you ever plug in 0."
+ },
+ {
+  "id": "18.1-calculus-for-cs-2",
+  "chapter": "18-Math/18.1-calculus-for-cs.md",
+  "prompt": "**State the chain rule and explain why it *is* backpropagation**, rates multiply along the chain; a deep net is a deep composition.",
+  "answer": "The chain rule is `d/dx f(g(x)) = f'(g(x))·g'(x)`, rates multiply along a chain: if u depends on x and y depends on u, then `dy/dx = (dy/du)·(du/dx)`. A neural network is a deeply nested composition, loss of activation of weights of activation of weights of ... input, so finding how the loss changes with respect to a weight buried many layers deep means applying the chain rule once per layer, multiplying local derivatives together. Backpropagation is exactly this, organized so each local derivative is computed once and reused (dynamic programming on the computation graph), which is also why sigmoid's small derivative (≤0.25) compounding across many layers causes vanishing gradients while ReLU's derivative of 1 on the active path doesn't."
+ },
+ {
+  "id": "18.1-calculus-for-cs-3",
+  "chapter": "18-Math/18.1-calculus-for-cs.md",
+  "prompt": "**Explain why the gradient points in the direction of steepest ascent**, using the dot-product/cosine argument.",
+  "answer": "To first order, stepping a unit distance v from point x changes f by `Δf ≈ ∇f · v = ‖∇f‖‖v‖cosθ = ‖∇f‖cosθ`, where θ is the angle between the step direction and the gradient. This change is maximized when `cosθ = 1`, i.e. θ=0, meaning v points exactly along ∇f, so among all possible step directions the gradient is the one that increases f the most. Stepping the opposite way (θ=180°, cosθ=-1) decreases f the most, that's gradient descent."
+ },
+ {
+  "id": "18.1-calculus-for-cs-4",
+  "chapter": "18-Math/18.1-calculus-for-cs.md",
+  "prompt": "**Write the gradient-descent update rule** and explain the role of the minus sign and the learning rate, in terms of the foggy hillside.",
+  "answer": "The update rule is `x_{t+1} = x_t - η·f'(x_t)`, where η is the learning rate. The minus sign matters because f'(x) points uphill (toward increasing f), and since you want to decrease f, you step in the opposite direction, exactly the foggy hillside picture: feel the slope under your feet and step downhill against it. The learning rate η controls the step size: too small and convergence crawls, too large and you overshoot the valley and oscillate or diverge entirely."
+ },
+ {
+  "id": "18.1-calculus-for-cs-5",
+  "chapter": "18-Math/18.1-calculus-for-cs.md",
+  "prompt": "**State the Fundamental Theorem of Calculus** and give the \"area-so-far function has the curve as its derivative\" intuition for why differentiation and integration are inverses.",
+  "answer": "The Fundamental Theorem states `∫ₐᵇ f(x)dx = F(b) - F(a)` where `F' = f`: to find accumulated area under a rate, find an antiderivative and subtract its endpoints. The intuition: let F(x) be the accumulated area from a up to x; pushing the right edge x rightward by a tiny amount dx adds a sliver of area with height f(x) and width dx, so `dF ≈ f(x)dx`, meaning `dF/dx = f(x)`. The area-so-far function's derivative is the original function itself, which is exactly why differentiation and integration are inverse operations, accumulating and rate-of-change are two sides of one coin."
+ },
+ {
+  "id": "18.1-calculus-for-cs-6",
+  "chapter": "18-Math/18.1-calculus-for-cs.md",
+  "prompt": "**Explain convex vs. non-convex** and why it's the line between \"optimization solved\" and \"optimization is an art\", tying linear regression vs. deep nets.",
+  "answer": "A function is convex if `f''(x) ≥ 0` everywhere (curves up like a cup); convexity guarantees exactly one minimum, and any local minimum is automatically the global minimum, so gradient descent is guaranteed to find the best answer. Non-convex functions can have many local minima and saddle points, so gradient descent might get stuck somewhere that isn't globally optimal. Linear and logistic regression have convex losses and train reliably to a unique optimum, while deep neural nets have wildly non-convex losses full of local minima and saddles, needing momentum, careful initialization, and learning-rate schedules to navigate, convex vs non-convex is literally the dividing line between \"optimization is solved\" and \"optimization is an art.\""
+ },
+ {
+  "id": "18.1-calculus-for-cs-7",
+  "chapter": "18-Math/18.1-calculus-for-cs.md",
+  "prompt": "**Implement, from scratch, numerical differentiation (central difference), gradient descent on a 2D function, and the trapezoid rule**, then check each against SymPy's exact answer. Cross-links: complexity of these iterations (01.4), the discrete-sum foundations behind integration-as-summation (01.3), the statistics where integrals become probabilities (16.1), the linear algebra that makes gradients into vectors and the Hessian into a matrix (18.2), and the full backpropagation derivation this chapter sets up (14.2). Next up, 18.2 gives the gradient a home: vectors, matrices as transformations, and the eigenvalues that power PCA and PageRank.",
+  "answer": "Central difference approximates a derivative as `(f(x+h) - f(x-h))/(2h)`, more accurate than the forward difference because its error is O(h²) instead of O(h), and it's the standard way to sanity-check an analytic gradient by comparing it to this numerical estimate. A 2D gradient-descent loop computes the gradient at the current point, steps against it scaled by a learning rate, and repeats until convergence, exactly the loop used to train a linear regression by minimizing MSE. The trapezoid rule approximates a definite integral by summing trapezoids under the curve (`h·(0.5·y₀ + 0.5·y_n + Σ interior y)`), and all three should be checked against SymPy's exact symbolic results (`sp.diff`, `sp.integrate`) to confirm the numerical approximations converge to the same answer."
+ },
+ {
+  "id": "18.2-linear-algebra-and-eigenvalues-1",
+  "chapter": "18-Math/18.2-linear-algebra-and-eigenvalues.md",
+  "prompt": "**Explain what a matrix *does* to space**, columns are where the basis vectors land; it rotates/scales/shears/projects. Draw the cat-on-graph-paper.",
+  "answer": "A matrix isn't just a grid of numbers, it's a function that transforms vectors, rotating, scaling, shearing, projecting, or flipping the space they live in. The key fact: a matrix's columns are exactly where the basis vectors (î and ĵ in 2D) land after the transformation, so applying the matrix to any vector `[x,y]` is a weighted sum of the columns, `x·(column 1) + y·(column 2)`. Picture graph paper with a cat drawn on it: the matrix is an operation on the whole sheet; spinning, stretching, or shearing the paper drags the cat's outline, and every vector on the sheet, along with it."
+ },
+ {
+  "id": "18.2-linear-algebra-and-eigenvalues-2",
+  "chapter": "18-Math/18.2-linear-algebra-and-eigenvalues.md",
+  "prompt": "**Derive matrix multiplication as composition**, `AB` means \"do `B`, then `A`,\" which is why it's non-commutative and why dimensions must match.",
+  "answer": "`AB` means \"do B first, then A,\" you're finding a single matrix C such that `Cv = A(Bv)` for all v. Because column j of C is where basis vector j lands after applying B and then A, working that out entry by entry gives the familiar rule `C_ij = Σ_k A_ik B_kj`, row i of A dotted with column j of B. It's non-commutative because \"rotate then shear\" is a genuinely different transformation from \"shear then rotate,\" order matters; dimensions must match (A is m×n, B is n×p) because B's output has to be a valid input for A."
+ },
+ {
+  "id": "18.2-linear-algebra-and-eigenvalues-3",
+  "chapter": "18-Math/18.2-linear-algebra-and-eigenvalues.md",
+  "prompt": "**Explain the dot product two ways** (sum of products *and* `‖a‖‖b‖cos θ`) and why it's a similarity score, connecting to cosine similarity and embeddings.",
+  "answer": "The dot product is `a·b = Σ aᵢbᵢ` (sum of products) and also `‖a‖‖b‖cosθ` (magnitude times the cosine of the angle between them); the two formulas are equal, which is what makes the dot product a similarity score: same direction gives a large positive value, perpendicular gives zero, opposite gives a large negative value. Cosine similarity is just the dot product normalized by both vectors' lengths, isolating the angle and ignoring magnitude, which is exactly why embeddings (words, documents, images) are compared by cosine similarity, two embeddings pointing the same way mean similar content regardless of vector length."
+ },
+ {
+  "id": "18.2-linear-algebra-and-eigenvalues-4",
+  "chapter": "18-Math/18.2-linear-algebra-and-eigenvalues.md",
+  "prompt": "**Explain the determinant as area scaling** and why `det = 0` ⟺ non-invertible (a destroyed dimension can't be recovered).",
+  "answer": "The determinant answers \"by what factor does this transformation scale area (or volume)?\" `det=2` doubles all areas, `det=1` preserves area (rotations), `det=0` collapses space onto a lower dimension, squashing area to zero. A destroyed dimension can't be recovered: if det=0, infinitely many different inputs map to the same output, so there's no way to reverse the transformation, which is exactly why `det(A)≠0` is equivalent to A being invertible."
+ },
+ {
+  "id": "18.2-linear-algebra-and-eigenvalues-5",
+  "chapter": "18-Math/18.2-linear-algebra-and-eigenvalues.md",
+  "prompt": "**Derive eigenvalues** from `Av = λv` → `(A−λI)v = 0` → `det(A−λI) = 0`, and explain what an eigenvector *means* (an invariant direction the transform only scales).",
+  "answer": "Rearranging `Av = λv` gives `(A - λI)v = 0`, which says the nonzero vector v gets mapped to zero by `(A - λI)`; a matrix can only crush a nonzero vector to zero if it's singular, so `det(A - λI) = 0`, the characteristic equation. Expanding this determinant gives a polynomial whose roots are the eigenvalues; solving `(A - λI)v = 0` for each root gives the corresponding eigenvector. An eigenvector is an invariant direction, a direction the transformation only stretches or shrinks (by the eigenvalue λ) without rotating off its own line, the axes the transformation is \"built around.\""
+ },
+ {
+  "id": "18.2-linear-algebra-and-eigenvalues-6",
+  "chapter": "18-Math/18.2-linear-algebra-and-eigenvalues.md",
+  "prompt": "**Implement power iteration** and explain why it finds the dominant eigenvector, connect to PageRank.",
+  "answer": "Power iteration repeatedly applies A to a random vector and renormalizes each step: `v ← Av/‖Av‖`. It converges to the dominant eigenvector because writing the starting vector in the eigenvector basis, each application of A scales each component by its own eigenvalue, so after k applications the component along the largest-magnitude eigenvector dominates while every other component's relative contribution shrinks as `(λᵢ/λ₁)^k → 0`. This is literally how Google's original PageRank works: the web is a giant link matrix, and the dominant eigenvector of that matrix is the stationary distribution of a random surfer, i.e. PageRank."
+ },
+ {
+  "id": "18.2-linear-algebra-and-eigenvalues-7",
+  "chapter": "18-Math/18.2-linear-algebra-and-eigenvalues.md",
+  "prompt": "**State SVD** (`A = UΣVᵀ` = rotate-scale-rotate) and why truncating it gives optimal compression, connect to image compression and recommenders.",
+  "answer": "SVD factors any matrix as `A = UΣVᵀ`, meaning every linear transformation is a rotation, then a scaling along axes (the singular values, sorted largest first), then another rotation. Truncating to the top k singular values gives the best possible rank-k approximation of A (the Eckart-Young theorem), because the singular values measure how much \"energy\" or variance lives along each direction, and the small ones discarded carry little information. This is why image compression works (an image is a matrix; keep the top singular values and most of the visual structure survives) and why recommender systems work (a user×item ratings matrix is approximately low-rank, a few latent \"taste\" factors explain most ratings)."
+ },
+ {
+  "id": "18.2-linear-algebra-and-eigenvalues-8",
+  "chapter": "18-Math/18.2-linear-algebra-and-eigenvalues.md",
+  "prompt": "**Derive PCA as the eigendecomposition of the covariance matrix** via the maximum-variance / Lagrange-multiplier argument, and implement it from scratch. Cross-links: the dot products and gradients of 18.1 (the steepest-ascent proof was a dot product; the Hessian is a matrix), the covariance and variance of 16.1 (PCA is built on the covariance matrix), the complexity of these operations, matrix multiply is `O(n³)` naïvely (01.4), the discrete structures underneath (01.3), and the embeddings and PCA used throughout ML (14.1) and as inputs to neural nets (14.2). Together, 18.1 and 18.2 are the mathematical bedrock the entire ML stack stands on, gradients to optimize, vectors and matrices to compute, eigenvalues to find the structure in data. No more black boxes.",
+  "answer": "PCA finds the unit direction w that maximizes the variance of the projected, centered data, `Var(Xw) = wᵀCw` subject to `‖w‖=1`, where C is the covariance matrix. Setting the gradient of the Lagrangian `wᵀCw - λ(wᵀw - 1)` to zero gives `Cw = λw`, exactly the eigenvector equation, so the direction of maximum variance is the eigenvector of the covariance matrix with the largest eigenvalue, and that eigenvalue equals the variance captured along it. Implementing it from scratch means: center the data, compute the covariance matrix, eigendecompose it (`np.linalg.eigh` since C is symmetric), sort eigenvectors by eigenvalue descending, and project onto the top k eigenvectors, matching scikit-learn's PCA exactly (up to a sign flip)."
+ },
+ {
+  "id": "20.1-artificial-intelligence-1",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**What is a rational agent, and why is \"rational\" different from \"successful\" and from \"omniscient\"?**",
+  "answer": "A rational agent, for each possible percept sequence, selects an action expected to maximize its performance measure, given its built-in knowledge and what it has perceived so far. It's different from \"successful\" because rationality is about making the best decision given available information, not about guaranteeing a good outcome, a rational poker player can play perfectly and still lose a hand. It's different from \"omniscient\" because you can only be rational about what you could have known; an agent that couldn't have foreseen an outcome wasn't irrational for not avoiding it."
+ },
+ {
+  "id": "20.1-artificial-intelligence-2",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**Frame \"find the cheapest route\" as a search problem** (all five components). Which uninformed search is optimal, and under what condition?",
+  "answer": "The five components are: initial state (starting location), actions (legal moves from a location), a transition model/result function (where an action leads), a goal test (is this the destination), and a step cost (the price of each move, e.g. distance). Uniform-Cost Search (Dijkstra-style, ordering the frontier by accumulated path cost) is optimal for any non-negative step costs, always expanding the cheapest path so far. BFS is only optimal under the special condition that every step cost is equal, since it finds the shallowest goal, which equals cheapest only when depth is proportional to cost."
+ },
+ {
+  "id": "20.1-artificial-intelligence-3",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**Why is A\\* optimal?** State admissibility and consistency, and give the one-line argument for each.",
+  "answer": "A* is optimal because with an admissible heuristic, any node n still on the optimal path always has `f(n) = g(n)+h(n) ≤ C*` (the optimal cost), while a suboptimal goal G₂ has `f(G₂) = g(G₂) > C*`, so A* always expands the optimal-path node before it could return the suboptimal goal. Admissibility means the heuristic never overestimates the true cost-to-go (`h(n) ≤ h*(n)`), it's optimistic. Consistency is the stronger triangle-inequality property (`h(n) ≤ cost(n,a,n') + h(n')`) that guarantees f never decreases along any path, so a state is never re-expanded once popped."
+ },
+ {
+  "id": "20.1-artificial-intelligence-4",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**Why does a \"more informed\" admissible heuristic never hurt**, and where do good heuristics come from?",
+  "answer": "A more-informed (larger but still admissible) heuristic dominates a weaker one, meaning it expands no more nodes, because a tighter, still-optimistic estimate lets A* prune more aggressively without ever risking overestimating and missing the optimal solution. Good heuristics usually come from relaxing the problem: solving an easier version where some constraint is removed (like letting 8-puzzle tiles pass through each other, giving Manhattan distance) gives a cost that's always an admissible estimate for the real, harder problem."
+ },
+ {
+  "id": "20.1-artificial-intelligence-5",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**Walk through minimax**, then explain what alpha-beta prunes and why the answer is *unchanged*.",
+  "answer": "Minimax assumes a perfect opponent: at a MAX node it takes the maximum of children's backed-up values, at a MIN node the minimum, all the way down to terminal states whose true utility is known, then backs those values up through alternating min/max layers so the root picks the move leading to the best guaranteed outcome. Alpha-beta pruning carries two bounds down the recursion, α (the best MAX can already guarantee) and β (the best MIN can already guarantee), and prunes any subtree where `α ≥ β` because that branch can no longer influence the final decision. The answer is unchanged because pruning never discards a branch that could actually change the backed-up value at the root, it's a pure efficiency optimization, not an approximation."
+ },
+ {
+  "id": "20.1-artificial-intelligence-6",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**Why is tic-tac-toe with optimal play always a draw**, but chess engines use evaluation functions instead of searching to the end?",
+  "answer": "Tic-tac-toe with optimal play always draws because minimax exhaustively proves that neither player can force a win against a perfect opponent, the game tree is small enough to search completely to terminal states. Chess engines use evaluation functions instead because chess's game tree (~10^40 states) is far too deep to search to terminal states in any reasonable time, so engines cut off the search at a depth limit and estimate who's winning with a hand-crafted or learned evaluation function rather than knowing the true outcome."
+ },
+ {
+  "id": "20.1-artificial-intelligence-7",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**What is a CSP**, and what do AC-3 and MRV each buy you?",
+  "answer": "A CSP is variables with domains of allowed values, plus constraints restricting which value combinations are legal, like Sudoku, map coloring, or scheduling. AC-3 (arc consistency propagation) buys you pruning: it deletes values that can't possibly participate in any solution before or during search, often solving easy instances with zero backtracking. MRV (Minimum Remaining Values, assign the most-constrained variable next) buys you failing fast: if a variable is about to run out of legal values, you discover that immediately instead of many levels deeper into a doomed branch."
+ },
+ {
+  "id": "20.1-artificial-intelligence-8",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**What's entailment vs. inference**, and how does resolution prove something by refutation?",
+  "answer": "Entailment (`KB ⊨ α`) means α is true in every world where the knowledge base is true; inference is the mechanical process of actually deriving entailed sentences from the KB. Resolution proves entailment by refutation: to show `KB ⊨ α`, you add `¬α` to the KB and repeatedly apply the resolution rule (from `(A∨B)` and `(¬A∨C)` infer `(B∨C)`) until you derive the empty clause, a contradiction, which proves the KB together with the negated query is unsatisfiable, meaning the original query must be entailed."
+ },
+ {
+  "id": "20.1-artificial-intelligence-9",
+  "chapter": "20-AI/20.1-artificial-intelligence.md",
+  "prompt": "**Why did learning beat hand-coding** for perception, and where is hand-coded/symbolic AI still the *right* choice? ---",
+  "answer": "Learning beat hand-coding for perception because problems like vision and speech defied rule-writing, nobody can articulate the rules for \"is this a cat,\" while statistical/deep learning infers those rules from data instead of demanding humans state them, and it degrades gracefully on noisy or off-distribution input where symbolic systems fail brittle and total. Hand-coded/symbolic AI is still the right choice for crisp, well-defined problems needing guarantees, chess, Sudoku, scheduling, theorem proving, constraint solvers running logistics or chip verification, anywhere correctness and transparency matter more than handling messy perceptual input."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-1",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**Why is a production ML system fundamentally harder to operate than ordinary software?** (Silent failure, data dependence, decay.)",
+  "answer": "Three things make it harder: production ML systems fail silently, a model that's quietly become less accurate throws nothing, no 500, no page, it just keeps returning confident wrong answers until a business metric tanks. They depend on data, not just code, so \"reproducible\" now means version-pinning data too, and a bug can live entirely in the data pipeline while the code stays untouched. And they rot: even a perfect model decays as the world drifts away from its training data, so a model isn't a deliverable you ship once, it's a service you keep alive with monitoring and retraining."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-2",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**What is data leakage?** Name three forms and the discipline that prevents each.",
+  "answer": "Data leakage is when information that wouldn't be available at prediction time sneaks into training, inflating the offline score in a way that collapses in production. Target leakage is a feature that's a proxy for the label itself (like `account_closed_date` when predicting churn), prevented by auditing each feature for \"is this knowable at prediction time?\" Train/test contamination is fitting a scaler or encoder on the full dataset before splitting, prevented by always using a `Pipeline` so preprocessing re-fits on train only, inside each CV fold. Temporal leakage is using future information to predict the past, prevented by splitting time-series data by time (`TimeSeriesSplit`), never randomly."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-3",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**Why is accuracy usually the wrong metric**, and what do you use instead for imbalanced problems? Why PR-AUC over ROC-AUC?",
+  "answer": "Accuracy is misleading on imbalanced data because a trivial \"always predict the majority class\" model can score extremely high (99.5% accurate on 0.5% fraud) while being useless. Instead use precision, recall, and F1, and choose the operating threshold from the business cost asymmetry rather than the default 0.5. PR-AUC is preferred over ROC-AUC on rare-positive problems because ROC-AUC can look great while the model is actually useless on the rare class (dominated by the huge number of true negatives), while PR-AUC directly reflects performance on the positives you actually care about."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-4",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**What is slicing and why is it non-negotiable** for both quality and fairness?",
+  "answer": "Slicing means evaluating model performance separately on meaningful subgroups (new users, a region, a device type) instead of just one global average metric. It's non-negotiable for quality because a model can be 95% accurate overall but 60% accurate on a subgroup that matters, and a global metric averages that failure away, hiding it until it costs the business. It's non-negotiable for fairness because the same averaging can hide discriminatory behavior against a demographic or protected group, and you can't fix or even see a problem you never measured."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-5",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**Explain gradient boosting as \"gradient descent in function space.\"** What does each tree fit, and what does XGBoost add?",
+  "answer": "Gradient boosting builds an additive model stage by stage, and at each stage the new tree is fit to the negative gradient of the loss with respect to the current predictions, the direction that would most reduce the loss; for squared error that negative gradient is exactly the residual, so each tree predicts the current errors and gets added in to nudge predictions toward the truth, one small step downhill on the loss surface, with the learning rate as step size. XGBoost adds a second-order Taylor expansion of the loss (using the Hessian, not just the gradient, for better steps), explicit regularization on tree complexity to resist overfitting, and fast, sparsity-aware split-finding."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-6",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**Data drift vs. concept drift**, which can you detect *without* labels, and how (PSI)?",
+  "answer": "Data drift (covariate shift) is when the input distribution `P(X)` changes, the model was trained on a world that no longer exists; concept drift is when the relationship `P(Y|X)` changes, the same inputs now mean a different outcome, more dangerous and usually needing labels (eventually) to detect. Data drift can be detected in real time without labels by comparing the live feature distribution to the training distribution, using the Population Stability Index (PSI); a rule of thumb is PSI under 0.1 is stable, 0.1-0.25 is moderate shift, and above 0.25 is significant drift worth investigating."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-7",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**Walk shadow → canary → A/B.** What does each one buy you, and why do ML models especially need careful rollout?",
+  "answer": "Shadow deployment runs the new model on real production traffic in parallel without acting on its output, just logging and comparing, buying zero-risk validation that it behaves sanely and meets latency budgets. Canary routes a small, growing slice of traffic to the new model with automatic rollback if metrics degrade, buying limited blast radius. A/B testing deliberately splits traffic to measure the actual business metric with statistical significance, buying the ground-truth online evaluation that an offline metric can't provide. ML models especially need careful rollout because they fail silently, a model that looks better offline can be worse online in ways the offline metric never showed."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-8",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**What is CT (continuous training)**, and what *extra* things does an ML CI pipeline test beyond code?",
+  "answer": "CT (Continuous Training) is the automated pipeline that retrains, re-evaluates, and re-deploys a model on a trigger, the full lifecycle running as a self-sustaining loop rather than a manual notebook run. Beyond testing code, an ML CI pipeline also validates data (schema checks, distribution checks, no unexpected nulls) and runs model tests: does the new model beat a baseline on a frozen eval set, does it pass behavioral invariance tests, and does it hold up on every slice, so a model that improves overall but tanks a protected slice fails the pipeline."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-9",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**What four things must you version** to make a model reproducible, and why is data the one people miss?",
+  "answer": "You must version code (a git SHA), data (a version or hash, what tools like DVC handle), environment (pinned dependencies or a Docker image), and config/hyperparameters (tracked per run); pin all four and any model is rebuildable byte-for-byte. Data is the one people miss because `git` naturally tracks code but not the datasets a model was trained on, and \"works on my machine\" is fatal in ML precisely because the model depends on data you can't see in your code repository, miss that one piece and nobody can reproduce or debug the model months later."
+ },
+ {
+  "id": "20.2-ml-engineering-and-mlops-10",
+  "chapter": "20-AI/20.2-ml-engineering-and-mlops.md",
+  "prompt": "**What goes in a model card vs. a runbook**, and why is \"how to roll back\" the most important runbook section? ---",
+  "answer": "A model card documents intended use and out-of-scope uses, the training data and its known limitations/biases, evaluation metrics including the sliced breakdown, the chosen threshold and why, and known failure modes, aimed at understanding what the model is and isn't good for. A runbook is operational: how to tell if the model is healthy, what each alert means and the first things to check, how to trigger a retrain, and who owns it. \"How to roll back\" is the most important runbook section because a model without a documented, fast rollback path isn't production-ready, it's a liability with a confidence score, since it's the one action that bounds the worst-case damage when something goes wrong at 3 a.m."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-1",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**One sentence:** an LLM is a next-token predictor; doing that well over all of text forces it to learn structure, and generation is just prediction run in a loop.",
+  "answer": "An LLM is a next-token predictor, trained to assign a probability distribution over what token comes next given everything before it; doing that well across the entire span of human text forces the model to internalize grammar, facts, and reasoning patterns as a side effect of the prediction objective, and generation is just that prediction run repeatedly in a loop, each output token appended and fed back in."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-2",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**Tokenization:** text → subword tokens via BPE (merge frequent adjacent pairs); the model never sees characters (hence spelling errors), and cost/context are measured in tokens (~4 chars each).",
+  "answer": "Text is converted to subword tokens via Byte-Pair Encoding, which starts with every character as its own token and repeatedly merges the most frequent adjacent pair, so common words become single tokens while rare words get split into pieces. Because the model operates on token IDs, not characters, it never truly \"sees\" individual letters, which is why it can miscount the r's in \"strawberry.\" Cost and context windows are measured in tokens, not words, roughly ~4 characters or ~1.3 tokens per English word, so a prompt looks shorter in words than it actually costs in tokens."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-3",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**Embeddings:** tokens → vectors where meaning is direction; similarity = cosine of the angle (ties to 18.2's dot product).",
+  "answer": "Each token maps to a learned vector in a high-dimensional embedding space, and meaning becomes geometry: tokens used in similar ways end up pointing in similar directions. Similarity between two vectors is measured as the cosine of the angle between them, the dot product normalized by both lengths (ties directly to 18.2's `a·b = ‖a‖‖b‖cosθ`), which isolates direction and ignores magnitude, exactly what semantic search and RAG retrieval rank by."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-4",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**Attention:** `softmax(QKᵀ/√dₖ)V`, each token's query matches every key to weight a blend of values; `√dₖ` prevents gradient saturation; causal masking forbids looking ahead; multi-head = several lenses in parallel; positional encoding restores word order.",
+  "answer": "Attention computes `softmax(QKᵀ/√dₖ)V`: each token's query is dotted against every token's key to get relevance scores, softmax turns those into weights summing to 1, and the output is a weighted blend of all tokens' values, so a token gathers context from wherever it's relevant. Dividing by `√dₖ` prevents the dot products from growing large enough to saturate softmax and kill gradients. Causal masking zeroes out future positions so a token predicting the next word can't peek ahead. Multi-head attention runs several of these in parallel with different learned projections, each head potentially tracking a different kind of relationship, and since attention itself is order-blind, positional encoding is added to restore word order."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-5",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**Training:** pretraining (next-token, huge scale) → SFT (instruction demos) → RLHF/DPO (human preferences). Scaling laws make bigger runs predictably better.",
+  "answer": "Pretraining trains a decoder-only network on next-token prediction over a massive corpus, giving a base model with broad knowledge and fluency but no assistant behavior. Supervised fine-tuning (SFT) then fine-tunes on curated (prompt, ideal response) pairs, turning a text-completer into an instruction-follower. RLHF or DPO aligns the model to human preferences by ranking multiple responses and optimizing toward the ones humans prefer, teaching tone, refusals, and formatting that's cheaper to scale than hand-writing perfect answers for everything. Scaling laws describe loss falling predictably as model size, data, and compute increase together, which is why bigger, well-balanced runs reliably buy better capabilities."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-6",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**Decoding:** greedy vs sampling; temperature (randomness), top-k/top-p (candidate set). Low temp for JSON/facts.",
+  "answer": "Greedy decoding always picks the highest-probability token, deterministic but repetitive; sampling draws randomly from the distribution, more diverse but riskier. Temperature rescales logits before softmax: low temperature sharpens the distribution toward argmax (deterministic, focused), high temperature flattens it (more random, more creative and error-prone). Top-k keeps only the k most probable tokens before sampling; top-p (nucleus) keeps the smallest set of tokens whose cumulative probability reaches p, adapting the candidate pool to the model's confidence. For anything that must be correct or parseable, like JSON output, use low temperature since randomness adds noise, not knowledge."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-7",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**Hallucinations:** the objective rewards plausibility, knowledge is frozen/lossy, and the model doesn't know what it doesn't know, mitigate with RAG, low temp, validation, and \"say I don't know.\"",
+  "answer": "Hallucinations happen because the training objective rewards plausible-sounding text, not verified truth, so a fabricated-but-plausible citation is exactly the kind of thing that \"should\" come next to the model. Training data has a cutoff and is lossily compressed into weights, and the model doesn't reliably know the boundary of its own knowledge, so it fills gaps with a confident best guess rather than admitting uncertainty. Mitigations: RAG (grounding in real source text is the biggest lever), lower temperature for factual tasks, instructing the model to cite sources or say \"I don't know,\" and structured output with schema validation so malformed or implausible answers get caught before they're trusted."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-8",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**Prompting:** system prompt, few-shot (in-context learning), chain-of-thought, structured JSON + validate + retry (your NYX pattern).",
+  "answer": "The system prompt is a persistent instruction framing the model's role, constraints, and output format for the whole conversation. Few-shot prompting includes input→output examples so the model pattern-matches the demonstrated format through in-context learning, no weight updates needed. Chain-of-thought asks the model to reason step by step before answering, which measurably improves accuracy on multi-step problems because each reasoning token becomes context for the next. The structured JSON pattern specifies an exact schema, gives one or two valid examples, uses the provider's JSON mode if available, and validates the result against a schema like Pydantic, retrying with the error fed back if it fails."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-9",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**RAG:** chunk → embed → vector index → cosine retrieve top-k → stuff context → grounded generate. Grounding is the biggest hallucination lever.",
+  "answer": "RAG (Retrieval-Augmented Generation) grounds an LLM in external data it wasn't trained on: split documents into overlapping chunks, embed each chunk into a vector, store them in a vector index for fast nearest-neighbor search, then at query time embed the question and retrieve the top-k most similar chunks by cosine similarity, stuff those chunks into the prompt, and instruct the model to answer only from that context. Grounding is the biggest hallucination lever because it gives the model actual source text to answer from instead of relying on its frozen, lossy internal knowledge."
+ },
+ {
+  "id": "20.3-generative-ai-and-llms-10",
+  "chapter": "20-AI/20.3-generative-ai-and-llms.md",
+  "prompt": "**When to use what:** prompt first; RAG for knowledge; fine-tune for behavior at scale, and they compose. ---",
+  "answer": "Start with prompting, it's cheapest and fastest to iterate, and most problems are actually prompt problems. Reach for RAG when the issue is knowledge, the model lacks facts or hallucinates, since RAG injects truth while fine-tuning generally doesn't reliably teach new facts. Reach for fine-tuning when the issue is behavior at scale, a very specific output style or format needed consistently, or thousands of examples that prompting can't fit. These aren't rivals, they compose: a fine-tuned model with RAG and a good system prompt is common in production."
+ },
+ {
+  "id": "20.4-agentic-ai-1",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**Agent = LLM + tools + loop.** Perceive → reason → act → observe → repeat, with autonomy over *when* to act, *which* tool, and *when done*. Add autonomy only where the task needs it; a fixed workflow is often better.",
+  "answer": "An agent is an LLM placed in a control loop where it can choose actions (tool calls) based on observations while pursuing a goal, cycling through perceive (read the goal and situation), reason (decide what's needed next), act (call a tool), observe (read the result), and repeat until done. The autonomy is specifically over when to act, which tool to use, and when the task is complete, that's what distinguishes an agent from a single LLM call. Autonomy should only be added where the task genuinely needs open-ended decision-making; a fixed workflow with the LLM filling in narrow pieces is often more reliable, cheaper, and easier to debug."
+ },
+ {
+  "id": "20.4-agentic-ai-2",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**ReAct:** interleave Thought (reasoning) and Action (tool call), read the Observation, loop, bounded by max-steps. Externalize what the model is bad at (math, fresh facts, side effects) to tools.",
+  "answer": "ReAct interleaves a Thought (chain-of-thought reasoning about what's needed next) with an Action (a tool call), reads the resulting Observation, and loops back to reasoning armed with that new information, continuing until the model produces a Final Answer, bounded by a max-steps guard so a confused agent can't loop forever. The key move is externalizing what the model is bad at, exact arithmetic, fresh facts, real-world side effects, to tools, while keeping the part it's good at, deciding what to do next, inside the model itself."
+ },
+ {
+  "id": "20.4-agentic-ai-3",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**Function calling:** describe tools as JSON Schema → model picks a tool & args → **validate** → execute → feed result back. The schema/description is the contract; treat model output as untrusted.",
+  "answer": "You describe each tool to the model as JSON Schema (name, description, typed parameters); the model, fine-tuned to recognize when a tool is appropriate, emits a structured tool-call choosing a tool and filling in arguments based on matching the tool's description to the need. The runtime then validates those arguments against the schema before ever executing, since model output is untrusted input, executes the tool in your own code, and feeds the result back to the model as an observation so it can continue. The schema and description are the contract that determines whether the model picks the right tool with valid arguments; write them carefully."
+ },
+ {
+  "id": "20.4-agentic-ai-4",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**MCP:** Anthropic's 2024 standard (de-facto by 2026) that turns the M×N tool-integration mess into M+N, one JSON-Schema protocol for tools/resources/prompts across vendors. Write tools once, use everywhere.",
+  "answer": "MCP (Model Context Protocol), introduced by Anthropic in 2024 and the de-facto standard by 2026, is a single JSON-Schema-based protocol for connecting models to tools, data resources, and reusable prompt templates. Before MCP every tool integration was bespoke glue code per model and per app, an M×N problem; MCP turns that into M+N because you write a tool once as an MCP server and any MCP-capable client or model can call it, no rewrites needed across frameworks or vendors."
+ },
+ {
+  "id": "20.4-agentic-ai-5",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**Memory:** short-term (context) + long-term (vector store / RAG over history) + summarization to stay within the window.",
+  "answer": "Short-term memory is the current transcript kept in the context window, fast but bounded and ephemeral. Long-term memory persists facts outside the context in a database or vector store and retrieves them when relevant, essentially RAG applied to the agent's own history, letting it \"remember\" things like a user's stated preferences across sessions. Summarization compacts older turns into a condensed note once the transcript grows too long, keeping the agent within its context budget while preserving the gist, though you have to watch for detail loss and keep critical facts verbatim."
+ },
+ {
+  "id": "20.4-agentic-ai-6",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**Planning:** decomposition, task graphs (DAGs, parallelism, dependencies, LangGraph), reflection/self-critique. More power, more cost, match to the task. RAG becomes a tool the agent calls when it decides it needs to.",
+  "answer": "Decomposition breaks a big goal into sub-tasks up front rather than deciding one step at a time. Task graphs represent those sub-tasks as a DAG so independent branches can run in parallel and dependencies are explicit, exactly what LangGraph models as state transitions. Reflection has the agent critique and revise its own output (\"does this answer the question? is it grounded?\"), which measurably improves quality on hard tasks at the cost of more tokens and latency. More planning and reflection means better results but more cost, so match the machinery to the task's actual difficulty. RAG becomes just one tool the agent can call when it decides it needs to look something up, rather than something always statically stuffed into context."
+ },
+ {
+  "id": "20.4-agentic-ai-7",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**Multi-agent:** roles + orchestration (supervisor / conversational / pipeline). Helps for separable, parallel, specialized work; hurts on simple or tightly-coupled tasks (cost × N, compounding errors). Start single-agent.",
+  "answer": "Multi-agent systems assign distinct roles (researcher, analyst, writer, critic) coordinated by an orchestration pattern, supervisor/worker delegation, conversational back-and-forth, or a fixed pipeline hand-off. They help when sub-tasks are genuinely separable, parallelizable, or benefit from role-specific prompts and tools, and when a critic agent catches errors a single agent would miss. They hurt on simple tasks (pure orchestration overhead) or tightly-coupled steps (agents pass garbled context and compound each other's errors), and cost multiplies by N agents while errors can compound rather than cancel. The default should be starting single-agent and only splitting into roles when you can name the specific benefit."
+ },
+ {
+  "id": "20.4-agentic-ai-8",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**2026 frameworks:** LangGraph (explicit state, high control) → CrewAI (pre-assembled orchestration, fast) on the control spectrum; Claude Agent SDK (production, Anthropic-native), AutoGen (conversational), LlamaIndex (RAG-first), Pydantic AI (type-safe + FastAPI). All speak MCP.",
+  "answer": "LangGraph sits at the high-control end, you explicitly define nodes and edges as a state graph, verbose but fully inspectable and debuggable, while CrewAI sits at the fast-prototyping end, pre-assembling role-based orchestration so you declare who and what and the framework handles the loop. The Claude Agent SDK is Anthropic-native and production-focused with the agent loop and MCP handled for you; AutoGen is built for conversational multi-agent patterns; LlamaIndex is RAG-first, best when the agent's core job is querying your data; Pydantic AI gives type-safe, FastAPI-style ergonomics. All of them speak MCP, so the tool layer you build is portable across whichever framework you choose."
+ },
+ {
+  "id": "20.4-agentic-ai-9",
+  "chapter": "20-AI/20.4-agentic-ai.md",
+  "prompt": "**Production:** evaluation (trajectory + success rate on golden tasks), guardrails (input/action/output), cost & runaway control (max steps, budgets, loop detection, timeouts), observability/tracing (13.1), security (prompt injection, sandboxing, least privilege, 12-Security), human-in-the-loop for consequential actions. ---",
+  "answer": "Evaluating an agent means measuring task success rate on a golden set, trajectory quality (did it use the right tools efficiently or wander), and cost/latency per task, since an agent is a whole trajectory, not one output. Guardrails constrain input (reject malicious/off-topic requests), action (allow-list tools, require approval for dangerous ones, cap argument ranges), and output (validate schema, filter unsafe content). Cost and runaway control means hard limits: max steps, token/dollar budgets, loop detection, and timeouts. Observability/tracing means recording every thought, tool call, and observation so a failed run can be replayed and debugged. Security means treating prompt injection as the top threat, sandboxing any code execution, and applying least privilege so an agent only has the minimum tools and permissions its job needs. Human-in-the-loop puts a person in the approval path for consequential or irreversible actions, like anything that moves money or sends external communication, as the pragmatic safety net while autonomy matures."
+ }
+]

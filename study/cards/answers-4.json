@@ -1,0 +1,710 @@
+[
+ {
+  "id": "04.1-python-deep-dive-1",
+  "chapter": "04-Programming-Mastery/04.1-python-deep-dive.md",
+  "prompt": "**Names vs. objects:** After `a = [1,2,3]; b = a; b.append(4)`, what is `a`, and why? Then after `x = 5; y = x; y += 1`, what is `x`, and why is the outcome different? (Answer should mention identity vs. value and mutable vs. immutable.)",
+  "answer": "`a` is `[1, 2, 3, 4]`. `b = a` doesn't copy the list, it just sticks a second name tag on the same object, so `a is b` is `True` and `b.append(4)` mutates the one object both names point at. `x` stays `5`. `int` is immutable, so `y += 1` can't change the `5` object in place, it creates a brand-new `int` object `6` and re-points only `y` to it, leaving `x` untouched. The difference comes down to mutable objects (list) being changed in place versus immutable objects (int) being rebound to a new object on \"modification.\""
+ },
+ {
+  "id": "04.1-python-deep-dive-2",
+  "chapter": "04-Programming-Mastery/04.1-python-deep-dive.md",
+  "prompt": "**The mutable default bug:** Explain *why* `def f(x, acc=[]): acc.append(x); return acc` accumulates across calls. When is the default object created? Write the correct sentinel-based fix and say why it works.",
+  "answer": "Default argument values are evaluated once, when the function is defined, not each time it's called, so that `[]` is one list object stored on the function (`f.__defaults__`). Every call that omits `acc` reuses that same shared list, so appends pile up across calls instead of starting fresh. The fix is the sentinel pattern: `def f(x, acc=None): if acc is None: acc = []; acc.append(x); return acc`. This works because `None` is the sentinel default (itself immutable and safe to share), and the fresh `[]` is created inside the function body, so it runs anew on every call instead of once at definition time."
+ },
+ {
+  "id": "04.1-python-deep-dive-3",
+  "chapter": "04-Programming-Mastery/04.1-python-deep-dive.md",
+  "prompt": "**The data model:** Which dunder does each of these call, `len(x)`, `x[0]`, `for i in x`, `a == b`, `with x:`, `repr(x)`? Why must `__eq__` and `__hash__` be defined together, and what breaks if you define only `__eq__`?",
+  "answer": "`len(x)` calls `__len__`, `x[0]` calls `__getitem__`, `for i in x` calls `__iter__` (or falls back to repeated `__getitem__`), `a == b` calls `__eq__`, `with x:` calls `__enter__`/`__exit__`, and `repr(x)` calls `__repr__`. `__eq__` and `__hash__` must travel together because if two objects are equal they must hash equal, otherwise dicts and sets break silently (a key that should match won't be found in its own bucket). If you define only `__eq__`, Python sets `__hash__ = None` on the class, making the object unhashable, so it explodes the moment you try to put it in a `set` or use it as a dict key."
+ },
+ {
+  "id": "04.1-python-deep-dive-4",
+  "chapter": "04-Programming-Mastery/04.1-python-deep-dive.md",
+  "prompt": "**Iterators vs. generators:** Implement `CountUp(stop)` as an iterator *class* (with `__iter__`/`__next__`), then rewrite it as a *generator function*. What does `yield` save you from writing by hand, and what does \"lazy evaluation\" let you do that a list can't?",
+  "answer": "As a class: `class CountUp:` with `__init__` storing `stop` and `current = 0`, `__iter__` returning `self`, and `__next__` raising `StopIteration` once `current >= stop`, otherwise returning `current` and incrementing it. As a generator: `def count_up(stop): current = 0; while current < stop: yield current; current += 1`. `yield` saves you from manually tracking state variables (like `self.current`) and manually raising `StopIteration`, the function just freezes and remembers its place automatically between calls. Lazy evaluation produces values on demand with O(1) memory instead of materializing everything up front, so it lets you represent infinite sequences or stream a huge file line by line, things a list can't do because it would have to hold everything in memory at once."
+ },
+ {
+  "id": "04.1-python-deep-dive-5",
+  "chapter": "04-Programming-Mastery/04.1-python-deep-dive.md",
+  "prompt": "**Decorators from scratch:** Build a `@timed` decorator. Then turn it into `@retry(times=3)`: how many function layers does taking an argument require, and what is each layer's job? What does `functools.wraps` fix, and how would you demonstrate the bug it solves?",
+  "answer": "`@timed` wraps a function so the wrapper records a start time, calls the original function, prints the elapsed time, and returns the result; applying `@timed` is exactly `slow_square = timed(slow_square)`. A decorator that takes arguments needs three layers: the outer factory (`retry(times=3)`) takes the config and returns the actual decorator, the middle `decorator(func)` takes the function and returns the wrapper, and the inner `wrapper(*args, **kwargs)` runs the real logic (retrying on exceptions) and forwards the original call signature. `functools.wraps(func)` on the wrapper copies `__name__`, `__doc__`, and `__module__` from the original function onto the wrapper. Without it, a decorated function's `__name__` prints `'wrapper'` instead of its real name and its docstring is lost, which you can demonstrate by decorating a documented function with a plain decorator and printing `.__name__`/`.__doc__` before and after adding `@functools.wraps(func)`."
+ },
+ {
+  "id": "04.1-python-deep-dive-6",
+  "chapter": "04-Programming-Mastery/04.1-python-deep-dive.md",
+  "prompt": "**Composition vs. inheritance & MRO:** Give a one-sentence rule for when to inherit vs. compose. For `class D(B, C)` where `B` and `C` both inherit from `A`, how do you find which `who()` runs, and what does `super()` actually refer to?",
+  "answer": "Reach for inheritance only when there's a genuine \"is-a\" relationship and you want polymorphism, otherwise compose (give the object the pieces it needs as injected dependencies, which also makes testing easier). To find which `who()` runs on `class D(B, C)`, look at `D.__mro__`, which Python computes via C3 linearization (here `[D, B, C, A, object]`); the first class in that order that defines `who()` wins. `super()` doesn't mean \"the parent class\" literally, it means \"the next class in the MRO,\" which is why cooperative multiple inheritance (every class calling `super().__init__()`) chains correctly through the linearized order rather than a fixed parent."
+ },
+ {
+  "id": "04.2-files-regex-os-1",
+  "chapter": "04-Programming-Mastery/04.2-files-regex-os.md",
+  "prompt": "**Text vs. binary mode:** What's the difference between `open(p, \"r\")` and `open(p, \"rb\")`? Why do you always pass `encoding=\"utf-8\"` in text mode, and what bug does forgetting it cause across machines?",
+  "answer": "`open(p, \"r\")` is text mode: Python reads bytes and decodes them into a `str` using an encoding, and also translates line endings. `open(p, \"rb\")` is binary mode: no decoding and no newline translation, you get raw `bytes`, which is what you want for images, PDFs, or anything non-text. You always pass `encoding=\"utf-8\"` because the default encoding depends on the platform's locale, not guaranteed to be UTF-8. Forgetting it causes garbled characters (mojibake) when a file written on one machine is read back on another machine whose default locale encoding differs."
+ },
+ {
+  "id": "04.2-files-regex-os-2",
+  "chapter": "04-Programming-Mastery/04.2-files-regex-os.md",
+  "prompt": "**Why `with`:** What resource does `open()` acquire, and what goes wrong if you never close a file? Rewrite a leaky `f = open(...); ...; f.close()` using `with` and explain the guarantee it gives even when the body raises.",
+  "answer": "`open()` grabs an OS resource, a file descriptor. If you never close it you leak descriptors, and on some systems the file stays locked. The leaky version `f = open(\"x.txt\"); data = f.read(); f.close()` becomes `with open(\"x.txt\", encoding=\"utf-8\") as f: data = f.read()`. This uses the `__enter__`/`__exit__` context-manager protocol: `with` guarantees `f.close()` runs on exit no matter what, exception or not, so if `f.read()` raises partway through, the file still gets closed instead of leaking."
+ },
+ {
+  "id": "04.2-files-regex-os-3",
+  "chapter": "04-Programming-Mastery/04.2-files-regex-os.md",
+  "prompt": "**`pathlib`:** Build the path to `project/data/2026/report.csv` using `Path` and `/`. Given a path, how do you get its `.name`, `.stem`, `.suffix`, and `.parent`? What's the difference between `glob(\"*.py\")` and `rglob(\"*.py\")`?",
+  "answer": "`p = Path(\"project\") / \"data\" / \"2026\" / \"report.csv\"`; the `/` operator joins path segments in an OS-correct way. `.name` gives the filename with extension (`report.csv`), `.stem` gives the name without the suffix (`report`), `.suffix` gives the extension with its dot (`.csv`), and `.parent` gives the containing directory (`project/data/2026`). `glob(\"*.py\")` is non-recursive, it only searches the given directory, while `rglob(\"*.py\")` is recursive and searches that directory and all subdirectories."
+ },
+ {
+  "id": "04.2-files-regex-os-4",
+  "chapter": "04-Programming-Mastery/04.2-files-regex-os.md",
+  "prompt": "**subprocess safety:** Why is `subprocess.run([\"echo\", user_input])` safe but `subprocess.run(f\"echo {user_input}\", shell=True)` dangerous? What three keyword arguments make up your default safe incantation, and what does each do?",
+  "answer": "Passing arguments as a list means there's no shell parsing involved, `user_input` is just handed to the program as a literal argument, so even a malicious-looking string is treated harmlessly. With `shell=True` and an f-string, the whole command is handed to a real shell, which interprets shell metacharacters like `;`, so crafted input can inject and run arbitrary commands, a shell-injection vulnerability. The default safe incantation is `capture_output=True` (grabs stdout/stderr), `text=True` (decodes bytes into `str` instead of raw bytes), and `check=True` (raises `subprocess.CalledProcessError` if the exit code isn't 0)."
+ },
+ {
+  "id": "04.2-files-regex-os-5",
+  "chapter": "04-Programming-Mastery/04.2-files-regex-os.md",
+  "prompt": "**Greedy vs. lazy regex:** Explain why `<.*>` matches the whole `<b>...</i>` span but `<.*?>` matches each tag. Walk through what the engine does (left-to-right, backtracking) for each.",
+  "answer": "Quantifiers are greedy by default: they match as much as possible and only backtrack if forced. For `<.*>` against `<b>bold</b> and <i>italic</i>`, the engine finds the first `<`, then `.*` grabs the rest of the entire string, then backtracks character by character until it finds a trailing `>` that lets the whole pattern succeed, so the match spans from the first `<` all the way to the last `>` in the string, one giant match. Adding `?` makes it lazy: `.*?` matches as little as possible, expanding one character at a time only until the very next `>` is found, so the engine stops at the first closing bracket and each tag becomes its own match."
+ },
+ {
+  "id": "04.2-files-regex-os-6",
+  "chapter": "04-Programming-Mastery/04.2-files-regex-os.md",
+  "prompt": "**Regex groups & lookarounds:** Write a pattern with named groups that extracts year/month/day from `2026-06-26`. Then write a lookbehind that grabs the number after a `$` in `price $42`. Why are lookarounds called \"zero-width,\" and why does that let you stack two of them at one position (like a password validator)?",
+  "answer": "The date pattern is `(?P<year>\\d{4})-(?P<month>\\d{2})-(?P<day>\\d{2})`, and `.groupdict()` on a match against `2026-06-26` gives `{'year': '2026', 'month': '06', 'day': '26'}`. The lookbehind is `(?<=\\$)\\d+`, which against `price $42` matches `42`, the number preceded by `$`. Lookarounds are called zero-width because they assert a condition about the surrounding text without consuming any characters as part of the match itself. Because they consume nothing, several lookarounds can be anchored at the exact same position in the string, which is how a password validator like `^(?=.*\\d)(?=.*[A-Z]).{8,}$` checks \"contains a digit\" and \"contains an uppercase letter\" both starting from position zero."
+ },
+ {
+  "id": "04.3-scraping-and-apis-1",
+  "chapter": "04-Programming-Mastery/04.3-scraping-and-apis.md",
+  "prompt": "**HTTP anatomy:** Name the four parts of a request and the three parts of a response. What's the difference between `GET` and `POST`, and where does a JSON body go?",
+  "answer": "A request has a method (verb, like `GET`/`POST`), a URL (optionally with a query string), headers (metadata like `Authorization`, `User-Agent`), and optionally a body. A response has a status code, headers, and a body. `GET` means \"please send me a copy\" (reading), `POST` means \"here's something new, please file it\" (submitting/creating). A JSON body goes in the request body, typically for `POST`/`PUT`, and with `requests` you send it via the `json=` parameter, which serializes it and sets the `Content-Type` header for you."
+ },
+ {
+  "id": "04.3-scraping-and-apis-2",
+  "chapter": "04-Programming-Mastery/04.3-scraping-and-apis.md",
+  "prompt": "**Status codes:** What do the `2xx`, `4xx`, and `5xx` families mean as a rule of thumb? What does `429` specifically tell you, and how should your code respond differently to a `404` vs. a `503`?",
+  "answer": "`2xx` means success, `4xx` means you (the client) messed up, fix your request, and `5xx` means the server messed up, not your fault, retry later maybe. `429` specifically means \"too many requests,\" you're going too fast and need to slow down. A `404` (not found) is a client-side problem you generally shouldn't retry, the resource just isn't there. A `503` (service unavailable) is a server-side, likely transient problem, so your code should retry with backoff rather than giving up immediately."
+ },
+ {
+  "id": "04.3-scraping-and-apis-3",
+  "chapter": "04-Programming-Mastery/04.3-scraping-and-apis.md",
+  "prompt": "**requests basics:** Show how to (a) send query params, (b) attach a bearer-token auth header, (c) POST a JSON body, and (d) detect an error response. Why do you always pass `timeout=`?",
+  "answer": "(a) `requests.get(url, params={\"q\": \"python\", \"page\": 2}, timeout=10)` builds and URL-encodes the query string for you. (b) `requests.get(url, headers={\"Authorization\": f\"Bearer {TOKEN}\"}, timeout=10)`. (c) `requests.post(url, json={\"name\": \"Spencer\"}, timeout=10)`, `json=` serializes and sets `Content-Type`. (d) call `resp.raise_for_status()`, which raises `requests.HTTPError` on any `4xx`/`5xx` and is a no-op on `2xx`. You always pass `timeout=` because without it a stalled server hangs your script forever."
+ },
+ {
+  "id": "04.3-scraping-and-apis-4",
+  "chapter": "04-Programming-Mastery/04.3-scraping-and-apis.md",
+  "prompt": "**Politeness:** What is exponential backoff and why use it on `429`/`503`? List three concrete things a polite client does, and explain what the `Retry-After` and `X-RateLimit-Remaining` headers are for.",
+  "answer": "Exponential backoff is retrying with an increasingly longer wait each time (1s, 2s, 4s, 8s...) so a struggling or rate-limiting server gets breathing room instead of an immediate stampede of retries; it's used on `429` (rate limited) and `503` (unavailable) because both are signals to slow down or wait rather than hammer the server again right away. Three things a polite client does: honor rate-limit headers, throttle proactively with `time.sleep()` between requests, and identify itself honestly with a descriptive `User-Agent`. `Retry-After` is a header the server sends telling you how long to wait before retrying. `X-RateLimit-Remaining` reports how many requests you have left in the current window, so you can proactively slow down before you actually get blocked."
+ },
+ {
+  "id": "04.3-scraping-and-apis-5",
+  "chapter": "04-Programming-Mastery/04.3-scraping-and-apis.md",
+  "prompt": "**API vs. scrape & ethics:** Give two reasons to prefer an API over scraping. What is robots.txt, is it legally binding, and why honor it anyway? List three things on your pre-scrape ethics checklist.",
+  "answer": "An API is a contract, stable fields, documented, and allowed by the site, whereas scraping HTML is fragile because it breaks when the site's markup changes, and it's legally and ethically grayer. `robots.txt` is a file at a site's root that tells bots which paths they're asked not to crawl; it is not a law, but honoring it is the baseline of good citizenship. Three items on the pre-scrape checklist: check whether an API or data download exists instead, check whether robots.txt disallows the path, and check whether the site's Terms of Service forbid automated access."
+ },
+ {
+  "id": "04.3-scraping-and-apis-6",
+  "chapter": "04-Programming-Mastery/04.3-scraping-and-apis.md",
+  "prompt": "**Parsing tools:** Why should you never parse HTML with regex? When does `requests` + BeautifulSoup fail to see the data you want, and what tool do you switch to? How would you confirm you actually need the heavier option before reaching for it?",
+  "answer": "HTML is nested and irregular, and regex chokes on that kind of recursive structure, so you should use a real parser like BeautifulSoup instead. `requests` + BeautifulSoup only see the initial HTML that comes back from the server; when a modern site renders content with JavaScript after load, the data you want may not be in `resp.text` at all, and that's when you switch to Playwright, which drives a real headless browser to run the JS and hand you the final DOM. To confirm you actually need Playwright, first print `resp.text` and check whether the value is already present in the raw HTML; if it is, plain requests plus BeautifulSoup is lighter and faster."
+ },
+ {
+  "id": "04.4-automation-projects-1",
+  "chapter": "04-Programming-Mastery/04.4-automation-projects.md",
+  "prompt": "**The universal loop:** Every project here follows \"read input → transform → write output → (notify/schedule).\" Pick two projects and name what plays each role. Why is a `--dry-run`/`--apply` split so valuable for the destructive ones?",
+  "answer": "In the photo organizer: read is walking the source folder and reading EXIF, transform is computing the date-based destination path, write is moving/copying the file into place. In the weather dashboard pipeline: read is fetching the current temperature from an API, transform is appending it to a history file, write is regenerating the dashboard HTML, and schedule is the cron job that runs it hourly. A `--dry-run`/`--apply` split is valuable because automation acts fast and at scale, a bug doesn't ruin one file, it ruins a thousand, so destructive tools should print their plan first and only act once you deliberately pass `--apply`."
+ },
+ {
+  "id": "04.4-automation-projects-2",
+  "chapter": "04-Programming-Mastery/04.4-automation-projects.md",
+  "prompt": "**EXIF & metadata:** Where does a photo's capture date come from, and what's your fallback when EXIF is missing? Why use `shutil.copy2` instead of plain `copy` when preserving photos?",
+  "answer": "A photo's capture date comes from its EXIF metadata, specifically the `DateTimeOriginal` tag, which the camera embeds and which the chapter's code reads via Pillow's EXIF access. When EXIF is missing or unreadable, the fallback is the file's last-modified time (`path.stat().st_mtime`). `shutil.copy2` is used instead of plain `copy` because `copy2` preserves file metadata (like modification times), so a copied photo keeps its original timestamp information rather than getting a fresh one at copy time."
+ },
+ {
+  "id": "04.4-automation-projects-3",
+  "chapter": "04-Programming-Mastery/04.4-automation-projects.md",
+  "prompt": "**SMTP & secrets:** Walk through the steps to send one email: connect, `starttls`, `login`, `send_message`. Why must credentials come from env vars, and why a Gmail app password rather than the account password? What does `--dry-run` protect you from?",
+  "answer": "You open an `smtplib.SMTP(host, port)` connection, call `server.starttls()` to upgrade the connection to encrypted TLS, call `server.login(user, password)` to authenticate, then call `server.send_message(msg)` for each `EmailMessage` you've built. Credentials must come from environment variables, never hard-coded in source, because a hard-coded secret ends up in git history forever; for Gmail specifically you use an app password rather than the real account password so a leaked credential only exposes a scoped, revocable app password instead of full account access. `--dry-run` renders and prints every message without actually connecting or sending, protecting you from mistakes like a loop bug that emails everyone twice."
+ },
+ {
+  "id": "04.4-automation-projects-4",
+  "chapter": "04-Programming-Mastery/04.4-automation-projects.md",
+  "prompt": "**Spreadsheets:** In openpyxl, what does `data_only=True` do when reading, and why does it matter for cells containing formulas? How do you attach a `BarChart` to a worksheet, and what do the `Reference` objects for data vs. categories point at?",
+  "answer": "`load_workbook(path, data_only=True)` returns the computed values of cells instead of the formula strings; without it, a cell containing a formula comes back as that literal formula text rather than the number it evaluates to, which breaks any aggregation code expecting numbers. To attach a chart, you create a `BarChart()`, build two `Reference` objects, one for the data (pointing at the values column, including the header row for the legend) and one for the categories (pointing at the label column, excluding the header), then call `chart.add_data(...)`, `chart.set_categories(...)`, and `ws.add_chart(chart, \"D2\")` to place it at a cell anchor."
+ },
+ {
+  "id": "04.4-automation-projects-5",
+  "chapter": "04-Programming-Mastery/04.4-automation-projects.md",
+  "prompt": "**Scheduling a pipeline:** Read this cron line and say when it runs: `0 * * * * cd /proj && python3 job.py >> run.log 2>&1`. What do the five time fields mean, and what does `>> run.log 2>&1` accomplish?",
+  "answer": "This runs at minute 0 of every hour, that is, once an hour on the hour. The five time fields are minute, hour, day of month, month, and day of week, and `*` means \"every\" for that field, so `0 * * * *` reads as \"minute 0, every hour, every day, every month, every weekday.\" `>> run.log 2>&1` redirects stdout with append (`>>`, so previous runs' output isn't wiped) and then redirects stderr (`2`) to wherever stdout is now going (`&1`), so both normal output and errors land in `run.log`, which matters because cron starts in a minimal environment and you need that log to debug a job that runs but silently fails."
+ },
+ {
+  "id": "04.4-automation-projects-6",
+  "chapter": "04-Programming-Mastery/04.4-automation-projects.md",
+  "prompt": "**PDF text extraction:** Why does `extract_text()` sometimes return an empty string, and what tool do you need for *scanned* PDFs? Sketch how you'd combine Projects 5 and 2 to email each customer a personalized PDF statement.",
+  "answer": "`extract_text()` works only on PDFs that have a real text layer; scanned PDFs are just images of pages, with no underlying text to read, so extraction returns an empty string. For scanned PDFs you need OCR, using tools like `pytesseract` plus `pdf2image`. To combine Project 5 (PDF toolkit) and Project 2 (CSV-driven mailer): read the customer CSV as in the mailer, for each row generate or select that customer's personalized PDF statement, then build an `EmailMessage` per row as the mailer does and attach the generated PDF before calling `server.send_message`, keeping the same `--dry-run` safety and per-recipient throttle."
+ },
+ {
+  "id": "06.1-tcp-ip-1",
+  "chapter": "06-Networking/06.1-tcp-ip.md",
+  "prompt": "**Name the four TCP/IP layers bottom-to-top and one protocol at each.** Link (Ethernet/Wi-Fi, MAC frames) → Internet (IP, host-to-host addressing/routing) → Transport (TCP/UDP, process-to-process via ports) → Application (HTTP/DNS/SSH). Each adds its own header and trusts the layer below; that separation lets layers evolve independently.",
+  "answer": "Bottom to top: the link layer (Ethernet/Wi-Fi, delivering frames over the local wire using MAC addresses), the internet layer (IP, handling host-to-host addressing and routing), the transport layer (TCP or UDP, providing process-to-process delivery via ports), and the application layer (HTTP, DNS, SSH, the protocols carrying what the app actually wants to say). Each layer adds its own header as data moves down the stack and trusts the layer below to do its job without knowing its internals, which is what lets any one layer be swapped or evolved without rewriting the rest."
+ },
+ {
+  "id": "06.1-tcp-ip-2",
+  "chapter": "06-Networking/06.1-tcp-ip.md",
+  "prompt": "**What does `192.168.1.0/24` mean, and is it public or private?** The `/24` means the first 24 bits are the network, leaving 8 host bits → 256 addresses (254 usable). It's in the `192.168.0.0/16` **private** range, so it's a LAN address never routed on the public internet; devices on it reach the internet through NAT.",
+  "answer": "The `/24` means the first 24 bits are the network portion, leaving 8 host bits, which gives 256 total addresses (254 usable once you subtract the network address and the broadcast address). `192.168.1.0/24` falls inside the `192.168.0.0/16` range, which is reserved as **private**, so it's a LAN address that is never routed on the public internet; devices on it reach the outside world through NAT."
+ },
+ {
+  "id": "06.1-tcp-ip-3",
+  "chapter": "06-Networking/06.1-tcp-ip.md",
+  "prompt": "**Walk through TCP's 3-way handshake and say what each message accomplishes.** SYN (client → server: \"let's connect, my sequence starts at x\"), SYN-ACK (server → client: \"ok, mine starts at y, and I acknowledge your x\"), ACK (client → server: \"I acknowledge your y\"). After the third message both sides have synchronized sequence numbers and the connection is established; each direction has confirmed the other can hear it.",
+  "answer": "The client sends a **SYN** with an initial sequence number x, meaning \"let's talk, my sequence starts at x.\" The server replies with a **SYN-ACK**, sending its own initial sequence number y while acknowledging the client's x, meaning \"ok, mine starts at y, and I got yours.\" The client then sends an **ACK** acknowledging y, and once the server receives it both sides are established. After these three messages both sides have synchronized sequence numbers and each direction has confirmed the other can actually hear it."
+ },
+ {
+  "id": "06.1-tcp-ip-4",
+  "chapter": "06-Networking/06.1-tcp-ip.md",
+  "prompt": "**Give two mechanisms TCP uses to be reliable that UDP lacks.** Any two of: sequence/acknowledgment numbers (so the sender knows what arrived), retransmission of unACKed data (recovers losses), in-order reassembly (buffers out-of-order packets), flow control (receive window), congestion control (back off on loss). UDP has none of these; it's just ports plus a checksum over IP.",
+  "answer": "TCP numbers every byte and uses sequence and acknowledgment numbers so the sender knows exactly what the receiver has gotten, and it retransmits any data that goes unACKed after a timeout to recover lost segments. It also buffers and reassembles out-of-order packets into the original byte stream, and layers on flow control (a receive window so a fast sender doesn't overwhelm a slow receiver) and congestion control (backing off when it detects loss). UDP has none of this: it's just ports and a checksum over IP, fire a datagram and hope it arrives."
+ },
+ {
+  "id": "06.1-tcp-ip-5",
+  "chapter": "06-Networking/06.1-tcp-ip.md",
+  "prompt": "**What is TCP head-of-line blocking and why does it happen?** Because TCP guarantees in-order byte delivery, a single lost segment forces all later segments that already arrived to wait in the buffer until the missing one is retransmitted, even though those later bytes are fine. The ordering guarantee causes one loss to stall everything behind it; HTTP/3 (QUIC over UDP) was designed to escape this.",
+  "answer": "TCP head-of-line blocking is when a single lost segment forces every later segment that already arrived to sit buffered and unusable until the missing one is retransmitted, even though those later bytes are perfectly fine on their own. It happens because TCP's core promise is in-order byte delivery, so the receiver can't hand the application any bytes past a gap until that gap is filled. This is a direct cost of TCP's ordering guarantee, and it's a major reason HTTP/3 moved to QUIC over UDP, where each stream is delivered independently."
+ },
+ {
+  "id": "06.1-tcp-ip-6",
+  "chapter": "06-Networking/06.1-tcp-ip.md",
+  "prompt": "**Why can a single server on port 80 serve thousands of simultaneous clients?** Because a TCP connection is identified by the full 4-tuple `(src IP, src port, dst IP, dst port)`, not just the server's port. Every client connection has a different source IP/port, so all the tuples are distinct; the server demultiplexes them even though they share its `:80` endpoint.",
+  "answer": "A TCP connection isn't identified by the server's port alone; it's identified by the full 4-tuple: source IP, source port, destination IP, and destination port. Every client connects from a different IP and/or source port, so even though they all target the server's `:80`, each connection's 4-tuple is unique, and the server demultiplexes incoming packets to the right connection using that whole tuple."
+ },
+ {
+  "id": "06.2-http-dns-tls-1",
+  "chapter": "06-Networking/06.2-http-dns-tls.md",
+  "prompt": "**Walk through recursive DNS resolution for `www.example.com`.** Your resolver (if not cached) asks a **root** server → referred to the **.com TLD** servers → referred to `example.com`'s **authoritative** nameservers → which return the **A record** (the IP). The resolver caches it for the record's **TTL** and returns it. The hierarchy is read right-to-left; caching at every level is what makes DNS scale.",
+  "answer": "If your resolver hasn't cached the answer, it first asks a **root** server, which doesn't know the address but refers it to the `.com` **TLD** servers. Those TLD servers refer it on to `example.com`'s **authoritative** nameservers, which finally return the actual **A record** (the IP address). The resolver then caches that answer for the record's **TTL** and returns it to you; the hierarchy is read right-to-left, and caching at every level is what keeps DNS from collapsing under load."
+ },
+ {
+  "id": "06.2-http-dns-tls-2",
+  "chapter": "06-Networking/06.2-http-dns-tls.md",
+  "prompt": "**What's the difference between a 4xx and a 5xx status code? Give one example of each.** 4xx = **client** error (\"you messed up\"), e.g., `404 Not Found` or `401 Unauthorized`. 5xx = **server** error (\"I messed up\"), e.g., `500 Internal Server Error` or `502 Bad Gateway`.",
+  "answer": "A 4xx status code is a **client** error, \"you messed up,\" examples being `404 Not Found` or `401 Unauthorized`. A 5xx status code is a **server** error, \"I messed up,\" examples being `500 Internal Server Error` or `502 Bad Gateway`."
+ },
+ {
+  "id": "06.2-http-dns-tls-3",
+  "chapter": "06-Networking/06.2-http-dns-tls.md",
+  "prompt": "**How does HTTP, a stateless protocol, remember a logged-in user?** With **cookies**: the server sends `Set-Cookie: session=...` (ideally `HttpOnly; Secure; SameSite`), and the browser returns `Cookie: session=...` on every subsequent request. The server maps that session ID to the user's state: statelessness is preserved on the wire, and the state lives server-side keyed by the cookie.",
+  "answer": "It uses **cookies**: the server sends `Set-Cookie: session=abc123` (ideally with `HttpOnly`, `Secure`, and `SameSite` flags set), and the browser automatically returns `Cookie: session=abc123` on every subsequent request to that domain. The server maps that session ID to the user's actual state, so the protocol itself stays stateless on the wire while the real state lives server-side, keyed by the cookie."
+ },
+ {
+  "id": "06.2-http-dns-tls-4",
+  "chapter": "06-Networking/06.2-http-dns-tls.md",
+  "prompt": "**Trace the HTTP/1.1 → 2 → 3 evolution in terms of head-of-line blocking.** HTTP/1.1 added keep-alive but responses come back in order → HTTP-level HOL blocking. HTTP/2 multiplexes many streams over one connection (fixing HTTP-level HOL) but still rides TCP, so a lost packet stalls all streams (TCP-level HOL). HTTP/3 runs over QUIC (UDP) with independently delivered streams, so one lost packet only stalls its own stream, escaping TCP HOL blocking entirely.",
+  "answer": "HTTP/1.1 added keep-alive so one TCP connection could be reused for many requests, but responses still had to come back in order, producing HTTP-level head-of-line blocking. HTTP/2 fixed that by multiplexing many requests as interleaved streams over a single connection, but it still rides on top of TCP, so one lost TCP packet stalls every stream, TCP-level head-of-line blocking. HTTP/3 runs over QUIC (built on UDP) instead, delivering each stream independently, so a lost packet only stalls its own stream and TCP-level head-of-line blocking is escaped entirely."
+ },
+ {
+  "id": "06.2-http-dns-tls-5",
+  "chapter": "06-Networking/06.2-http-dns-tls.md",
+  "prompt": "**Name TLS's three guarantees and which crypto provides authentication.** **Confidentiality** (encryption hides content), **integrity** (tampering is detectable via MACs), **authentication** (you're talking to the real server). Authentication comes from the **certificate** + **chain of trust**: a trusted CA signs a cert binding the domain to a public key, and the server proves it holds the matching private key during the handshake.",
+  "answer": "TLS provides **confidentiality** (traffic is encrypted so eavesdroppers only see ciphertext), **integrity** (tampering is detectable via message authentication codes), and **authentication** (proof you're really talking to the real server, not an impostor). Authentication comes from the **certificate and chain of trust**: a CA your browser already trusts signs a certificate binding a domain name to a public key, and during the handshake the server proves it holds the matching private key."
+ },
+ {
+  "id": "06.2-http-dns-tls-6",
+  "chapter": "06-Networking/06.2-http-dns-tls.md",
+  "prompt": "**Why does TLS use both asymmetric and symmetric cryptography?** Asymmetric crypto (certificate + Diffie-Hellman key exchange) is used once to authenticate the server and let two strangers agree on a shared secret over a tapped wire, but it's slow. Symmetric crypto, using that shared secret, then encrypts all the actual data fast. Best of both: asymmetric solves key agreement/identity; symmetric does the bulk encryption efficiently.",
+  "answer": "Asymmetric crypto, the certificate verification plus a Diffie-Hellman key exchange, is used once during the handshake to authenticate the server and let two strangers agree on a shared secret over a wire someone might be tapping, but it's computationally slow. Symmetric crypto then uses that shared secret to encrypt all the actual application data quickly. It's the best of both: asymmetric solves the key-agreement and identity problem, while symmetric handles the bulk encryption efficiently."
+ },
+ {
+  "id": "06.3-websockets-rpc-polling-1",
+  "chapter": "06-Networking/06.3-websockets-rpc-polling.md",
+  "prompt": "**Contrast short polling, long polling, SSE, and WebSockets in one line each.** Short polling: client re-asks on a timer (simple, wasteful, laggy). Long polling: server holds the request open until it has data (low latency over plain HTTP, the classic WS fallback). SSE: one long-lived connection the server streams events down (one-way, server→client, auto-reconnect). WebSockets: a persistent full-duplex channel either side can send on anytime (true bidirectional, low overhead).",
+  "answer": "Short polling has the client re-asking on a fixed timer whether there's anything new, simple but wasteful and laggy. Long polling has the client request and the server hold that request open until it actually has data before replying, giving near-real-time updates over plain HTTP and serving as the classic WebSocket fallback. SSE has the client open one long-lived connection over which the server streams events, one-way only, with automatic reconnection built in. WebSockets establish a persistent, full-duplex channel where either side can send a message at any time."
+ },
+ {
+  "id": "06.3-websockets-rpc-polling-2",
+  "chapter": "06-Networking/06.3-websockets-rpc-polling.md",
+  "prompt": "**When would you choose SSE over WebSockets, and vice versa?** SSE when you only need **server→client** push (live feeds, notifications, a read-only ticker), it's simpler and reconnects automatically. WebSockets when you need **bidirectional**, frequent, low-latency messaging (chat, games, interactive dashboards) where the client also sends data back.",
+  "answer": "Choose SSE when you only need server-to-client push, like a live feed, notifications, or a read-only ticker the user just watches; it's simpler than WebSockets, runs over plain HTTP, and the browser's `EventSource` reconnects automatically. Choose WebSockets when you need genuine bidirectional, frequent, low-latency messaging where the client also has to send data back, such as chat, games, or interactive dashboards."
+ },
+ {
+  "id": "06.3-websockets-rpc-polling-3",
+  "chapter": "06-Networking/06.3-websockets-rpc-polling.md",
+  "prompt": "**How does a WebSocket connection get established, and what HTTP status signals it?** It begins as an ordinary HTTP/1.1 GET with `Upgrade: websocket` and `Connection: Upgrade` headers plus a random `Sec-WebSocket-Key`. The server replies **`101 Switching Protocols`** with a `Sec-WebSocket-Accept` derived from the key + a magic GUID, proving it understood the handshake. After the 101, the TCP connection is a full-duplex WebSocket carrying lightweight frames instead of HTTP messages.",
+  "answer": "It starts life as an ordinary HTTP/1.1 GET request carrying `Upgrade: websocket` and `Connection: Upgrade` headers plus a random base64 `Sec-WebSocket-Key` nonce. The server responds with **`101 Switching Protocols`** and a `Sec-WebSocket-Accept` header computed by hashing the client's key together with a fixed magic GUID, proving the server actually understood the WebSocket handshake. After that 101, the same TCP connection stops being HTTP and becomes a full-duplex WebSocket carrying lightweight frames instead of HTTP messages."
+ },
+ {
+  "id": "06.3-websockets-rpc-polling-4",
+  "chapter": "06-Networking/06.3-websockets-rpc-polling.md",
+  "prompt": "**Explain the mental-model difference between REST and RPC.** REST thinks in **resources/nouns**, you manipulate things at URLs with HTTP verbs (`PUT /users/42`). RPC thinks in **functions/verbs**, you call a named procedure that happens to run on another machine (`updateUser(42, ...)`), with the network plumbing hidden by a client stub. REST is resource-oriented; RPC is action-oriented and aims for location transparency.",
+  "answer": "REST thinks in terms of resources, nouns you manipulate at URLs using HTTP verbs, for example `PUT /users/42` to update user 42. RPC thinks in terms of functions, verbs, you call a named procedure that happens to execute on another machine, for example `updateUser(42, ...)`, with a client stub hiding the network plumbing so the call looks and feels local. REST is resource-oriented and manipulates state through addressable things; RPC is action-oriented and chases location transparency, the illusion that a remote call is just a local function call."
+ },
+ {
+  "id": "06.3-websockets-rpc-polling-5",
+  "chapter": "06-Networking/06.3-websockets-rpc-polling.md",
+  "prompt": "**What does gRPC use for serialization and transport, and when would you pick it over REST?** gRPC uses **Protocol Buffers** (compact, schema-defined binary) over **HTTP/2** (multiplexing + streaming). Pick gRPC for internal service-to-service communication needing high throughput, low latency, strict typed contracts, and streaming. Pick REST for public, browser-facing, human-debuggable APIs where JSON-over-HTTP and HTTP caching matter more than raw speed.",
+  "answer": "gRPC serializes with **Protocol Buffers**, a compact, schema-defined binary format described in `.proto` files, and it runs over **HTTP/2**, which gives it multiplexing and support for streaming RPCs. Pick gRPC for internal service-to-service communication that needs high throughput, low latency, strict typed contracts, and streaming. Pick REST instead for public, browser-facing, human-debuggable APIs, where JSON over HTTP and HTTP caching semantics matter more than raw wire efficiency."
+ },
+ {
+  "id": "06.3-websockets-rpc-polling-6",
+  "chapter": "06-Networking/06.3-websockets-rpc-polling.md",
+  "prompt": "**Why is FTP considered legacy, and what is a webhook?** FTP sends credentials/data in plaintext and uses two connections (control + data), which is insecure and NAT/firewall-hostile, replaced by **SFTP** (file transfer over encrypted SSH, single connection). A **webhook** inverts polling for server-to-server: instead of you polling a service, you register a URL and the service POSTs event data to you when something happens (\"don't call us, we'll call you\"), event-driven, timely, and cheaper than polling.",
+  "answer": "FTP is legacy because it sends credentials and data in plaintext with no encryption, and because it uses two separate connections, a control channel and a data channel, which is awkward and often broken behind NAT and firewalls; it's been replaced by **SFTP**, file transfer tunneled over encrypted SSH using a single connection. A **webhook** flips the polling model for server-to-server communication: instead of you repeatedly asking a service if anything is new, you register a URL and the service sends an HTTP POST to it the moment an event happens, \"don't call us, we'll call you,\" which is more timely and cheaper than polling."
+ },
+ {
+  "id": "10.1-docker-1",
+  "chapter": "10-Cloud-DevOps/10.1-docker.md",
+  "prompt": "A container shares the host kernel but is isolated. Name the three Linux primitives that create that isolation and say what each one does.",
+  "answer": "The three primitives are namespaces, cgroups, and union filesystems. Namespaces control what a process can see, partitioning kernel resources like PIDs, mounts, network stack, hostname, and IPC so a process gets its own private view. Cgroups control what a process can use, limiting and accounting for CPU, memory, and I/O, which is how `docker run --memory=512m` works. Union filesystems (overlayfs) stack read-only image layers with a thin writable layer on top using copy-on-write, so containers from the same image share disk space cheaply."
+ },
+ {
+  "id": "10.1-docker-2",
+  "chapter": "10-Cloud-DevOps/10.1-docker.md",
+  "prompt": "You edit one line of `main.py` and rebuild. Why does ordering `COPY requirements.txt` + `RUN pip install` *before* `COPY . .` make the rebuild fast?",
+  "answer": "Docker's build cache walks instructions top to bottom and reuses cached layers until it hits the first instruction whose inputs changed, then rebuilds everything below it. Since `requirements.txt` didn't change, the `COPY requirements.txt` and `RUN pip install` layers stay cached, and only the later `COPY . .` layer (and anything after it) reruns. If `COPY . .` came first, editing `main.py` would bust the cache at that point and force `pip install` to rerun on every build, turning a fast rebuild into a slow one."
+ },
+ {
+  "id": "10.1-docker-3",
+  "chapter": "10-Cloud-DevOps/10.1-docker.md",
+  "prompt": "Explain the difference between `CMD` and `ENTRYPOINT`, and what `docker run myimg bash` does for an image that uses only `ENTRYPOINT` vs only `CMD`.",
+  "answer": "`ENTRYPOINT` is the fixed program that always runs; `CMD` supplies its default arguments, or, used alone, is the default command. For an image using only `ENTRYPOINT` (e.g. `ENTRYPOINT [\"uvicorn\", ...]`), `docker run myimg bash` passes `bash` as an argument to that entrypoint rather than replacing it, so uvicorn still runs, just with `bash` appended as an arg. For an image using only `CMD` (e.g. `CMD [\"uvicorn\", ...]`), `docker run myimg bash` replaces the whole command, so it runs `bash` instead of uvicorn."
+ },
+ {
+  "id": "10.1-docker-4",
+  "chapter": "10-Cloud-DevOps/10.1-docker.md",
+  "prompt": "What does a multi-stage build actually accomplish, and why does it shrink the final image?",
+  "answer": "A multi-stage build uses multiple `FROM` statements, one for a builder stage that can install compilers and build toolchain, and a separate final stage that copies over only the built artifacts it actually needs. It shrinks the image because none of the builder stage's junk, wheels, caches, or compilers land in the runtime stage, only the finished artifact does. A typical example goes from a large image with full build tools down to a much smaller one by copying just the built output into a slim runtime base image."
+ },
+ {
+  "id": "10.1-docker-5",
+  "chapter": "10-Cloud-DevOps/10.1-docker.md",
+  "prompt": "In your Compose file, the app connects to `db:5432`. How does the hostname `db` resolve, and why won't that work on Docker's default bridge network?",
+  "answer": "The hostname `db` resolves via Docker's embedded DNS to the `db` service's container, because Compose automatically puts services on a shared user-defined network where containers can reach each other by name. On Docker's default bridge network, containers can't resolve each other by name at all, that name resolution only works on a user-defined network. That's why you always create a network (or let Compose create one for you) instead of relying on the default bridge."
+ },
+ {
+  "id": "10.1-docker-6",
+  "chapter": "10-Cloud-DevOps/10.1-docker.md",
+  "prompt": "Your Redis counter survives `docker compose down` but resets on `docker compose down -v`. Explain why in terms of the writable layer vs named volumes.",
+  "answer": "The Redis data lives in a named volume, which is Docker-managed storage that exists outside the container's writable layer. `docker compose down` removes the containers but leaves named volumes intact, so the counter data persists and is remounted when you bring the stack back up. `docker compose down -v` additionally deletes the named volumes, wiping the actual persisted data, which resets the counter. If the counter had instead lived only in the container's writable layer with no volume, it would have reset on any container removal, not just `-v`."
+ },
+ {
+  "id": "10.2-kubernetes-1",
+  "chapter": "10-Cloud-DevOps/10.2-kubernetes.md",
+  "prompt": "State the one-sentence mental model of how Kubernetes works, and explain how it produces \"self-healing\" without any special magic.",
+  "answer": "You submit desired state to the API server and controllers run an endless reconciliation loop that compares actual state to desired state and takes actions to converge them. Self-healing falls out of this loop with no special mechanism: if a pod dies, the controller observes fewer running replicas than desired and creates a replacement; if a node dies, it notices and reschedules the pods elsewhere. It's the same loop every time, you manage the spec, controllers manage reality, just applied continuously and forever."
+ },
+ {
+  "id": "10.2-kubernetes-2",
+  "chapter": "10-Cloud-DevOps/10.2-kubernetes.md",
+  "prompt": "Walk a request through the control plane: what does kube-apiserver do, where is state stored, and what is the scheduler's job?",
+  "answer": "kube-apiserver is the front door: every read and write, including everything `kubectl` sends, goes through it for validation, auth, and admission; it is itself stateless. All cluster state is stored in etcd, a distributed, consistent key-value store that is the single source of truth. The scheduler watches for pods that haven't been assigned to a node yet and picks a node for them based on resource requests, affinity, and taints/tolerations, while the controller-manager runs the actual reconcile loops (Deployment, ReplicaSet, Node, Job, etc.)."
+ },
+ {
+  "id": "10.2-kubernetes-3",
+  "chapter": "10-Cloud-DevOps/10.2-kubernetes.md",
+  "prompt": "Pods get ephemeral, changing IPs. So how does one pod reliably reach another service? What object solves this and how?",
+  "answer": "A Service solves this: it gives a stable virtual IP and DNS name that load-balances traffic to whichever pods currently match its label selector, regardless of individual pod IPs changing as pods die and get replaced. kube-proxy programs the node's networking so that Service virtual IPs route to the current set of healthy backing pods. Pods are mortal and disposable and should never be addressed directly; that's exactly why Services exist."
+ },
+ {
+  "id": "10.2-kubernetes-4",
+  "chapter": "10-Cloud-DevOps/10.2-kubernetes.md",
+  "prompt": "Difference between a liveness probe and a readiness probe - and why a failing readiness probe is what makes a rolling update zero-downtime.",
+  "answer": "A liveness probe asks \"is it alive?\", and if it fails, the kubelet restarts the container. A readiness probe asks \"is it ready for traffic?\", and if it fails, the pod is removed from the Service's endpoints without being restarted. Readiness is what makes a rolling update zero-downtime because new pods only get added to the Service's routing once their readiness probe passes, so traffic never hits a pod that isn't actually ready to serve it."
+ },
+ {
+  "id": "10.2-kubernetes-5",
+  "chapter": "10-Cloud-DevOps/10.2-kubernetes.md",
+  "prompt": "During `kubectl set image`, `kubectl get rs` shows two ReplicaSets. Explain what each is and how this enables instant `rollout undo`.",
+  "answer": "One ReplicaSet is the old one, running the previous image, scaled down to 0 replicas as the rollout completes. The other is the new ReplicaSet the Deployment created for the new image, scaled up to the desired replica count. The old ReplicaSet isn't deleted, it just sits at 0, so `kubectl rollout undo` is instant because it's simply scaling the old ReplicaSet back up while scaling the new one down, no rebuild or repull needed."
+ },
+ {
+  "id": "10.2-kubernetes-6",
+  "chapter": "10-Cloud-DevOps/10.2-kubernetes.md",
+  "prompt": "Why does an HPA require `resources.requests.cpu` to be set, and what does `averageUtilization: 70` actually mean?",
+  "answer": "The HPA measures CPU utilization against the pod's `requests.cpu` value, so without a request set it has nothing to compute utilization against and effectively does nothing. `averageUtilization: 70` means the HPA's target is for the average CPU usage across pods to be 70% of what was requested; if actual usage climbs above that target, the HPA increases replicas up to `maxReplicas`, and if usage drops below it, it scales back down to `minReplicas`. It's itself a reconciliation loop watching a metric and adjusting the Deployment's replica count to hold that target."
+ },
+ {
+  "id": "10.3-cicd-and-deployment-1",
+  "chapter": "10-Cloud-DevOps/10.3-cicd-and-deployment.md",
+  "prompt": "In one sentence each, distinguish continuous integration, continuous delivery, and continuous deployment. What single thing separates the two CDs?",
+  "answer": "Continuous Integration is every push getting automatically built and tested on a shared branch so integration breakage is caught in minutes. Continuous Delivery is every change that passes CI being automatically prepared for release, ready to deploy at the push of a button. Continuous Deployment is the same, but with no human gate, every green commit goes straight to production automatically. The single thing separating the two CDs is whether there's a manual approval step before production: Delivery has one, Deployment doesn't."
+ },
+ {
+  "id": "10.3-cicd-and-deployment-2",
+  "chapter": "10-Cloud-DevOps/10.3-cicd-and-deployment.md",
+  "prompt": "We promote *the same Docker image* from staging to prod and only change injected config. Why is that property so valuable, and which 12-Factor rule does it embody?",
+  "answer": "It guarantees that what you tested in staging is byte-identical to what runs in prod, eliminating the class of bugs where a rebuild between environments introduces a different version of code or dependencies. This embodies the 12-Factor App rule that config lives in the environment, not the code: the same built artifact is promoted unchanged across environments, and only the injected config/secrets differ per environment."
+ },
+ {
+  "id": "10.3-cicd-and-deployment-3",
+  "chapter": "10-Cloud-DevOps/10.3-cicd-and-deployment.md",
+  "prompt": "During a rolling update, v1 and v2 pods serve traffic simultaneously. What does that force you to do about database migrations, and what's the name of the pattern?",
+  "answer": "It forces migrations to be backward-compatible, since both old and new code are hitting the same schema at the same time during the roll. The pattern is expand/contract: first expand by adding the new column or table additively and nullably (old code ignores it, new code can use it), then deploy the new code, then in a later release contract by dropping the old column once nothing references it anymore. Destructive schema changes should never ship in the same deploy as the code that depends on the old shape."
+ },
+ {
+  "id": "10.3-cicd-and-deployment-4",
+  "chapter": "10-Cloud-DevOps/10.3-cicd-and-deployment.md",
+  "prompt": "Compare blue-green and canary on blast radius, rollback speed, and cost. When would you reach for each?",
+  "answer": "Blue-green has a full blast radius during cutover, since all traffic flips to the new environment at once, but instant rollback, just flip the router back to blue, at the cost of running two full environments. Canary has the smallest blast radius, exposing the new version to a small percentage of traffic and ramping based on metrics, with rollback being scaling the canary to 0, but it needs good observability to watch error rate and latency. Canary fits as a default for everyday releases since it caps blast radius, while blue-green fits specifically for riskier changes where you want a full new environment tested before an atomic flip."
+ },
+ {
+  "id": "10.3-cicd-and-deployment-5",
+  "chapter": "10-Cloud-DevOps/10.3-cicd-and-deployment.md",
+  "prompt": "In the workflow, name the three security gates that were added and exactly what bad thing each one catches. Which step's `exit-code: \"1\"` blocks a deploy and why?",
+  "answer": "The three gates are a dependency-review action, which catches PRs introducing high/critical CVEs in dependencies; a secret scanner (Gitleaks), which catches leaked secrets committed anywhere in git history; and Trivy, which catches high/critical CVEs baked into the built Docker image. The Trivy step's `exit-code: \"1\"` is the one that blocks a deploy, because it makes the CI job fail on HIGH/CRITICAL findings, and since the build and deploy steps depend on that job, a vulnerable image never gets pushed or deployed."
+ },
+ {
+  "id": "10.3-cicd-and-deployment-6",
+  "chapter": "10-Cloud-DevOps/10.3-cicd-and-deployment.md",
+  "prompt": "How does an \"environment with required reviewers\" turn this pipeline from continuous deployment into continuous delivery for prod?",
+  "answer": "Setting the production environment with required reviewers means the workflow run pauses at the deploy-to-prod job and waits for a human to approve before it proceeds. That manual click is exactly the human gate that distinguishes continuous delivery (always release-ready, approved by a person) from continuous deployment (every green commit auto-ships with no gate). Everything up to and including staging still runs automatically; only the final push to prod requires the approval."
+ },
+ {
+  "id": "10.4-aws-1",
+  "chapter": "10-Cloud-DevOps/10.4-aws.md",
+  "prompt": "Draw the shared-responsibility line: give two concrete things AWS secures and two you must secure. Which side do most real breaches fall on?",
+  "answer": "AWS is responsible for security **of** the cloud: the physical hardware and datacenters, and the hypervisor plus the internals of managed services. You are responsible for security **in** the cloud: your IAM policies (least privilege, roles vs. keys) and your S3 bucket/security group configuration (not making a bucket public, restricting inbound ports). Most real breaches fall on your side of the line, things like a too-open security group or a public S3 bucket, not a failure in AWS's own infrastructure."
+ },
+ {
+  "id": "10.4-aws-2",
+  "chapter": "10-Cloud-DevOps/10.4-aws.md",
+  "prompt": "Why are IAM **roles** preferred over IAM **users with access keys** for applications, and what's the most common least-privilege mistake people make?",
+  "answer": "Roles have no permanent credentials, they're assumed temporarily and grant short-lived credentials that auto-expire, so a leaked role credential is far less dangerous than a leaked long-lived access key, which is a standing breach until manually rotated. EC2 instances, Lambda functions, and CI systems should assume roles rather than carry baked-in keys. The most common least-privilege mistake is over-permissioning, attaching broad admin access or wildcard actions/resources because it \"just works,\" rather than scoping both the action and the resource to exactly what's needed."
+ },
+ {
+  "id": "10.4-aws-3",
+  "chapter": "10-Cloud-DevOps/10.4-aws.md",
+  "prompt": "What is an S3 presigned URL, and why is it the correct way to let a browser upload a file directly to a private bucket?",
+  "answer": "A presigned URL is a time-limited URL signed with your own AWS credentials that lets whoever holds it upload or download one specific object, without ever handing them AWS credentials. It's the correct pattern because the bucket stays private (Block Public Access on) while the browser can PUT the file bytes directly to S3 using the presigned URL, so the server never has to proxy the file and access is scoped per-object and time-boxed."
+ },
+ {
+  "id": "10.4-aws-4",
+  "chapter": "10-Cloud-DevOps/10.4-aws.md",
+  "prompt": "Lambda scales to zero and is event-driven, name two things that makes it great for and two hard limits that make it wrong for some workloads. What is a cold start and how do you reduce it?",
+  "answer": "Lambda is great for event-driven workloads triggered by things like API Gateway, S3 events, or SQS/SNS, and for spiky/low-baseline traffic since it scales to zero and you pay nothing idle. Its hard limits are a 15-minute max timeout and up to 10 GB memory with ephemeral storage, which make it wrong for long-running or heavily stateful workloads. A cold start is the init latency paid on the first invocation (or a scale-out event) while AWS spins up the runtime and runs your init code; you reduce it with smaller deployment packages, provisioned concurrency, and keeping heavy clients like DB connections in the init scope so they're reused across warm invocations."
+ },
+ {
+  "id": "10.4-aws-5",
+  "chapter": "10-Cloud-DevOps/10.4-aws.md",
+  "prompt": "RDS vs DynamoDB: give a NYX feature that belongs in each and say why.",
+  "answer": "Structured financial records belong in RDS Postgres, because that data needs SQL joins, transactions, and ad-hoc analytics queries over a fixed schema, which RDS handles with managed backups, patching, and failover. Hot dashboard lookups belong in DynamoDB, because they need single-digit-millisecond latency at scale for simple key-based access patterns rather than ad-hoc queries, and its pay-per-request pricing fits unpredictable traffic. The general rule: relational plus complex queries goes to RDS; massive scale plus known key-based access goes to DynamoDB."
+ },
+ {
+  "id": "10.4-aws-6",
+  "chapter": "10-Cloud-DevOps/10.4-aws.md",
+  "prompt": "In the NYX architecture, justify the SNS→SQS(DLQ) hop: what does it buy you over having the ingest Lambda call the aggregator directly?",
+  "answer": "Routing through SNS fan-out lets the aggregation Lambda and the user-notification Lambda consume the ingest event independently, each subscribing to the same topic without being coupled to each other or to the ingest function's execution. The SQS dead-letter queue on the path means failed or bad-row events land somewhere for retry and inspection instead of being silently lost, which a direct synchronous call from ingest to aggregator wouldn't give you. Overall it decouples the pipeline so a slow or failing downstream consumer doesn't take the ingest producer down."
+ },
+ {
+  "id": "15.1-coding-interviews-1",
+  "chapter": "15-Career/15.1-coding-interviews.md",
+  "prompt": "**Name all 13 patterns and one signal for each**, cold, no notes. This is the single most important recall in the chapter.",
+  "answer": "The 13 patterns and their signals: **Two Pointers** (sorted array or pairs/triples from both ends), **Sliding Window** (contiguous subarray/substring plus a constraint like longest/shortest/at-most-K), **Fast & Slow Pointers** (linked list cycle detection or finding the middle), **Hashing for O(1) Lookups** (\"have you seen this before,\" counting, complements, deduping), **Binary Search, including on the answer** (a sorted structure, or a monotonic yes/no feasibility question), **BFS/DFS** (trees, graphs, grids, connected components, shortest unweighted path), **Backtracking** (generate all combinations/permutations/subsets, constraint satisfaction), **Dynamic Programming** (\"number of ways\"/\"min-max cost\" with overlapping subproblems and optimal substructure), **Heap/Top-K** (top K, K closest, median of a stream), **Intervals** (inputs are `[start, end]` pairs, merge/overlap questions), **Stack/Monotonic Stack** (matching/nesting, next greater/smaller element), **Prefix Sums** (many range-sum or subarray-sum queries), and **Greedy** (a locally optimal choice that's provably globally optimal)."
+ },
+ {
+  "id": "15.1-coding-interviews-2",
+  "chapter": "15-Career/15.1-coding-interviews.md",
+  "prompt": "**What are the four axes interviewers score, and why is \"can you code\" only one of them?**",
+  "answer": "The four axes: **problem solving** (did you find a working approach, did you improve it), **coding** (clean, correct, idiomatic, bug-free), **communication** (thinking aloud, clarifying, explaining tradeoffs), and **complexity** (can you analyze and reason about time/space). Only the second axis is literally \"can you code\"; the other three are about how you think and communicate. A candidate who talks through a clean solution beats a silent candidate who types a clever one nobody understood, because it's a conversation that happens to involve code."
+ },
+ {
+  "id": "15.1-coding-interviews-3",
+  "chapter": "15-Career/15.1-coding-interviews.md",
+  "prompt": "**Walk through UMPIRE** on a fresh problem out loud, spending real time on Understand/Match/Plan before coding.",
+  "answer": "A model walkthrough follows the six UMPIRE steps in order. **Understand**: restate the problem, ask clarifying questions about input types, ranges, duplicates, empty input, and what to return. **Match**: say out loud which pattern's signals fit the problem, for example \"contiguous substring with a constraint, that's Sliding Window.\" **Plan**: describe the approach in plain English before touching code, walk a tiny example by hand, and get agreement before proceeding. **Implement**, **Review** (trace the code on an example and hunt edge cases), and **Evaluate** (state time and space complexity) follow after. The amateur move is jumping straight to Implement; the strong move is spending real time on Understand, Match, and Plan first, before writing a line of code."
+ },
+ {
+  "id": "15.1-coding-interviews-4",
+  "chapter": "15-Career/15.1-coding-interviews.md",
+  "prompt": "**Why does spaced-repetition re-solving beat re-reading?** What's your re-solve schedule?",
+  "answer": "Re-reading a solution you didn't fight for teaches almost nothing; a problem isn't really \"done\" the first time you solve it, because first-solve recall fades fast. Re-solving from a blank file forces genuine recall instead of pattern-matching against a memorized solution, if you can't re-derive it cold, you never owned it. The schedule is to re-solve after 1 day, then 1 week, then 1 month, tracking in a log whether you're confident yet."
+ },
+ {
+  "id": "15.1-coding-interviews-5",
+  "chapter": "15-Career/15.1-coding-interviews.md",
+  "prompt": "**Pick three patterns and write their template from a blank file**, then state the time/space complexity of each out loud.",
+  "answer": "This is the pattern-playbook exercise: re-derive each pattern's template pseudocode from a blank file in your own words rather than copying it, so it becomes half-internalized. Three worked examples: **Two Pointers** (converging indices scanning toward each other on a sorted array) runs O(n) time, O(1) space. **Sliding Window** (expand the right edge, shrink the left edge when the constraint is violated) runs O(n) time, O(min(n, alphabet)) space. **Backtracking** (choose, recurse, un-choose over partial solutions, e.g. generating subsets) runs O(n times 2^n) time, since there are 2^n subsets and O(n) to copy each. Stating the dominant term and why it dominates, out loud, is what interviewers listen for."
+ },
+ {
+  "id": "15.1-coding-interviews-6",
+  "chapter": "15-Career/15.1-coding-interviews.md",
+  "prompt": "**What do you do when you're stuck for 30 seconds in an interview?** (Say what you know, work an example, brute force, take the hint gracefully, never go silent.) Next: [15.2, System Design Interviews](15.2-system-design-interviews.md), where the same \"have a framework, drive the conversation\" mindset applies to the design round.",
+  "answer": "A model response follows five steps for being stuck. Say what you know and what's blocking you, for example \"I know this needs the K-largest, so a heap fits, but I'm not sure how to handle ties,\" which invites a hint. Go back to a concrete example and work it by hand to surface the mechanical insight. Try the brute force, since a working slow solution beats an elegant blank screen and you can optimize after. Take any hint gracefully and not defensively. And never go silent, a few seconds of thinking is fine but thirty seconds of silence is a red flag, so narrate even your confusion."
+ },
+ {
+  "id": "15.2-system-design-interviews-1",
+  "chapter": "15-Career/15.2-system-design-interviews.md",
+  "prompt": "**Recite the 9-step framework** from memory, and state the two unbreakable rules (requirements before solutions; estimates before architecture).",
+  "answer": "The 9 steps: **Requirements** (functional and non-functional, ask clarifying questions first), **Scope** (explicitly cut features), **Estimates** (back-of-envelope QPS, storage, bandwidth), **API** (key endpoints/method signatures), **Data model** (entities and access patterns, then pick storage), **High-level design** (boxes and arrows), **Deep dive** into the hardest one or two parts, **Bottlenecks** (find the limiting resource, add cache/replica/shard/queue), and **Tradeoffs** (say what you optimized for and gave up). The two unbreakable rules: requirements before solutions (don't design for a billion users when they said a thousand) and estimates before architecture (the math tells you whether you even need a cache or a shard)."
+ },
+ {
+  "id": "15.2-system-design-interviews-2",
+  "chapter": "15-Career/15.2-system-design-interviews.md",
+  "prompt": "**For each building block** (LB, cache, CDN, replicas, queue, rate limiter, sharding), what pressure does it relieve, in one sentence?",
+  "answer": "**Load balancer**: relieves the need for many app servers to look like one service and lets you survive node death. **Cache**: relieves read-heavy load on the DB and cuts latency. **CDN**: relieves geographic latency for static/cacheable content. **Replicas**: relieve read load by scaling reads across copies of the database. **Queue**: relieves slow, spiky, or fan-out work by decoupling it into async processing. **Rate limiter**: relieves abuse/overload pressure on the system. **Sharding**: relieves a single database when data or writes exceed what one primary can hold."
+ },
+ {
+  "id": "15.2-system-design-interviews-3",
+  "chapter": "15-Career/15.2-system-design-interviews.md",
+  "prompt": "**Walk the URL shortener** end to end out loud in under 6 minutes.",
+  "answer": "A model walkthrough for the URL shortener. Requirements: `shorten(long_url) -> short_code` and a redirect endpoint returning a 301; redirects must be very low latency and highly available, the workload is read-heavy, links are effectively permanent; scope is shortening and redirecting, analytics is secondary. Estimates: a large volume of new links per month with reads roughly 100x writes, storage in the low terabytes, meaning caching matters a lot and sharding can wait. API: an endpoint to shorten and an endpoint to redirect by code. Data model: a single links table (code, long_url, created_at, click_count), a key-value shape. Code generation: base62 of an auto-increment counter, simple and collision-free, versus random plus collision check. Diagram: client, load balancer, app servers, a Redis cache mapping code to long_url, and the database on a cache miss. Deep dive: cache the code-to-URL mapping since link popularity is heavily skewed, so hit rate is high. Tradeoffs: optimize for read latency and availability, accept eventual consistency on click counts by incrementing them asynchronously via a queue instead of on the hot redirect path."
+ },
+ {
+  "id": "15.2-system-design-interviews-4",
+  "chapter": "15-Career/15.2-system-design-interviews.md",
+  "prompt": "**Explain fan-out on write vs. read** and when you'd use the hybrid, this is the Twitter-lite signal.",
+  "answer": "**Fan-out on read (pull)**: at feed time, fetch posts from everyone you follow and merge by time; writes are simple but feed reads are expensive. **Fan-out on write (push)**: when a user posts, push the post into each follower's precomputed feed list, so feed reads become a cheap lookup, at the cost of more work and storage at write time. Since a feed is typically read-heavy, fan-out on write fits the common case, but it breaks down for the celebrity problem, a user with tens of millions of followers would trigger tens of millions of writes per post. The fix is a **hybrid**: fan-out on write for normal users, and fan-out on read, merging in at read time, for celebrities."
+ },
+ {
+  "id": "15.2-system-design-interviews-5",
+  "chapter": "15-Career/15.2-system-design-interviews.md",
+  "prompt": "**Why must a distributed rate limiter's counter live in Redis, and why does the decrement need to be atomic?**",
+  "answer": "With many app servers behind a load balancer, a per-server in-memory counter is wrong because a client could get N requests per server instead of N total, so the counter has to be shared and centralized across all servers. It also has to be fast and in-memory since the limiter runs on essentially every request, which rules out hitting a SQL database and points at Redis. The check-and-decrement must be atomic, for example via a Lua script or an atomic increment with expiry, to avoid a race condition where two concurrent requests both read the counter before either decrements it, letting more requests through than the limit allows."
+ },
+ {
+  "id": "15.2-system-design-interviews-6",
+  "chapter": "15-Career/15.2-system-design-interviews.md",
+  "prompt": "**List four red flags** that tank a junior design round.",
+  "answer": "Four red flags: jumping straight to a diagram without requirements or estimates (the number one mistake), buzzword salad (naming Kafka, Kubernetes, or microservices with no reason a pressure demands them), over-engineering (designing for a billion users when they said a thousand), and going silent while thinking instead of narrating. Two more: giving no explicit tradeoffs, and refusing to commit to a decision."
+ },
+ {
+  "id": "15.2-system-design-interviews-7",
+  "chapter": "15-Career/15.2-system-design-interviews.md",
+  "prompt": "**Design a deck of cards (or parking lot) out loud**, naming each class, its responsibility, and whether you chose composition or inheritance and why. Next: [15.3, Behavioral Interviews, Resume & the Job Search](15.3-behavioral-resume-jobsearch.md), because passing the technical rounds is only half of landing the offer.",
+  "answer": "A model walkthrough for a deck of cards: `Suit` and `Rank` are enums, fixed sets that prevent invalid cards; `Card` is immutable rank-plus-suit data; and `Deck` has-a list of `Card` objects, composition rather than inheritance, exposing `shuffle()` and `deal(n)` as its responsibilities. Composition is chosen because a deck isn't a kind of card, it contains cards; extending to multiple decks just means multiplying the card list in `Deck.__init__` without changing the rest of the API. The same pattern applies to a parking lot: `ParkingLot` has-a list of `Level`s, each `Level` has-a list of `Spot`s, and a `Spot` holds a size and an occupying `Vehicle`; `Vehicle` is the one place inheritance fits, as a base class with `Car`/`Motorcycle`/`Truck` subclasses, with the lot exposing `park(vehicle)` and `leave(ticket)`."
+ },
+ {
+  "id": "15.3-behavioral-resume-jobsearch-1",
+  "chapter": "15-Career/15.3-behavioral-resume-jobsearch.md",
+  "prompt": "**What does each letter of STAR stand for, and which two letters should dominate the answer?**",
+  "answer": "STAR stands for **Situation** (set the scene briefly), **Task** (what your specific responsibility or goal was), **Action** (what you did, step by step), and **Result** (the outcome, quantified if possible, plus what you learned). **Action and Result** should dominate the answer, since the most common failure is living in Situation and Task forever and never getting to a concrete Action and Result."
+ },
+ {
+  "id": "15.3-behavioral-resume-jobsearch-2",
+  "chapter": "15-Career/15.3-behavioral-resume-jobsearch.md",
+  "prompt": "**Deliver your \"tell me about yourself\"** in 60-90 seconds, ending with a tie to a specific role.",
+  "answer": "A model answer follows the arc of who you are, proof through concrete projects, then why this specific role: state your background and area of strength, walk through one or two real projects that demonstrate it with specifics, mention any related work experience, and close by tying it directly to why this role and company fit that trajectory. It isn't really STAR, it's a 60-90 second narrative that always ends by connecting to the specific role you're interviewing for rather than trailing off generically."
+ },
+ {
+  "id": "15.3-behavioral-resume-jobsearch-3",
+  "chapter": "15-Career/15.3-behavioral-resume-jobsearch.md",
+  "prompt": "**State the resume bullet formula** and turn one weak bullet from your own resume into a strong one out loud.",
+  "answer": "The formula is: strong action verb, plus what you built or did with the technology named, plus a measurable impact or result. Example transformation: a weak bullet like \"Helped build a dashboard for a finance app\" becomes a strong one like \"Built a real-time analytics dashboard (React, FastAPI) serving sub-second queries over 1M+ records via Redis caching and indexing.\" The strong version names the action, the tech, and a concrete, quantified impact; numbers don't have to be huge, they have to be concrete."
+ },
+ {
+  "id": "15.3-behavioral-resume-jobsearch-4",
+  "chapter": "15-Career/15.3-behavioral-resume-jobsearch.md",
+  "prompt": "**List four things to cut from a new-grad resume** and three things that help it survive an ATS.",
+  "answer": "Four things to cut: an \"Objective\" statement, high school anything once you have a degree, a skills bar or rating (like a Python skill meter), and soft-skill claims with no evidence such as \"team player\" or \"hard worker.\" Three things that help survive an ATS: a clean single-column layout (multi-column or graphic templates get bullets scrambled or dropped), standard section headers like Experience, Projects, Skills, and Education, and honestly mirroring keywords from the job description while submitting as a PDF with selectable text."
+ },
+ {
+  "id": "15.3-behavioral-resume-jobsearch-5",
+  "chapter": "15-Career/15.3-behavioral-resume-jobsearch.md",
+  "prompt": "**Why are referrals the highest-ROI channel, and how do you ask for one** in a way that's easy to say yes to?",
+  "answer": "Referrals are the highest-ROI channel because a referral can be five to ten times more likely to get an interview than a cold application. To ask in a way that's easy to say yes to, name the specific role or team, tie it to something real you've built, ask directly whether they'd be open to referring you or pointing you to the right person, and make it effortless by attaching your resume, the exact job link, and a two-to-three sentence blurb they can paste, while offering an explicit out like \"no worries if not.\""
+ },
+ {
+  "id": "15.3-behavioral-resume-jobsearch-6",
+  "chapter": "15-Career/15.3-behavioral-resume-jobsearch.md",
+  "prompt": "**Walk through the negotiation script** for a first offer, including what to say when asked for a number first.",
+  "answer": "When asked for a number first, deflect: express interest in learning more about the role and ask what range they had in mind, and if pressed, give a researched range pulled from public salary data for that company, level, and location. Get the offer in writing, then ask for a few days to consider it rather than accepting on the spot. If you have leverage, like a competing offer or being in final rounds elsewhere, mention it, then make a specific ask to move the base toward the top of that range. Negotiate the whole package, sign-on bonus, equity, start date, relocation, not just base salary, since sign-on is often the easiest lever for new grads, and stay gracious throughout since the worst outcome of asking is a polite no."
+ },
+ {
+  "id": "15.3-behavioral-resume-jobsearch-7",
+  "chapter": "15-Career/15.3-behavioral-resume-jobsearch.md",
+  "prompt": "**Describe your weekly job-search routine** and which funnel number tells you to fix the resume vs. practice patterns vs. mock more. Next: [15.4, Capstone & Portfolio Projects](15.4-capstone-projects.md), building the proof that makes every resume bullet and interview story land.",
+  "answer": "A weekly cadence of roughly 10-12 hours: apply to several tailored roles and send a couple of referral asks early in the week, split coding practice by pattern with a mock interview mid-week, do system design practice plus polishing behavioral stories, spend a day on follow-ups (thank-you notes, nudging stale referrals, updating the tracker), a day on project or GitHub polish, and a day to rest and review the week's funnel numbers. The funnel diagnosis: lots of applications with no callbacks means fix the resume or get more referrals; lots of screens with no onsites means practice the coding patterns more; onsites with no offers means mock more and work on behavioral answers."
+ },
+ {
+  "id": "15.4-capstone-projects-1",
+  "chapter": "15-Career/15.4-capstone-projects.md",
+  "prompt": "**Why does a deployed project beat a resume claim**, what three jobs does a portfolio project do at once?",
+  "answer": "A deployed project beats a resume claim because an interviewer can't verify \"proficient in React/FastAPI\" as a sentence, but they can click a live link, read the README, and browse clean commits, no trust required. Projects do three jobs at once: proof over claims (a deployed app demonstrates skill instead of asserting it), interview fuel (every behavioral question gets a real, specific answer instead of a hand-wave), and differentiation (an interesting, deployed project is what makes a recruiter stop scrolling among thousands of new grads with similar coursework)."
+ },
+ {
+  "id": "15.4-capstone-projects-2",
+  "chapter": "15-Career/15.4-capstone-projects.md",
+  "prompt": "**Name four things that separate an impressive project from a forgettable tutorial clone.**",
+  "answer": "Four things that separate an impressive project: solving a real problem you or someone else actually has, rather than a todo app or exact tutorial clone; being end-to-end, covering data, logic, API, and UI (or the full systems path), rather than a single isolated script; being deployed with a live URL anyone can click, rather than only running on your laptop; and being tested with CI passing, rather than having no tests at all. Two more: a documented README explaining the why, how, and demo, and showing a decision or tradeoff you can actually discuss in an interview."
+ },
+ {
+  "id": "15.4-capstone-projects-3",
+  "chapter": "15-Career/15.4-capstone-projects.md",
+  "prompt": "**What's the #1 reason projects die, and what's the discipline that prevents it?** (Scope → ship the MVP first, deployed.)",
+  "answer": "The number one reason projects die is scope, building forever and never shipping. The discipline that prevents it: define the MVP brutally, the smallest version that solves the core problem end to end, ship that MVP first while deployed, since an ugly deployed MVP beats a polished unfinished thing on localhost and deploying early surfaces the hard parts like env config and secrets while the app is still small, then add stretch features one at a time, each on its own branch, and timebox the whole effort to a few weeks."
+ },
+ {
+  "id": "15.4-capstone-projects-4",
+  "chapter": "15-Career/15.4-capstone-projects.md",
+  "prompt": "**What are the two highest-value sections of a README, and why?**",
+  "answer": "The two highest-value sections are a visible demo, a GIF, screenshot, or live link near the top, which earns the click, and a \"what I learned / tradeoffs\" section near the bottom, the honest, interesting part covering a hard problem you hit and how you solved it, or a decision you'd revisit. That second section is what an interviewer actually reads and asks about, so it hands them their questions and hands you your STAR stories."
+ },
+ {
+  "id": "15.4-capstone-projects-5",
+  "chapter": "15-Career/15.4-capstone-projects.md",
+  "prompt": "**Pick two of the six projects and, for each, name the chapters it exercises and the one thing you'd highlight in an interview.**",
+  "answer": "A full-stack CRUD-and-auth app exercises frontend and backend chapters, auth and permissions, relational schema design and indexing, Docker, CI/CD, git workflow, and web app security; the thing to highlight in an interview is how you secured it, password hashing, token expiry, and scoping every query to the authenticated user to avoid an authorization bug. A mini key-value store exercises hash tables (since you're building the storage engine itself), memory, concurrency for many clients, TCP sockets, protocol design, eviction concepts, and complexity analysis; the thing to highlight is a benchmark plus the line that building a mini Redis gives you a genuinely deeper understanding of caching, eviction, and the cost of persistence, which makes your system-design answers more credible."
+ },
+ {
+  "id": "15.4-capstone-projects-6",
+  "chapter": "15-Career/15.4-capstone-projects.md",
+  "prompt": "**Walk through how you'd present a project in an interview** (problem → role & decisions → hard part → result/learning).",
+  "answer": "Lead with the problem, what real problem the project solves and for whom, not a tech stack dump. Then your role and key technical decisions, your chance to show design thinking, like why you picked a given architecture or data model. Then a hard part and how you handled it, ideally a nasty bug or a real tradeoff, since that becomes a behavioral story. Then the result and what you learned, the outcome plus a thoughtful \"what I'd do differently,\" which signals growth. Practice this roughly two-minute version out loud, since you'll give it in nearly every interview."
+ },
+ {
+  "id": "15.4-capstone-projects-7",
+  "chapter": "15-Career/15.4-capstone-projects.md",
+  "prompt": "**Why write the README before the feature code?** --- That closes Part 15, and, honestly, the practical arc of the whole book. Parts 1-14 built the deep understanding \"a mile wide and an *inch* deep\" was never going to give you; Part 15 turns that understanding into a job. [Chapter 0](../README.md) was the start, now ship the thing that proves how far you've come.",
+  "answer": "Writing the README first, the pitch, the problem, planned features, and the stack and why, forces you to clarify what you're actually building before you build it, the same requirements-before-solutions discipline used in system design interviews. It also means your first commit is the scaffold plus README, so the git history tells a clean story from day one."
+ },
+ {
+  "id": "21.1-software-company-1",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Entities:** Name the four entity types and the liability/tax/raising trade-off of each. Why is a VC-backed startup almost always a *Delaware C-corp*?",
+  "answer": "The four entities are sole proprietorship, LLC, C-corporation, and S-corporation. Sole proprietorship has no liability protection, profit flows onto your personal return with self-employment tax, and you can't raise money since there are no shares to sell. An LLC gives limited liability and pass-through taxation but is awkward for VC because funds generally don't want LLC membership interests. A C-corp has limited liability, faces double taxation in the classic case, and is ideal for raising because it offers clean preferred stock and a standard option pool. An S-corp keeps limited liability and pass-through taxes but restricts the number and type of shareholders, which collides with how VC investing works. VC-backed startups converge on a Delaware C-corp because C-corp status is what VC funds require off the shelf, and Delaware specifically offers deep, predictable corporate case law, so every VC lawyer already knows how to paper the deal."
+ },
+ {
+  "id": "21.1-software-company-2",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Cap table:** What is dilution, and why can it *raise* the value of your stake even as your percentage falls? Compute an investor's ownership from investment and post-money.",
+  "answer": "Dilution happens when the company issues new shares, to investors or an option pool: total shares outstanding grows, so everyone who didn't get new shares owns a smaller percentage. It can still raise the value of your stake because a good round grows the whole pie, so a smaller percentage of a much bigger company can be worth as much or more in dollar terms than a bigger percentage of a small one. Investor ownership equals investment divided by post-money valuation; for example, a $2,000,000 investment on an $8,000,000 pre-money valuation gives a $10,000,000 post-money, so the investor owns 2,000,000 divided by 10,000,000, or 20%."
+ },
+ {
+  "id": "21.1-software-company-3",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Vesting:** What is a 4-year vest with a 1-year cliff, and what problem does it solve?",
+  "answer": "A 4-year vest with a 1-year cliff means shares are earned over time rather than owned outright on day one: nothing vests for the first year, then 25% vests at once at the one-year mark, the cliff, and the remaining 75% vests monthly over the following three years. It solves the problem of a co-founder or employee quitting after a few months and walking away with a permanent slice of the company; with vesting they leave with nothing before the cliff, or only their earned portion after it. Investors require it, but founders should want it regardless, since it's the mechanism that makes shared commitment actually enforceable."
+ },
+ {
+  "id": "21.1-software-company-4",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**PMF:** Give two concrete signals you'd actually have found product-market fit.",
+  "answer": "Retention curves that flatten instead of decaying to zero, meaning people keep coming back, is the single most honest signal of product-market fit. Another is the \"very disappointed\" test: survey users on how they'd feel if they could no longer use the product, and roughly 40% or more answering very disappointed is a strong PMF signal. Both beat vanity metrics like signups or pageviews, which feel good but don't tell the truth about whether people actually need the product."
+ },
+ {
+  "id": "21.1-software-company-5",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Unit economics:** Define CAC, LTV, churn, gross margin, payback. Why compute LTV on *gross profit*? What are the healthy targets for LTV:CAC and payback?",
+  "answer": "CAC is the fully loaded cost to acquire one customer, sales and marketing spend divided by customers acquired. LTV is the total gross profit one customer generates over their lifetime. Churn is the rate customers cancel per period; its inverse gives average customer lifetime. Gross margin is revenue left after the direct cost of serving a customer, hosting, APIs, support. Payback is CAC divided by monthly gross profit, how many months it takes to earn back the acquisition spend. LTV is computed on gross profit rather than revenue because using revenue overstates the truth by ignoring cost-to-serve. Healthy targets: an LTV to CAC ratio of at least 3 to 1, and CAC payback under 12 months."
+ },
+ {
+  "id": "21.1-software-company-6",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Market sizing:** Compute TAM/SAM/SOM bottom-up. Why is \"we just need 1% of a huge market\" a red flag?",
+  "answer": "TAM, SAM, and SOM are built bottom-up as count of buyers times price. For example, TAM might be all companies in a category that could use the product times an annual price, giving a total addressable market in the billions; SAM narrows that to the realistic sweet-spot segment, say a few hundred million; and SOM is the realistic share of SAM captured in a few years, in the low millions of ARR. \"We just need 1% of a huge market\" is a red flag because it's a lazy top-down number with no defensible inputs, signaling you haven't thought about how you'd actually reach customers, whereas a bottom-up number is defensible because every input, buyer count and price, is something you can argue for."
+ },
+ {
+  "id": "21.1-software-company-7",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Funding:** SAFE vs priced round? What is the SAFE-stacking surprise? Why might *grants* matter specifically for Anneava?",
+  "answer": "A priced round sets a valuation now and issues priced preferred stock with full legal docs, standard from Series A on. A SAFE gives an investor money now for the right to shares later at the next priced round, without setting today's valuation, using a valuation cap or discount to reward the early investor; it's faster, cheaper, and standard for pre-seed and seed. The SAFE-stacking surprise is that SAFEs feel dilution-free today since nothing converts immediately, but stack several SAFEs with low caps and they all convert at once at the next priced round, leaving founders far more diluted than any single instrument suggested. Grants might matter specifically for a healthcare venture like Anneava because it has access to research and health-focused, non-dilutive grants that pure consumer software apps don't, widening the funding menu beyond just raising from VCs."
+ },
+ {
+  "id": "21.1-software-company-8",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Runway:** Compute runway from cash and net burn. Why start raising with 6+ months left? Default-alive vs default-dead?",
+  "answer": "Runway equals cash in the bank divided by net burn, where net burn is cash going out minus cash coming in per month. You should start raising with 6 or more months of runway left because a raise itself takes months to close and running out of cash mid-raise is fatal, so you need to start the next raise well before the money runs out, not right before it does. Default-alive means current growth makes the company profitable before cash hits zero, so it's in control of its own fate; default-dead means it must raise again or die regardless of how growth looks."
+ },
+ {
+  "id": "21.1-software-company-9",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Execution:** What's the most valuable Scrum ceremony, and why? Score three features with RICE and rank them.",
+  "answer": "The retrospective is the most valuable Scrum ceremony because it's how the team improves itself, reflecting on what went well, what didn't, and what to change, rather than status theater. RICE score equals reach times impact times confidence divided by effort. Scoring three example features: a new dashboard with high reach, high impact, moderate confidence, but higher effort scores highest; dark mode, cheap effort with full confidence but low impact, scores second; and SSO login, moderate reach and impact but lower confidence and moderate effort, scores lowest. Ranked by score, the cheap high-confidence feature can beat a more impactful but expensive, uncertain one."
+ },
+ {
+  "id": "21.1-software-company-10",
+  "chapter": "21-Business/21.1-software-company.md",
+  "prompt": "**Regulatory mindset:** Explain *in one paragraph* why Anneava routes payments through a licensed facilitator, and state the general mindset it illustrates. ---",
+  "answer": "Anneava routes payments through a licensed payment facilitator because moving money on behalf of others is heavily regulated in the US; a business that transmits money for others risks being classified as a money services business or money transmitter, which triggers federal registration and a punishing state-by-state licensing patchwork. Rather than take on that classification itself, Anneava lets a facilitator that already holds the licenses move the funds while Anneava orchestrates the workflow around it, getting the functionality without the licensing burden. The general mindset: ask what activity you're actually doing legally, not what you call it, find out which regulatory classification it falls into before building, and architect the business so the regulated activity sits with the party licensed to handle it, since being demonstrably compliant is itself a sales asset in regulated markets."
+ },
+ {
+  "id": "25.1-computer-architecture-1",
+  "chapter": "25-Architecture/25.1-computer-architecture.md",
+  "prompt": "**Von Neumann model.** One memory holds both instructions and data; CPU (control unit + ALU + registers) talks to it over a bus. \"Code is data\" enables compilers, JITs, and self-modifying code. Real chips dodge the von Neumann bottleneck with split I-cache/D-cache (Harvard *inside*).",
+  "answer": "The von Neumann model uses a single memory to hold both instructions and data, with the CPU, control unit, ALU, and registers, connected to that memory over a bus. Because code and data are the same kind of stuff in memory, \"code is data,\" which is what makes compilers, JIT compilers, and self-modifying code possible, a JIT can write new machine-code bytes into memory and then jump into them. That shared path also creates the von Neumann bottleneck, since the CPU can't fetch an instruction and access a data word over the same channel at the same instant; real chips work around this at the microarchitecture level with separate instruction and data caches, a Harvard-style split, so the system is von Neumann overall but Harvard inside the chip."
+ },
+ {
+  "id": "25.1-computer-architecture-2",
+  "chapter": "25-Architecture/25.1-computer-architecture.md",
+  "prompt": "**ISA vs microarchitecture.** The ISA is the stable software-visible contract (instructions, registers, memory model); the microarchitecture is the ever-changing implementation. RISC (ARM, RISC-V, simple, fixed-length, load-store) vs CISC (x86, complex, variable-length); modern x86 is RISC-inside, CISC-outside.",
+  "answer": "The ISA is the documented, stable contract a CPU makes with software, specifying its instructions, registers, and memory model, while the microarchitecture is the actual implementation underneath, pipeline depth, caches, branch predictors, which changes every chip generation without breaking that contract. RISC ISAs like ARM and RISC-V use few, simple, fixed-length instructions in a load-store design where only load and store touch memory, while CISC ISAs like x86 use many complex, variable-length instructions that can each do more work. Modern x86 chips decode their complex CISC instructions into small RISC-like micro-ops and run those on an internally RISC-style pipeline, so today's chips are RISC on the inside and CISC on the outside purely for backward compatibility."
+ },
+ {
+  "id": "25.1-computer-architecture-3",
+  "chapter": "25-Architecture/25.1-computer-architecture.md",
+  "prompt": "**Fetch-decode-execute.** PC names the next instruction; fetch into IR, decode, execute (ALU / memory / write reg / change PC), repeat. Control flow is just *writing a new value into the PC*.",
+  "answer": "The program counter holds the address of the next instruction to run. Fetch loads that instruction into the instruction register and advances the PC, decode figures out the operation and its operands, and execute actually performs it, whether that means an ALU operation, a memory access, writing a register, or changing the PC, then the cycle repeats. All control flow, branches, loops, jumps, comes down to nothing more mysterious than writing a new value into the PC."
+ },
+ {
+  "id": "25.1-computer-architecture-4",
+  "chapter": "25-Architecture/25.1-computer-architecture.md",
+  "prompt": "**Single-cycle CPU.** Each instruction completes fully before the next. We built one in Python: registers, data memory, PC, an ALU, and a handful of instructions running a real program.",
+  "answer": "A single-cycle CPU completes each instruction fully, fetch through execute, before starting the next one; it's the simplest correct CPU design. The chapter builds one in Python with registers, a data memory array, a program counter, an ALU, and a small instruction set (things like LOADI, ADD, SUB, MUL, LOAD, STORE, JZ, JMP, HALT), then runs a real program on it to show fetch-decode-execute actually happening, one cycle charged per instruction."
+ },
+ {
+  "id": "25.1-computer-architecture-5",
+  "chapter": "25-Architecture/25.1-computer-architecture.md",
+  "prompt": "**Pipelining.** Overlap instruction stages like a laundry assembly line. Throughput → ~one instr/cycle; speedup approaches the number of stages for long runs. **Hazards** (structural, data, control) force stalls; fixed by forwarding, bubbles, and branch prediction. Hazards raise effective CPI.",
+  "answer": "Pipelining overlaps the stages of successive instructions the way an assembly line overlaps loads of laundry: the next load starts washing while the first is drying instead of waiting for it to finish completely. This pushes throughput toward about one instruction completed per cycle, and for long instruction runs the speedup approaches the number of pipeline stages, since the one-time fill cost becomes negligible. Hazards break that ideal: structural hazards (two instructions wanting the same hardware unit), data hazards (an instruction needing a result not yet produced), and control hazards (not knowing which instruction to fetch after a branch) all force stalls or flushes, addressed by duplicating hardware, forwarding results between stages, and branch prediction; every hazard that forces a stall pushes the effective CPI above the ideal 1.0."
+ },
+ {
+  "id": "25.1-computer-architecture-6",
+  "chapter": "25-Architecture/25.1-computer-architecture.md",
+  "prompt": "**Memory hierarchy.** registers→L1→L2→L3→RAM→disk; each ~10× bigger and slower. Caches exploit **temporal** and **spatial locality**, fetch **64-byte lines**, and use direct-mapped / set-associative / fully-associative mapping with write-through or write-back policies. Hit rate dominates performance because of the ~100× L1-vs-RAM cliff.",
+  "answer": "The memory hierarchy runs registers, L1, L2, L3, RAM, then disk, each level roughly 10x bigger and 10x slower than the one above it. Caches work because programs show temporal locality, recently used addresses get reused, and spatial locality, nearby addresses get used soon after, so caches fetch data in 64-byte lines and use direct-mapped, fully-associative, or set-associative schemes to decide where a line can live, paired with a write-through or write-back policy for handling writes. Hit rate dominates real performance because of the roughly 100x latency cliff between an L1 hit and a RAM access, so a small change in hit rate swings runtime dramatically."
+ },
+ {
+  "id": "25.1-computer-architecture-7",
+  "chapter": "25-Architecture/25.1-computer-architecture.md",
+  "prompt": "**Going wider.** Superscalar (multiple instr/cycle), out-of-order (hide latency), SIMD (vector ops), multicore (separate streams). All to keep the silicon busy.",
+  "answer": "Beyond pipelining's roughly one instruction per cycle, architects add more parallelism: superscalar issues multiple instructions per cycle using multiple execution units, out-of-order execution reorders work so the CPU can keep running independent instructions while a slow one, like a cache-missing load, is still pending, hiding its latency, SIMD applies one instruction to multiple data values at once, and multicore puts multiple full CPUs on one chip to run separate instruction streams. All of these exist for the same reason, keeping the silicon busy instead of idle."
+ },
+ {
+  "id": "25.1-computer-architecture-8",
+  "chapter": "25-Architecture/25.1-computer-architecture.md",
+  "prompt": "**Iron law.** `CPU time = instructions × CPI × cycle time`. You must reason about all three (and memory behavior), never judge a CPU by clock speed or instruction count alone. ---",
+  "answer": "The iron law of performance states CPU time equals instructions times CPI (cycles per instruction) times cycle time. Because these three factors trade off against each other, for example RISC-style code runs more instructions but at a lower CPI and faster clock than CISC-style code, you can't judge a CPU by clock speed or instruction count alone; you have to reason about the product of all three, plus memory and cache behavior, to know whether a design or change is actually faster."
+ },
+ {
+  "id": "25.2-assembly-programming-1",
+  "chapter": "25-Architecture/25.2-assembly-programming.md",
+  "prompt": "**Why assembly.** Demystification (closes the stack from Python to electrons), debugging (ground truth in crashes/optimized builds), performance (know what your code compiles to), security (overflows are an asm-level phenomenon, 12.x), compilers (codegen is emitting asm, 24.2). The skill is *reading without panic*, not fluent writing.",
+  "answer": "Learning assembly isn't about writing large programs by hand, the compiler is better at that bookkeeping, it's about being able to read it without panic. There are five reasons to learn it: demystification, since assembly is the rung where your code meets the hardware, closing the loop from a high-level language down to electrons; debugging, because a crash's stack trace, an optimized build, or a core dump often only makes sense at the assembly level, the ground truth; performance, since making code fast requires knowing what it actually compiles to; security, since buffer overflows and related exploits are assembly-level phenomena; and compilers, since a compiler's back end is a program that emits assembly, so understanding codegen means understanding this."
+ },
+ {
+  "id": "25.2-assembly-programming-2",
+  "chapter": "25-Architecture/25.2-assembly-programming.md",
+  "prompt": "**Mental model.** Registers (16 fast slots inside the CPU), memory (the big array), flags (ZF/SF/CF/OF set by ops). `cmp`/`test` set flags; conditional jumps read them, that pair builds *all* control flow.",
+  "answer": "The CPU operates on three things: registers, a small set of ultra-fast storage slots inside the CPU where almost all work actually happens; memory, the big addressable array where everything not currently being worked on lives; and flags, bits in the status register (zero, sign, carry, overflow) set by operations, especially comparisons. `cmp` and `test` set these flags without storing a result, and conditional jumps read them to decide whether to branch; that flag-setting-then-conditional-jump pair is the entire mechanism behind every `if`, `while`, and `for` loop."
+ },
+ {
+  "id": "25.2-assembly-programming-3",
+  "chapter": "25-Architecture/25.2-assembly-programming.md",
+  "prompt": "**Syntax.** x86-64 primary; **AT&T syntax** (`op src, dst`, destination on the right, `%reg`, `$imm`) is the GNU/`objdump` default. Intel is `op dst, src`. ARM64 is RISC, load-store, args in `x0..x7`, same concepts, different spelling.",
+  "answer": "x86-64 is the primary architecture covered, using AT&T syntax, the GNU/`objdump` default on Linux and Mac, where instructions take the form `op src, dst` with the destination on the right, registers prefixed with `%`, and immediates prefixed with `$`. Intel syntax reverses the operand order to `op dst, src` with no such prefixes, and is used by Intel's manuals and Windows tooling; either can be forced with a compiler or objdump flag. ARM64 is a RISC, load-store architecture where only `ldr`/`str` touch memory, with arguments passed in `x0` through `x7`; the underlying concepts, registers, flags, compare-and-branch, stack, call and return, are identical to x86, only the spelling differs."
+ },
+ {
+  "id": "25.2-assembly-programming-4",
+  "chapter": "25-Architecture/25.2-assembly-programming.md",
+  "prompt": "**Core instructions.** `mov`/`lea` (move/address), `add`/`sub`/`imul`/`xor` (arithmetic & idiomatic zeroing), `cmp`/`test` (set flags), conditional/unconditional jumps, `push`/`pop` (stack), `call`/`ret` (functions).",
+  "answer": "The core vocabulary covers moving data with `mov` and computing addresses without touching memory with `lea`; arithmetic and logic with `add`, `sub`, and `imul`, plus idioms like `xor reg, reg` to zero a register faster than a `mov`; setting flags for comparison with `cmp` and `test`, neither of which stores a result, they only set flags; conditional and unconditional jumps that read those flags to decide whether to branch; `push`/`pop` for moving data on and off the stack; and `call`/`ret` for invoking and returning from functions."
+ },
+ {
+  "id": "25.2-assembly-programming-5",
+  "chapter": "25-Architecture/25.2-assembly-programming.md",
+  "prompt": "**Calling convention (System V AMD64).** Integer args in `rdi, rsi, rdx, rcx, r8, r9`; return in `rax`. Caller-saved (`rax, rcx, rdx, rsi, rdi, r8-r11`) vs callee-saved (`rbx, rbp, r12-r15`). A function call = put args in registers, `call` (pushes return address), prologue builds a stack frame, body runs, epilogue tears it down, `ret` pops the return address. The return address sits on the stack above the locals, *which is why buffer overflows can hijack control flow*, and why canaries/NX/ASLR exist (12.x).",
+  "answer": "Under the System V AMD64 calling convention, the first six integer or pointer arguments go in `rdi`, `rsi`, `rdx`, `rcx`, `r8`, and `r9` in order, and the return value comes back in `rax`. Registers split into caller-saved, which a called function may freely overwrite, and callee-saved, which a function must save and restore if it uses them. A function call works by putting arguments in those registers and executing `call`, which pushes the return address and jumps to the function; the callee's prologue then builds a stack frame, the body runs, the epilogue tears the frame down, and `ret` pops the return address back into the instruction pointer. Because that return address sits on the stack directly above the local variables, a buffer overflow that writes past a local array can overwrite it and hijack control flow when `ret` executes, which is exactly why defenses like stack canaries, non-executable stack, and address space layout randomization exist."
+ },
+ {
+  "id": "25.2-assembly-programming-6",
+  "chapter": "25-Architecture/25.2-assembly-programming.md",
+  "prompt": "**Reading compiler output.** `gcc -S` emits the compiler's asm; compare `-O0` (literal, stack-heavy, debuggable) vs `-O2` (register-resident, hoisted, sometimes loop-eliminated). `objdump -d` disassembles the actual binary, showing the real machine-code bytes the CPU fetches. **godbolt.org** does all this in the browser.",
+  "answer": "`gcc -S` emits the compiler's own assembly for a source file, before assembly or linking, letting you compare `-O0` output, literal and stack-heavy, reloading variables from stack slots every iteration, deliberately kept dumb so debuggers can map every variable to source, against `-O2` output, values kept in registers, loop-invariant work hoisted out, and sometimes a loop replaced entirely with a closed-form calculation. `objdump -d` disassembles the actual compiled binary, showing the real machine-code bytes the CPU fetches alongside the mnemonics, the ground truth of what actually runs versus what the compiler emitted as text. godbolt.org, the Compiler Explorer, does all of this interactively in the browser, showing source and generated assembly side by side."
+ },
+ {
+  "id": "25.2-assembly-programming-7",
+  "chapter": "25-Architecture/25.2-assembly-programming.md",
+  "prompt": "**How HLL maps down.** Locals → registers/stack slots; arrays → base + scaled index (cache-friendly, 25.1); structs → base + offsets; `if` → `cmp`+jump; loops → label + `cmp`+jump-back; calls → convention; recursion → nested stack frames (why it can overflow, 05.1). ---",
+  "answer": "Local variables map to registers when there's room, or to stack slots when there isn't or when their address is taken; arrays map to a base address plus a scaled index, base plus index times element size, which is exactly why contiguous arrays are cache-friendly, since sequential indices walk sequential addresses; structs map to a base address plus fixed byte offsets per field, with gaps showing up as alignment padding. An `if` compiles to a comparison followed by a conditional jump around a block, a loop compiles to a label, a comparison, and a conditional jump back to that label, and function calls compile to loading arguments into the calling convention's registers and issuing `call`. Recursion is just ordinary call and return, but each call pushes a new stack frame, which is literally why deep recursion can overflow the stack, since every frame consumes finite stack space."
+ }
+]

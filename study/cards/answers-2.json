@@ -1,0 +1,704 @@
+[
+ {
+  "id": "02.1-arrays-1",
+  "chapter": "02-Data-Structures/02.1-arrays.md",
+  "prompt": "Derive why `a[i]` is O(1). Write the address formula, name every term (`base`, `i`, `stride`), and explain why the cost doesn't depend on `i` or on `n`. What property of the array makes this formula possible in the first place?",
+  "answer": "The formula is `address(a[i]) = base_address + i * stride`, where `base_address` is where element 0 starts, `i` is the index, and `stride` is the number of bytes one element occupies. To read `a[i]` the CPU does one multiplication and one addition, then one memory fetch, a fixed handful of operations regardless of how large `i` or `n` is, so it qualifies as O(1) by definition (a cost that doesn't grow with input size). This is only possible because the array is **contiguous**: every element is the same size and laid end to end, so any element's address is a closed-form arithmetic expression rather than something you have to search for."
+ },
+ {
+  "id": "02.1-arrays-2",
+  "chapter": "02-Data-Structures/02.1-arrays.md",
+  "prompt": "A dynamic array is \"a lie maintained on top of a fixed buffer.\" Explain the lie. What two numbers must the structure track, and what happens, step by step, when `append` is called and `size == capacity`?",
+  "answer": "The lie is that a dynamic array looks infinitely growable, but underneath it is still a fixed-size contiguous block of memory; growth is faked by secretly swapping in a bigger buffer when needed. The structure tracks **capacity** (how big the underlying buffer actually is) and **size** (how many slots are currently filled). When `append` is called and `size == capacity`, `_resize` fires: a new, bigger buffer is allocated (`2 * capacity`, geometric growth), every existing element is copied into it, the old buffer is discarded, then the new value is written at `buffer[size]` and `size` is incremented."
+ },
+ {
+  "id": "02.1-arrays-3",
+  "chapter": "02-Data-Structures/02.1-arrays.md",
+  "prompt": "Prove that `append` is amortized O(1) using the aggregate method: show that the total copying cost over `n` appends with doubling sums to a geometric series, evaluate it to `≈ 2n`, and conclude the per-append cost. Then redo the proof with the accounting method (how many credits per append, and why does the bank never go negative?).",
+  "answer": "Aggregate method: every append does one cheap write (n writes total), plus resizes happen at sizes 1, 2, 4, 8, ..., so the copying totals `1 + 2 + 4 + ... + n ≈ 2n - 1 < 2n` (in a doubling series the last term beats everything before it combined). Total work is `≤ n + 2n = 3n`, so average cost per append is `3n / n = 3 = O(1)`. Accounting method: charge each `append` 3 credits, 1 to pay for the write and 2 banked with the element; right after a resize from `k` to `2k` the buffer is half full, so the next `k` appends deposit `2k` credits, exactly enough to pay for copying the `2k` elements at the next resize, meaning the bank never runs dry and the flat charge of 3 is always sufficient."
+ },
+ {
+  "id": "02.1-arrays-4",
+  "chapter": "02-Data-Structures/02.1-arrays.md",
+  "prompt": "Suppose you changed the growth strategy from \"double the capacity\" to \"add 10 slots each time it fills.\" What does the amortized cost of `append` become, and why? Show the sum. (This is the question that proves you understand why doubling matters, not just that it's used.)",
+  "answer": "The amortized cost degrades to O(n), and the total cost over `n` appends becomes O(n²). With additive growth by 10, resizes happen roughly every 10 appends, copying sizes `10 + 20 + 30 + ... + n`, which is an arithmetic series summing to about `n²/20`. Because each resize copies a growing amount and resizes don't get rarer relative to the copy size the way doubling's gaps do, the total is quadratic in `n`, so per-append cost is O(n) rather than O(1); the chapter's own example (growing by 1 slot each time) makes this explicit as `1 + 2 + ... + n = n(n+1)/2 = O(n²)`."
+ },
+ {
+  "id": "02.1-arrays-5",
+  "chapter": "02-Data-Structures/02.1-arrays.md",
+  "prompt": "Why are `insert(0, x)` and `delete(0)` both O(n) while `append` and `pop()` from the end are O(1)? Tie your answer directly to the contiguity invariant: what does contiguity force us to do when we open or close a gap in the middle?",
+  "answer": "Contiguity means there are no gaps in the buffer, so opening a hole at index 0 for `insert` forces every element from `i` onward to physically slide one slot right, and closing a hole after `delete` forces every element after `i` to slide one slot left; at the front that's `n` (or `n-1`) shifts, hence O(n). `append` and `pop()` operate at the end where nobody is in the way, so no shifting is needed, just one write (or a decrement of `size`), which is O(1). The array is fast to read anywhere but fast to modify only at the end, exactly because contiguity has no slack for insertions except at the boundary."
+ },
+ {
+  "id": "02.1-arrays-6",
+  "chapter": "02-Data-Structures/02.1-arrays.md",
+  "prompt": "Python's `list` is a dynamic array. Using only what's in this chapter, predict the Big-O of: `lst[500]`, `lst.append(x)`, `lst.insert(0, x)`, `lst.pop()`, `lst.pop(0)`, and `x in lst`. For each, name the one-line reason. If you wanted fast inserts at the front, what should you reach for instead, and why? --- _Closing note: what most people are missing in all those interviews isn't the vocabulary; it's the geometric series. Once \"the last term in a doubling sum beats everything before it combined\" becomes a picture in your head, amortized O(1) stops being a phrase you repeat and becomes something you can prove on a napkin. On to linked lists, where giving up contiguity buys us O(1) front insertion - the exact trade-off this chapter sets up._",
+  "answer": "`lst[500]` is O(1): direct offset arithmetic, `base + i*stride`. `lst.append(x)` is O(1) amortized: geometric doubling makes resize copies sum to `< 2n` over `n` appends. `lst.insert(0, x)` is O(n): every element must shift right to open the gap at the front. `lst.pop()` is O(1): shrinking from the end just decrements `size`, no shifting. `lst.pop(0)` is O(n): every remaining element shifts left to close the gap. `x in lst` is O(n): unsorted, so it must scan linearly with no structure to exploit. For fast front inserts, reach for `collections.deque`, which is O(1) at both ends, unlike a contiguous array whose only cheap end is the back."
+ },
+ {
+  "id": "02.2-linked-lists-1",
+  "chapter": "02-Data-Structures/02.2-linked-lists.md",
+  "prompt": "**The mental model.** Sketch `3 → 7 → 9 → None` as nodes-with-pointers and explain, referencing the C++ `struct Node { int data; Node* next; };`, why `cur = cur->next` walks the list and why the nodes need not be adjacent in memory.",
+  "answer": "Each node is `struct Node { int data; Node* next; }`, so the chain is three boxes: `{3, ●}→{7, ●}→{9, nullptr}`, where head points at the `3` node and each `●` is the address stored in `next`. `cur = cur->next` means \"replace your hand-position with the address the current node is pointing at,\" so repeating it walks 3, then 7, then 9, stopping when `next` is `nullptr`. Because `next` stores an address rather than requiring physical placement, node `7` could live at `0x1000` and node `9` at `0x40`; the only thing linking them is that `7`'s `next` field literally holds `9`'s address, so the nodes never need to be adjacent in memory."
+ },
+ {
+  "id": "02.2-linked-lists-2",
+  "chapter": "02-Data-Structures/02.2-linked-lists.md",
+  "prompt": "**Derive the trade-off.** From first principles (not the table), prove why front-insertion is O(1) for a linked list but O(n) for an array, and why index access is the reverse. Then explain why, despite this, iterating an array is usually faster in practice - use the words \"cache line\" and \"pointer chase.\"",
+  "answer": "Front-insertion on a linked list is three pointer writes, new node's `next` set to the old head, then `head` reassigned, none of which depends on `n`, so it's O(1); on an array, contiguity means inserting at index 0 forces every one of the `n` existing elements to shift right, so it's O(n). Index access flips: an array computes `base + i*stride` directly, O(1), while a linked list has no arithmetic shortcut and must follow `next` from `head` exactly `i` times, O(n). Despite the list's O(1) front insert, arrays usually win in practice because the CPU pulls a whole **cache line** (about 64 bytes) at a time and an array's contiguous layout lets the prefetcher stream through those lines with near-zero misses, whereas walking a list is a **pointer chase** where each node is scattered on the heap and the next address isn't known until the current node is read, so nearly every hop risks a costly cache miss."
+ },
+ {
+  "id": "02.2-linked-lists-3",
+  "chapter": "02-Data-Structures/02.2-linked-lists.md",
+  "prompt": "**Reverse it.** Walk through reversing `1→2→3` with the three pointers `prev/cur/nxt`. Why must you stash `nxt = cur.next` before doing `cur.next = prev`? State the loop invariant and why it proves correctness.",
+  "answer": "Starting `prev=None, cur=1`: save `nxt=cur.next` (2), flip `cur.next=prev` (1→None), advance `prev=1, cur=2`. Repeat: save `nxt=3`, flip `2.next=1`, advance `prev=2, cur=3`. Repeat: save `nxt=None`, flip `3.next=2`, advance `prev=3, cur=None`, loop ends with `head=prev=3`, giving `3→2→1→None`. You must stash `nxt` first because doing `cur.next = prev` before saving it destroys your only link to the rest of the list, orphaning everything after `cur`. The loop invariant: at the top of each iteration, `prev` heads a correctly-reversed prefix of consumed nodes and `cur` heads the untouched suffix; each iteration extends the reversed prefix by one node while shrinking the suffix by one, so when `cur` becomes `None` the suffix is empty and `prev` heads the fully reversed list, which proves correctness by induction."
+ },
+ {
+  "id": "02.2-linked-lists-4",
+  "chapter": "02-Data-Structures/02.2-linked-lists.md",
+  "prompt": "**Prove Floyd's.** Two pointers, +1 and +2, both inside a cycle of length `λ`. Show with the gap `d = (t - h) mod λ` that the gap shrinks by exactly 1 each step, and conclude that collision happens within `λ` steps. Why does the \"speed difference of exactly 1\" matter?",
+  "answer": "Define the gap `d = (t - h) mod λ`, where `t` is the tortoise's position and `h` is the hare's position mod `λ`. After one step, `new gap = ((t+1) - (h+2)) mod λ = (t - h - 1) mod λ = (d - 1) mod λ`, so the gap shrinks by exactly 1 every step. Starting from some `d₀` with `0 ≤ d₀ < λ`, after exactly `d₀` steps the gap hits 0, meaning `t ≡ h (mod λ)` and they occupy the same node, so collision is guaranteed within at most `λ` steps once both pointers are in the cycle. The speed difference of exactly 1 matters because it means the hare gains one position per step relative to the tortoise and can't leap over it; it must land on it, whereas a larger speed difference (like 3x) could let the hare skip past and would need a gcd-based argument instead."
+ },
+ {
+  "id": "02.2-linked-lists-5",
+  "chapter": "02-Data-Structures/02.2-linked-lists.md",
+  "prompt": "**Middle in one pass.** Explain the rate argument: when fast has gone `n`, why is slow at `n/2`? What one-character change flips the even-length result from the second middle to the first?",
+  "answer": "Fast moves 2 nodes per step while slow moves 1, so fast always covers exactly twice the ground slow does; when fast has traveled `n` nodes and reached the end, slow has traveled `n/2`, landing on the middle. This is purely a rate argument: fast is twice as fast, so it finishes the walk in half the steps slow needs to cover the same total distance. To flip the even-length result from the second middle to the first, start `fast = head.next` instead of `fast = head`, a one-token change noted explicitly in the chapter."
+ },
+ {
+  "id": "02.2-linked-lists-6",
+  "chapter": "02-Data-Structures/02.2-linked-lists.md",
+  "prompt": "**The LRU payoff.** Why does an LRU cache need a doubly linked list specifically (not singly, not an array)? Name the two operations that must be O(1) and map each to its primitive (`remove_node`, `prepend`/`add_front`, dict lookup). What role do the sentinel head/tail nodes play?",
+  "answer": "An LRU cache needs a doubly linked list because \"touching\" an item requires unlinking an arbitrary node in O(1), which needs a `prev` pointer to splice cleanly; a singly linked list has no back-pointer so it would need an O(n) walk to find the predecessor, and an array's move-to-front would be an O(n) shift. The two operations that must be O(1) are finding an item, handled by the **dict lookup** (`key → node`), and moving/evicting it, handled by `remove_node` (O(1) unlink using the node's own `prev`/`next`) paired with `prepend`/`add_front` (O(1) reinsertion at the MRU end). The sentinel head/tail nodes are fake boundary nodes that always exist, so every real node always has real neighbors, meaning `prev`/`next` are never `None` and the code never has to special-case \"is this the head/tail?\", cutting down on branches and bugs."
+ },
+ {
+  "id": "02.3-stacks-and-queues-1",
+  "chapter": "02-Data-Structures/02.3-stacks-and-queues.md",
+  "prompt": "**ADT vs. implementation:** Explain why `ArrayStack` and `LinkedStack` can pass the exact same test suite despite storing data completely differently. What does the ADT promise, and what does the implementation decide?",
+  "answer": "They pass identical tests because the **ADT** (Stack) is just a contract, `push`, `pop`, `peek`, `is_empty`, plus the LIFO law, that says what operations exist and what they promise, nothing about how. `ArrayStack` implements the top as the *end* of a dynamic array (cheap end for a contiguous buffer), while `LinkedStack` implements the top as the *head* of a singly linked list (cheap end for a chain), but both honor the exact same contract. The implementation is free to decide memory layout and constant factors, cache locality versus per-node pointer overhead, but as long as it satisfies the contract, it's a correct Stack."
+ },
+ {
+  "id": "02.3-stacks-and-queues-2",
+  "chapter": "02-Data-Structures/02.3-stacks-and-queues.md",
+  "prompt": "**The naive-queue trap:** Why is `list.pop(0)` O(n) while `list.pop()` is O(1)? Walk through what happens in contiguous memory for each. Then explain the two distinct fixes (ring buffer vs. linked list) and what each trades off.",
+  "answer": "`list.pop(0)` is O(n) because a list is contiguous: removing index 0 leaves a hole at the front, and to keep the array contiguous every remaining element must shift one slot left, `n - 1` moves. `list.pop()` is O(1) because removing from the end just decrements `length`, no shifting required. The two fixes: a **ring/circular buffer** keeps a fixed-capacity array plus `head`/`tail` indices that wrap with modulo, giving O(1) at both ends but adding the full-vs-empty ambiguity and resize bookkeeping; a **linked list with head and tail pointers** dequeues from the head and enqueues at the tail, both O(1) worst case with no resizing, but pays per-node pointer overhead and worse cache locality since nodes are scattered."
+ },
+ {
+  "id": "02.3-stacks-and-queues-3",
+  "chapter": "02-Data-Structures/02.3-stacks-and-queues.md",
+  "prompt": "**Ring-buffer index math:** In a circular buffer of capacity `cap`, why does `(i + 1) % cap` correctly advance an index *and* handle wraparound in one expression? And why is `head == tail` ambiguous, what two states does it represent, and what are two ways to disambiguate?",
+  "answer": "`(i + 1) % cap` works for both cases: if `i = cap - 1` (the last slot), `i + 1 = cap` and `cap % cap = 0`, wrapping to the front; for any `i < cap - 1`, `i + 1 < cap` so the modulo leaves it unchanged and the index just advances normally, one formula for the normal step and the wrap. `head == tail` is ambiguous because it's true both when the queue is empty (nothing stored) and when it's completely full (`tail` has wrapped all the way back around to `head`), two different states with the same index configuration that can't be told apart from `head`/`tail` alone. The two fixes are keeping an explicit `size` counter, or wasting one slot so that \"full\" is defined as `(tail + 1) % cap == head`."
+ },
+ {
+  "id": "02.3-stacks-and-queues-4",
+  "chapter": "02-Data-Structures/02.3-stacks-and-queues.md",
+  "prompt": "**Linked-queue invariants:** State the invariant linking `head` and `tail` in `LinkedQueue`. Identify the two edge cases that could break it and the specific lines of code that protect it.",
+  "answer": "The invariant is `head is None <=> tail is None <=> size == 0`. The two edge cases are enqueueing into an empty queue, where both `head` and `tail` must be set to the new node (`if self._tail is None: self._head = node; self._tail = node`), and dequeueing the last element, where `head` becomes `None` but `tail` must also be reset (`if self._head is None: self._tail = None`) so a stale `tail` doesn't link a future enqueue onto a node that's no longer in the queue."
+ },
+ {
+  "id": "02.3-stacks-and-queues-5",
+  "chapter": "02-Data-Structures/02.3-stacks-and-queues.md",
+  "prompt": "**Stack vs. queue in the wild:** Why does DFS naturally use a stack (or recursion) while BFS uses a queue? Tie your answer to the LIFO/FIFO ordering and to why BFS finds shortest paths in an unweighted graph.",
+  "answer": "DFS uses a stack (or the call stack via recursion) because when it hits a dead end it needs to back up to its most recent decision point, which is exactly LIFO: the most recently opened branch is explored first. BFS uses a queue because it explores level by level, dequeueing a node and enqueueing its unvisited neighbors, which is FIFO: nodes are visited in the order they were discovered. That FIFO discipline guarantees nodes are visited in non-decreasing distance from the start, so by the time BFS reaches any node it has already visited everything closer, which is exactly why BFS finds shortest paths in an unweighted graph."
+ },
+ {
+  "id": "02.3-stacks-and-queues-6",
+  "chapter": "02-Data-Structures/02.3-stacks-and-queues.md",
+  "prompt": "**Evaluator operand order:** In `eval_rpn`, why must the first value popped be the right operand and the second the left? Give a concrete expression where swapping them produces the wrong answer, and explain it via how operands sit on the stack.",
+  "answer": "RPN preserves left-to-right operand order, so the left operand gets pushed onto the value stack first and ends up sitting underneath the right operand, which is pushed later; popping the stack therefore surfaces the right operand first and the left operand second. For `\"10 6 -\"`, the correct evaluation pops `right = 6`, then `left = 10`, giving `10 - 6 = 4`; swapping the order would compute `6 - 10 = -4`, which is wrong, exactly the trap the chapter's `eval_postfix` test comment (\"order matters!\") calls out. Because `-` and `/` are non-commutative, getting this backwards silently produces a different, incorrect result rather than an obvious error."
+ },
+ {
+  "id": "02.3-stacks-and-queues-7",
+  "chapter": "02-Data-Structures/02.3-stacks-and-queues.md",
+  "prompt": "**The monotonic pattern:** What family of problems should make you reach for a monotonic stack or deque? Explain why maintaining the stack/deque in sorted order makes \"next greater element\" and \"sliding window maximum\" run in O(n) instead of O(n²); specifically, what is the bound on how many times each element is touched?",
+  "answer": "The family is \"for each element, find the nearest larger or smaller element\" (next greater element) or \"the max/min over a sliding window\" (sliding window maximum). Keeping the stack or deque in monotonic (sorted) order means each element is pushed once and popped at most once over the entire scan, a bound of a constant number of touches per element, so the total work across all `n` elements is O(n) instead of the O(n²) you'd get from comparing every element against every other. In the next-greater-element case, an element gets popped exactly when a later, bigger element resolves it; in the sliding-window-maximum case, each index enters and leaves the deque exactly once as expired or dominated indices get dropped."
+ },
+ {
+  "id": "02.3-stacks-and-queues-8",
+  "chapter": "02-Data-Structures/02.3-stacks-and-queues.md",
+  "prompt": "**Two-stack designs:** Sketch how undo/redo and browser back/forward both fall out of *two stacks plus a current item*. What single action must clear one of the stacks, and why? --- *Next up (2.4): hash tables, and how a good hash function turns lookup-by-arbitrary-key into expected O(1), and what it takes to keep that promise.*",
+  "answer": "Both are a back/undo stack, a forward/redo stack, and a `current` item. Visiting a new page (or doing a new action) pushes `current` onto the back/undo stack and makes the new item `current`; going back pushes `current` onto the forward/redo stack and pops the back/undo stack into `current`; going forward/redo does the mirror image. The single action that must clear the forward/redo stack is visiting a new page or performing a new action, because branching off to something new makes the old forward history unreachable: once you take a new path, the old \"forward\" pages are gone, which is why the Forward button greys out after you click a fresh link."
+ },
+ {
+  "id": "02.4-hash-tables-1",
+  "chapter": "02-Data-Structures/02.4-hash-tables.md",
+  "prompt": "**Why are collisions inevitable, and why do they appear so much earlier than the table-size would suggest?** (Pigeonhole says the key universe exceeds `m` buckets so some must collide; the birthday paradox says collisions in pairs grow quadratically, so the first collision is expected after only ~`√m` insertions, not `m/2`.)",
+  "answer": "Collisions are guaranteed by the **pigeonhole principle**: the universe of possible keys vastly exceeds the `m` buckets, so once more than `m` keys are inserted, some bucket must hold at least two. They show up far sooner than intuition suggests because of the **birthday paradox**: with `n` insertions there are `n(n-1)/2` pairs to compare, and that pair count grows quadratically, not linearly. The expected number of insertions before the first collision is about `1.25·√m`, so a table with `m = 1,000,000` buckets gets its first collision after roughly 1,250 insertions, not 500,000."
+ },
+ {
+  "id": "02.4-hash-tables-2",
+  "chapter": "02-Data-Structures/02.4-hash-tables.md",
+  "prompt": "**Walk through exactly why deleting a key in an open-addressing table needs a tombstone instead of just emptying the slot. Construct the bug.** (If `A,B,C` all probe-chain through consecutive slots and you empty `B`'s slot, a later search for `C` hits the empty slot, assumes the chain ended, and wrongly reports `C` absent. A tombstone says \"keep probing\" to searches while signaling \"reusable\" to inserts.)",
+  "answer": "Deleting by simply marking a slot `EMPTY` breaks the probe chain that later searches depend on. Say `A`, `B`, `C` all hash to the same home bucket and linear probing lands them in consecutive slots, `A`@5, `B`@6, `C`@7. If you delete `B` and set slot 6 to `EMPTY`, a later `get(C)` hashes to 5 (no match), probes to 6, finds it `EMPTY`, and stops, wrongly concluding `C` isn't in the table, even though it's sitting at slot 7. The fix is a **tombstone** (`DELETED`): search treats it as keep probing, this slot was used, while insert treats it as free, reusable."
+ },
+ {
+  "id": "02.4-hash-tables-3",
+  "chapter": "02-Data-Structures/02.4-hash-tables.md",
+  "prompt": "**Derive the expected chain length for separate chaining, and state the analogous result for open addressing.** (Under SUHA each of `n` keys lands in a given bucket with prob `1/m`; by linearity of expectation `E[chain] = n/m = α`, so search is O(1+α). For open addressing, expected probes for an unsuccessful search ≈ `1/(1−α)`.)",
+  "answer": "Under the **Simple Uniform Hashing Assumption**, each of the `n` keys lands in a given bucket independently with probability `1/m`. By **linearity of expectation**, the expected chain length in any bucket is `E[chain] = n·(1/m) = n/m = α`, so an expected search does one unit of work to hash and index plus `α` to scan the chain, giving O(1+α). For open addressing, the analogous result is that the expected number of probes for an unsuccessful search is about `1/(1−α)`, since each probe has roughly an `α` chance of hitting an occupied slot, forming a geometric-like process."
+ },
+ {
+  "id": "02.4-hash-tables-4",
+  "chapter": "02-Data-Structures/02.4-hash-tables.md",
+  "prompt": "**Why do we resize by *doubling*, and why doesn't the O(n) cost of a resize break our O(1) claim?** (Doubling makes resizes geometrically rarer; total resize work over `n` inserts is `1+2+4+…+n < 2n = O(n)`, so the per-insert *amortized* cost is O(1). Adding a constant amount instead would give O(n) amortized.)",
+  "answer": "Doubling is chosen because it makes resizes geometrically rarer over time. If a table doubles at sizes 1, 2, 4, 8, up to `n`, the total work across every resize is `1+2+4+…+n = 2n−1 = O(n)`, a geometric series that stays under `2n` even though any single resize touches all `n` entries. Spread that O(n) total cost across the `n` inserts that triggered it and the amortized cost per insert is O(1). Adding a fixed constant amount of capacity each time instead would force O(n) resizes, each O(n), giving O(n) amortized cost per insert, not O(1)."
+ },
+ {
+  "id": "02.4-hash-tables-5",
+  "chapter": "02-Data-Structures/02.4-hash-tables.md",
+  "prompt": "**Name three situations that turn a hash table's O(1) into O(n), and how each is mitigated.** (Adversarial/colliding keys → randomized per-run hash seed; a bad/non-uniform hash function → use a good avalanching hash; unbounded load factor → resize to keep α bounded. All three break the uniform-hashing precondition the O(1) proof relies on.)",
+  "answer": "Adversarial or colliding keys (hash flooding) push all inserts into one bucket or one probe run; mitigated with a randomized per-run hash seed (`PYTHONHASHSEED`) so an attacker can't predict collision sets. A bad, non-uniform hash function, like a naive one that sums character codes and collides every anagram, jams keys into a few buckets regardless of load; mitigated by using a good avalanching hash such as a polynomial rolling hash. An unbounded load factor, from never resizing, lets `α` grow without limit so chains and probe runs become O(n); mitigated by resizing to keep `α` bounded. All three break the **SUHA** precondition the O(1) proof depends on."
+ },
+ {
+  "id": "02.4-hash-tables-6",
+  "chapter": "02-Data-Structures/02.4-hash-tables.md",
+  "prompt": "**What probing strategy does CPython's `dict` use, and how does it avoid both primary and secondary clustering?** (Open addressing with a *perturbation* sequence roughly `j = (5j + 1 + perturb) % m`, where `perturb` is seeded from the full hash and shifted right each step, so early probes use low hash bits for cache-locality and later probes mix in high bits, making even low-bit-colliding keys diverge, avoiding the long runs of linear probing and the identical-sequence trap of quadratic probing.)",
+  "answer": "CPython's `dict` uses open addressing with a **perturbation** probe sequence, roughly `j = (5*j + 1 + perturb) % m`, where `perturb` starts as the key's full hash and is shifted right each step. Early probes depend mostly on the low bits of the hash, which is fast and cache-local, while later probes mix in progressively higher bits, so even keys that collide in their low bits eventually diverge. This avoids the long contiguous runs of linear probing (**primary clustering**) and the identical-sequence problem of quadratic probing, where same-home keys repeat the same steps forever (**secondary clustering**), without needing a second full hash function like double hashing does."
+ },
+ {
+  "id": "02.4-hash-tables-7",
+  "chapter": "02-Data-Structures/02.4-hash-tables.md",
+  "prompt": "**A function is O(n²) because of a nested loop where the inner loop searches a list. What's the reflex to make it O(n), and name three problems it solves?** (Replace the search with an O(1) hash-map lookup, \"remember what you've seen.\" It solves two-sum via complements, subarray-sum-equals-k via stored prefix sums, and longest-substring-without-repeats via last-seen positions.)",
+  "answer": "The reflex is to replace the inner-loop search with an O(1) hash-map lookup: remember what you've seen as you scan once, instead of rescanning for each element. It solves **two-sum** by storing `value -> index` and checking whether each element's complement (`target - x`) was already seen. It solves **subarray-sum-equals-k** by storing counts of running **prefix sums** and checking for `running - k` at each step. It solves **longest-substring-without-repeating-characters** by storing the last-seen index of each character and jumping the window's left edge past a duplicate when one is found."
+ },
+ {
+  "id": "02.5-trees-1",
+  "chapter": "02-Data-Structures/02.5-trees.md",
+  "prompt": "**Depth vs. height vs. degree.** Define each precisely. For a binary tree, what's the relationship between the number of nodes `n` and the minimum possible height? What's the *maximum* possible height, and what shape causes it?",
+  "answer": "**Depth** of a node is the number of edges from the root down to that node; **height** of a node is the number of edges on the longest path down to a leaf, and the height of the tree is the height of the root. **Degree** of a node is its number of children. For `n` nodes, the minimum possible height is about `⌈log₂(n+1)⌉ − 1`, achieved by a full, balanced tree where a tree of height `h` holds at most `2^(h+1) − 1` nodes. The maximum possible height is `n − 1`, caused by a degenerate tree shaped like a single chain, a linked list wearing a tree costume."
+ },
+ {
+  "id": "02.5-trees-2",
+  "chapter": "02-Data-Structures/02.5-trees.md",
+  "prompt": "**The four DFS/BFS traversals.** Give the visit order (NLR/LNR/LRN and level-order) and one real use case for each. Then explain why iterative postorder can be done as \"a modified preorder, reversed\": what does NRL→reverse give you, and why doesn't plain NLR→reverse work?",
+  "answer": "**Preorder** (NLR) visits node, then left, then right, and is used for copying a tree since the root comes first for top-down reconstruction. **Inorder** (LNR) visits left, node, right, and on a BST prints values in sorted order. **Postorder** (LRN) visits left, right, node, and is used for deleting or freeing a tree since children are gone before their parent. **Level-order** (BFS, via a queue) visits row by row, closest nodes first. Iterative postorder works as a modified preorder reversed because an **NRL** traversal (node, right, left, produced by pushing left before right so right pops first) reversed gives **LRN**, exactly postorder; plain NLR reversed gives RLN, which puts children in the wrong relative order and isn't postorder."
+ },
+ {
+  "id": "02.5-trees-3",
+  "chapter": "02-Data-Structures/02.5-trees.md",
+  "prompt": "**BST delete, case 3.** When deleting a node with two children, why do we replace it with its inorder successor specifically, and why is deleting that successor always guaranteed to fall into the easy one-child-or-leaf case?",
+  "answer": "We replace the deleted node's value with its **inorder successor**, the smallest value in its right subtree, because that's the very next value in sorted order, so dropping it into the vacated slot keeps everything to the left smaller and everything to the right larger, preserving the BST invariant. Deleting that successor is always the easy case because the successor is by definition the leftmost node of the right subtree, meaning it has no left child; it therefore has at most one child, its own right child, which is Case 1 or Case 2, so the recursion can never spiral into another two-children delete."
+ },
+ {
+  "id": "02.5-trees-4",
+  "chapter": "02-Data-Structures/02.5-trees.md",
+  "prompt": "**The balance catastrophe.** Walk through what happens when you insert `1,2,3,...,n` into a plain BST. What's the resulting height, what does that do to search complexity, and why does the BST have no defense against it?",
+  "answer": "Inserting `1,2,3,...,n` into a plain BST sends every new value right, since it's always larger than everything already there, producing a rightward chain, a linked list wearing a tree costume, with height exactly `n − 1`. Since every BST operation is O(h), that turns search, insert, and delete into O(n). The plain BST has no defense because it has no mechanism to stay bushy: insert only follows the left/right comparisons dictated by value, it never restructures or rebalances, so the tree's shape is purely a function of insertion order."
+ },
+ {
+  "id": "02.5-trees-5",
+  "chapter": "02-Data-Structures/02.5-trees.md",
+  "prompt": "**AVL's four rotation cases.** Name LL, RR, LR, RL and the rotation(s) each requires. Explain why LR and RL need two rotations but LL and RR need only one. What balance-factor values trigger a fix?",
+  "answer": "**LL** (heavy on the left child's left) is fixed with a single right rotation on the unbalanced node. **RR** (heavy on the right child's right) is fixed with a single left rotation. **LR** (heavy left, but the insertion landed in the left child's right subtree) needs a left rotation on the left child followed by a right rotation on the node. **RL** (heavy right, insertion in the right child's left subtree) needs a right rotation on the right child followed by a left rotation on the node. LR and RL need two rotations because the offending subtree forms a zig-zag rather than a straight line, so the first rotation straightens it into an LL or RR shape before the matching single rotation can fix it. A fix triggers once a node's balance factor (`height(left) − height(right)`) reaches `+2` or `−2`; legal values are `−1, 0, +1`."
+ },
+ {
+  "id": "02.5-trees-6",
+  "chapter": "02-Data-Structures/02.5-trees.md",
+  "prompt": "**Tries.** Why is trie search O(L) regardless of dictionary size, and what can a trie do that a hash set fundamentally cannot? In the autocomplete code, what exactly does the `is_word` flag let `search` do that `starts_with` doesn't care about? --- *Next up (Chapter 2.6): heaps and priority queues, another tree-shaped structure, but stored flat in an array, where the \"shape\" rule is about a parent dominating its children rather than left-less-than-right. The traversal muscles you built here carry straight over.*",
+  "answer": "Trie search is O(L) regardless of dictionary size because each step consumes one character of the key and follows one edge to the next node, so the total work is the length of the key `L`, never a function of how many other words are stored. A trie can answer give me all words starting with this prefix by walking to the prefix's node and collecting everything below it, something a hash set fundamentally cannot do since hashing destroys any relationship between a string and its prefixes. The `is_word` flag lets `search` demand an exact inserted word: reaching a node by walking every character only proves the path exists, but `search` also checks `is_word` at that final node, so `search(\"ca\")` is `False` even though `\"ca\"` is a valid path, while `starts_with` only cares that the node is reachable at all."
+ },
+ {
+  "id": "02.6-heaps-1",
+  "chapter": "02-Data-Structures/02.6-heaps.md",
+  "prompt": "**Index arithmetic & completeness.** Given a heap stored in a 0-indexed array, what are the formulas for the left child, right child, and parent of index `i`? Then explain *why* contiguous array storage works at all, what property of the tree makes the math valid, and what would break if the tree had gaps in the middle?",
+  "answer": "The formulas are `left(i) = 2i + 1`, `right(i) = 2i + 2`, and `parent(i) = floor((i - 1) / 2)`, derived from the fact that fill order matches array order: each of the `i` nodes before node `i` claims two child slots, so node `i`'s children land at `1 + 2i` and `2 + 2i`. Contiguous storage works because a heap is a **complete binary tree**: every level is filled except possibly the last, and the last level fills left to right with no gaps, so the tree's fill order can be written straight into a flat array with no pointers needed. That completeness is exactly what makes the index arithmetic valid. If the tree had gaps in the middle, a node's array position would no longer match its true position in the tree, so `2i+1`, `2i+2`, and `(i-1)//2` would point at the wrong nodes entirely and the array trick would break."
+ },
+ {
+  "id": "02.6-heaps-2",
+  "chapter": "02-Data-Structures/02.6-heaps.md",
+  "prompt": "**Sift-up vs. sift-down.** Walk through `insert(value)` and `extract_min()` step by step. For each, say where the new/replacement element starts, which direction it moves, and why each is O(log n). For `extract_min`, why must `_sift_down` swap with the **smaller** child rather than either child?",
+  "answer": "`insert(value)` appends the new value to the end of the array (the next open slot, preserving completeness), then sifts it up: compare with its parent, swap if smaller, repeat until it's no longer smaller than its parent or it reaches the root. `extract_min()` saves `heap[0]` as the answer, moves the last element into index 0 and shrinks the array (removing the last leaf keeps the tree complete), then sifts it down: compare with its children, swap with the smaller child, repeat until it's a leaf or the heap property holds. Both are O(log n) because each walks a single root-to-leaf path, and a complete tree of n nodes has height `⌊log2 n⌋`. `_sift_down` must swap with the smaller child because the promoted value has to end up ≤ both children; swapping with the larger child would leave the smaller child greater than the new parent, breaking the invariant on the other side."
+ },
+ {
+  "id": "02.6-heaps-3",
+  "chapter": "02-Data-Structures/02.6-heaps.md",
+  "prompt": "**The O(n) build-heap proof.** Why is building a heap from `n` elements via Floyd's bottom-up sift-down O(n) and not O(n log n)? Reproduce the series `Σ (n / 2^(h+1)) · h` and explain why it converges to O(n). (Bonus: derive `Σ h/2^h = 2` by differentiating the geometric series.)",
+  "answer": "Build-heap is O(n) because Floyd's method starts at the last non-leaf node (`parent(n-1)`) and sifts down bottom-up, so most nodes are near the bottom where sift-down is cheap; the naive `(n/2) x O(log n)` bound is loose since it ignores that a sift-down from height `h` costs at most `h` swaps. With roughly `n/2^(h+1)` nodes at height `h`, total work is bounded by `T(n) <= Σ (n/2^(h+1))·h = (n/2)·Σ(h/2^h)`, and that infinite series converges to 2, giving `T(n) <= (n/2)·2 = n = O(n)`. Nearly half the nodes are free leaves, a quarter cost at most 1 swap, an eighth cost at most 2, so the log n factor evaporates. Bonus: starting from `Σ x^h = 1/(1-x)`, differentiating gives `Σ h·x^(h-1) = 1/(1-x)^2`, multiplying by `x` gives `Σ h·x^h = x/(1-x)^2`, and plugging in `x = 1/2` gives `(1/2)/(1/4) = 2`."
+ },
+ {
+  "id": "02.6-heaps-4",
+  "chapter": "02-Data-Structures/02.6-heaps.md",
+  "prompt": "**Heapsort properties.** Describe the two phases of heapsort and the cost of each. Why is the overall complexity O(n log n) in the *worst* case (unlike quicksort)? Why is heapsort **not stable**, and how much extra memory does it use?",
+  "answer": "Heapsort has two phases: build a max-heap in place via Floyd's method, O(n), then repeatedly swap the root (current max) with the last element of the shrinking heap region and sift-down the new root, `n-1` extractions at O(log n) each, so O(n log n). The total is O(n) + O(n log n) = O(n log n), and this holds worst, average, and best case because sift-down's cost only depends on tree height, not the input's arrangement, unlike quicksort, which degrades to O(n²) on bad pivots. Heapsort is not stable because moving the last leaf to the root and sifting it down jumps elements across the array without regard to their original order, so equal elements can get reordered. It sorts in place with O(1) extra memory."
+ },
+ {
+  "id": "02.6-heaps-5",
+  "chapter": "02-Data-Structures/02.6-heaps.md",
+  "prompt": "**Min-heap for top-k largest.** In the streaming top-k problem, why do you use a *min*-heap (not a max-heap) of size k to find the k *largest* elements? Derive the O(n log k) time and O(k) space bounds, and explain what the heap's root represents at each step.",
+  "answer": "You use a min-heap of size k because the element you need to evict when a bigger value shows up is the smallest of your current top-k, and a min-heap puts exactly that element at the root for O(1) inspection; a max-heap would surface the wrong element. Time is O(n log k): you process n stream elements, and each does an O(1) peek against the root plus at most one push and one pop on a heap of size k, which costs O(log k). Space is O(k) because the heap never holds more than k elements at once. At each step the root represents the current weakest member of the top-k so far, the \"bar to clear\": any incoming value larger than the root replaces it."
+ },
+ {
+  "id": "02.6-heaps-6",
+  "chapter": "02-Data-Structures/02.6-heaps.md",
+  "prompt": "**PQ ADT vs. implementation.** What operations define the priority-queue ADT, and why is a binary heap the usual implementation? Binary heaps can't find an arbitrary element quickly, so how did the scheduler support `decrease_key` in O(log n), and what's the alternative \"lazy deletion\" approach used in typical Dijkstra code? --- _Recap: a heap is a **complete binary tree** flattened into an **array**, where the **heap property** keeps the extreme value at the root. The shape rule makes index arithmetic (`2i+1`, `2i+2`, `(i−1)//2`) exact; the ordering rule is maintained by **sift-up** (insert) and **sift-down** (extract), each O(log n) because the tree is `log₂ n` tall. **Build-heap is O(n)** thanks to a converging series. From this one idea you get priority queues, Dijkstra, heapsort, and streaming top-k, all tested, all from scratch._",
+  "answer": "The priority-queue ADT is defined by `insert(item, prio)`, `peek`/`find_min`, `pop`/`extract`, `is_empty`/`len`, and optionally `decrease_key`. A binary heap is the usual implementation because it gets O(log n) insert/pop with O(1) peek and a tiny constant factor, all in a single array, even though the ADT itself says nothing about heaps. Since a plain heap can't locate an arbitrary element to update it, the scheduler used an indexed heap: a `dict` (`self._pos`) mapping each task to its current array index, kept in sync on every swap, so `decrease_key` looks up the task in O(1) and then sifts it up in O(log n). The alternative, used in typical Dijkstra code, is lazy deletion: push a new `(priority, item)` entry with the better priority and just skip stale entries when popping, rather than updating in place."
+ },
+ {
+  "id": "02.7-graphs-1",
+  "chapter": "02-Data-Structures/02.7-graphs.md",
+  "prompt": "State the Handshaking Lemma and explain why it's true in one sentence. Then: a graph has vertices of degrees `[1, 3, 3, 2, 1]`. How many edges does it have? (Sum is 10, so 5 edges.) Could a graph have degree sequence `[1, 1, 1]`? Why or why not? (No: the sum is odd, but every edge contributes 2, so the degree sum must be even.)",
+  "answer": "The Handshaking Lemma says the sum of all vertex degrees equals `2|E|`, true because every edge is incident to two endpoints and so contributes +1 to each of their degrees, counting it twice. For degrees `[1, 3, 3, 2, 1]`, the sum is 10, so the graph has `10/2 = 5` edges. A degree sequence `[1, 1, 1]` is impossible because its sum is 3, which is odd, but the degree sum must always be even since it equals `2|E|`."
+ },
+ {
+  "id": "02.7-graphs-2",
+  "chapter": "02-Data-Structures/02.7-graphs.md",
+  "prompt": "You're storing a social network: 2 billion users, average ~200 friends each. Matrix or adjacency list? Estimate the space each would need and justify the choice using the dense-vs-sparse distinction.",
+  "answer": "Adjacency list, decisively. With 2 billion users averaging about 200 friends, the edge count is roughly `E ≈ 200 billion`, while `V² ≈ 4×10^18`; a matrix would need on the order of quintillions of cells for a graph that's actually sparse. The list costs `O(V + E)`, which scales with what actually exists, while the matrix costs a fixed `O(V²)` no matter how few edges there are, so the dense-vs-sparse rule (the matrix only pays off when E is close to V²) points straight at the list here."
+ },
+ {
+  "id": "02.7-graphs-3",
+  "chapter": "02-Data-Structures/02.7-graphs.md",
+  "prompt": "Walk through what `add_edge(\"A\", \"B\", weight=5)` does internally for the undirected list-backed graph. Which lines run, and which invariant would break if we forgot the `if not self.directed` branch?",
+  "answer": "`add_edge(\"A\", \"B\", weight=5)` first calls `add_vertex(\"A\")` and `add_vertex(\"B\")`, which auto-create either vertex if it doesn't exist yet. Then, since this is the list representation, it runs `self._adj[\"A\"][\"B\"] = 5`, and because the graph is undirected and `\"A\" != \"B\"`, the `if not self.directed` branch also runs `self._adj[\"B\"][\"A\"] = 5`. If that branch were missing, the undirected symmetry invariant (`has_edge(u, v) == has_edge(v, u)`) would break: the graph would become silently half-directed, with `has_edge(\"A\", \"B\")` true but `has_edge(\"B\", \"A\")` false."
+ },
+ {
+  "id": "02.7-graphs-4",
+  "chapter": "02-Data-Structures/02.7-graphs.md",
+  "prompt": "Why is `has_edge` `O(1)` in our list implementation but `O(deg(u))` in a \"textbook\" adjacency list? What data-structure choice did we make to get there, and what did it cost us?",
+  "answer": "`has_edge` is O(1) in this implementation because each vertex's neighbors are stored as a `dict` (`{neighbor: weight}`), so checking `v in self._adj[u]` is an O(1) average hash lookup that also gives you the weight in the same place. A \"textbook\" adjacency list backed by a plain Python list makes `has_edge` O(deg(u)) because you have to scan the neighbor list for a match. The cost of the dict choice is the extra memory and hashing overhead of a hash table per vertex compared to a bare list, in exchange for O(1) average membership tests."
+ },
+ {
+  "id": "02.7-graphs-5",
+  "chapter": "02-Data-Structures/02.7-graphs.md",
+  "prompt": "In the road network, `is_reachable(\"Lakeside\", \"Harbor\")` returned `False`. Explain why in graph-theory terms (use the words \"out-degree\" and \"sink\"), and describe what single edge you'd add to make it `True`.",
+  "answer": "`is_reachable(\"Lakeside\", \"Harbor\")` is `False` because Lakeside has out-degree 0 in the road network: it's a sink, so once you drive in you can't drive out by road, meaning no path leaves it toward Harbor or anywhere else. The only edge touching Lakeside is `Westend -> Lakeside`. Adding a single edge `Lakeside -> Westend` would fix it, since from there `Westend -> Easton -> Harbor` reconnects Lakeside to the rest of the network and makes the query `True`."
+ },
+ {
+  "id": "02.7-graphs-6",
+  "chapter": "02-Data-Structures/02.7-graphs.md",
+  "prompt": "Without looking: which graph algorithms does the `neighbors()` abstraction set us up to write in Part 3.4, and why does having one clean `neighbors()` interface mean we write each algorithm only once regardless of representation? --- > _Next stop: Part 3, Algorithms. Recursion, sorting, and searching come first; then in 3.4 these graphs come alive: BFS for shortest unweighted paths, DFS for connectivity and topological order, and Dijkstra for weighted shortest paths. Everything there leans on the `neighbors()` interface we just hardened._",
+  "answer": "The `neighbors()` abstraction sets up BFS (shortest unweighted paths), DFS (connectivity and cycle detection), topological sort (dependency ordering), and Dijkstra (weighted shortest paths), all covered in Part 3.4. Because `neighbors(node)` behaves identically whether the graph is backed by a matrix or a list, directed or undirected, an algorithm written against that one interface, like the chapter's `is_reachable` DFS, runs correctly on every representation without modification. That's the payoff of the abstraction: you write each algorithm exactly once, and the underlying storage becomes an implementation detail the algorithm never has to know about."
+ },
+ {
+  "id": "11.1-git-and-github-1",
+  "chapter": "11-Version-Control/11.1-git-and-github.md",
+  "prompt": "Git is a \"content-addressed key-value store.\" Name the four object types and explain how a commit, a tree, and a blob relate. Why does a branch cost almost nothing to create?",
+  "answer": "The four object types are **blob** (raw file bytes, no name or metadata), **tree** (a directory listing of names, modes, and hashes pointing to blobs and sub-trees), **commit** (a pointer to one tree plus parent commit hash(es), author, and message), and **tag**. A commit points to a tree, the full snapshot, and that tree points down through sub-trees to blobs holding the actual file content, so a commit, tree, and blob form a chain from snapshot pointer to directory listing to raw content. A branch costs almost nothing because it is just a **ref**, a small file holding a commit hash; creating one only writes that file, and switching branches just moves `HEAD` and updates the working tree, no copying involved."
+ },
+ {
+  "id": "11.1-git-and-github-2",
+  "chapter": "11-Version-Control/11.1-git-and-github.md",
+  "prompt": "Describe the three trees and say which two `git status` compares for \"staged\" vs \"unstaged\" changes.",
+  "answer": "The three trees are the **working directory** (the actual files you edit), the **index/staging area** (the proposed next snapshot, populated by `git add`), and **HEAD** (the last commit on the current branch). `git status` is diffing these against each other: \"changes staged\" is the index compared to HEAD, and \"changes not staged\" is the working directory compared to the index."
+ },
+ {
+  "id": "11.1-git-and-github-3",
+  "chapter": "11-Version-Control/11.1-git-and-github.md",
+  "prompt": "A fast-forward vs a 3-way merge: when does each happen, and *precisely* when does a conflict occur?",
+  "answer": "A **fast-forward** happens when the target branch hasn't diverged, your branch is strictly ahead, so Git just slides the pointer forward with no merge commit and linear history. A **3-way merge** happens when both branches have new commits since they diverged; Git uses the two branch tips plus their common ancestor (the merge base) and produces a new merge commit with two parents. A conflict occurs precisely when both sides changed the same region of the same file relative to the merge base; non-overlapping changes auto-merge fine."
+ },
+ {
+  "id": "11.1-git-and-github-4",
+  "chapter": "11-Version-Control/11.1-git-and-github.md",
+  "prompt": "Explain what rebase actually does to commit objects, and state the golden rule (and why violating it hurts collaborators).",
+  "answer": "Rebase **replays** your commits onto a new base; it doesn't move the original commits, it creates brand-new commit objects with the same changes but different parents, which means different hashes. The golden rule: never rebase commits that you've already pushed and that others may have based work on. Violating it hurts collaborators because rewriting hashes on shared history forces everyone else's local copy into a painful divergence from the rewritten branch."
+ },
+ {
+  "id": "11.1-git-and-github-5",
+  "chapter": "11-Version-Control/11.1-git-and-github.md",
+  "prompt": "Cherry-pick the commit `c9d4b7` onto `release`: what gets copied, what does *not* come with it, and how does the result differ from merging the whole branch?",
+  "answer": "`git cherry-pick c9d4b7` takes the diff introduced by that single commit and applies it as a brand-new commit (new hash) on `release`. It does not bring the commit's history, its parents, or any other commits from `main`, for example a later commit like a dashboard change stays off `release` entirely. This differs from merging the whole branch, which brings *all* of the branch's commits and records the relationship as a merge commit with shared ancestry; cherry-pick copies just one specific change with no ancestry link."
+ },
+ {
+  "id": "11.1-git-and-github-6",
+  "chapter": "11-Version-Control/11.1-git-and-github.md",
+  "prompt": "Map `reset --soft / --mixed / --hard` to the three trees, and say when you'd use `revert` instead of `reset`.",
+  "answer": "`reset --soft` moves only HEAD, leaving the index and working directory unchanged, so the undone commit's changes stay staged. `reset --mixed` (the default) moves HEAD and resets the index, but leaves the working directory untouched, so changes become unstaged. `reset --hard` moves HEAD and resets both the index and the working directory, discarding uncommitted work, this is destructive. Use `revert` instead of `reset` when the commit is already shared or pushed: revert adds a new commit that undoes the change and preserves history, while reset rewrites history and should only be used on local, unshared commits."
+ },
+ {
+  "id": "11.1-git-and-github-7",
+  "chapter": "11-Version-Control/11.1-git-and-github.md",
+  "prompt": "You just ran `git reset --hard` and lost two hours of commits. What's the first command you run, and how do you get them back?",
+  "answer": "Run `git reflog` first. It shows every place HEAD has been, including the entry right before the reset (like `HEAD@{1}`) that still points at the commit you thought you lost, since Git objects aren't deleted immediately, just made unreachable until garbage collection. Then run `git reset --hard <hash>` using that hash, or `git branch recover <hash>` to save it on a new branch, to get the commits back. The chapter's rule of thumb: \"reflog first, panic never.\""
+ },
+ {
+  "id": "11.2-git-hands-on-tutorial-1",
+  "chapter": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+  "prompt": "What are the **three areas** a file moves through, and which command moves it between each? (working tree → `add` → staging → `commit` → history)",
+  "answer": "The three areas are the **working tree**, the **staging area** (a.k.a. the index), and **history** (commits on the branch). `git add <file>` moves a file's changes from the working tree into staging, and `git commit -m \"msg\"` moves what's staged into history as a new commit. To go the other direction, `git restore --staged <file>` unstages, and `git restore <file>` discards unstaged working-tree edits."
+ },
+ {
+  "id": "11.2-git-hands-on-tutorial-2",
+  "chapter": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+  "prompt": "What's the difference between `git diff` and `git diff --staged`?",
+  "answer": "`git diff` shows **unstaged** changes, the working tree compared against the staging area, answering \"what haven't you staged yet?\" `git diff --staged` shows **staged** changes, the staging area compared against the last commit, answering \"what's about to go into the commit?\""
+ },
+ {
+  "id": "11.2-git-hands-on-tutorial-3",
+  "chapter": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+  "prompt": "When does a merge fast-forward vs. create a merge commit?",
+  "answer": "A merge fast-forwards when `main` (the branch you're merging into) hasn't moved since you branched off it, Git just slides the `main` pointer forward to the tip of the other branch, no new commit needed. A merge creates a merge commit when both branches have advanced since they diverged, a real 3-way merge, shown as a fork-and-join diamond in `git log --graph`, with the resulting commit having two parents."
+ },
+ {
+  "id": "11.2-git-hands-on-tutorial-4",
+  "chapter": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+  "prompt": "You see `<<<<<<< HEAD ... ======= ... >>>>>>> branch` in a file. What do you do, exactly, to resolve it?",
+  "answer": "Open the file, decode the markers (`<<<<<<< HEAD` starts your current branch's version, `=======` divides it from `>>>>>>> branch`, the incoming version), and edit the region to exactly the content you want, deleting all three marker lines. Then run `git add <file>` to mark it resolved, and `git commit` (or `git merge --continue`) to finish the merge. Two escape hatches also work: `git merge --abort` to bail out entirely, or `git checkout --ours <file>` / `--theirs <file>` to take one side wholesale before adding and committing."
+ },
+ {
+  "id": "11.2-git-hands-on-tutorial-5",
+  "chapter": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+  "prompt": "You committed a typo in the message and **haven't pushed**. Fix it.",
+  "answer": "Run `git commit --amend -m \"Better message\"` to rewrite the last commit with a corrected message. This only works safely because the commit hasn't been pushed, amend rewrites the commit and gives it a new hash, so it should never be used on something already pushed and pulled by others."
+ },
+ {
+  "id": "11.2-git-hands-on-tutorial-6",
+  "chapter": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+  "prompt": "You pushed a bad commit that teammates already pulled. `reset` or `revert`? Why?",
+  "answer": "Use `revert`. `git revert <hash>` makes a new commit that undoes the previous one while preserving history, which is the safe, public way to undo something already shared. `reset` moves the branch pointer backward and rewrites history, which is only safe for local, unpushed mistakes, doing it on shared history forces painful re-syncs on teammates."
+ },
+ {
+  "id": "11.2-git-hands-on-tutorial-7",
+  "chapter": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+  "prompt": "You're mid-feature and must switch branches for a hotfix without committing. Which command?",
+  "answer": "`git stash`. It shelves your uncommitted changes (working tree and index) so you get a clean tree, letting you switch branches, fix the bug, and come back later with `git stash pop` to reapply the work (or `git stash apply` to reapply while keeping it in the stash list)."
+ },
+ {
+  "id": "11.2-git-hands-on-tutorial-8",
+  "chapter": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+  "prompt": "You ran `git reset --hard` and lost a commit. How do you get it back? If you can answer all eight without notes, you have working git fluency. ---",
+  "answer": "Run `git reflog`, it records every place HEAD has pointed, even after a `reset --hard`, and will show the lost commit's hash (for example at `HEAD@{1}`). Then run `git reset --hard <hash>` to move the branch back to it, since Git only garbage-collects unreachable commits after roughly 30 days, giving a wide recovery window."
+ },
+ {
+  "id": "14.1-ml-foundations-1",
+  "chapter": "14-ML-DL/14.1-ml-foundations.md",
+  "prompt": "**Decompose expected squared error into bias², variance, and irreducible noise. Which term does adding regularization reduce, and what does it cost?** (Walk through inserting `±\\bar f` and killing the cross terms. Regularization lowers variance by constraining the model, at the price of more bias, you slide left on the complexity axis.)",
+  "answer": "Starting from `y = f(x) + ε`, write `E[(y-\\hat f)^2] = E[((f-\\bar f)+(\\bar f-\\hat f)+ε)^2]` where `\\bar f = E_D[\\hat f(x)]` is the average prediction across training sets. The cross terms vanish because `ε` is independent with mean 0 and `(\\bar f - \\hat f)` has mean 0 over `D`, leaving `(f-\\bar f)^2` (**bias²**) plus `E[(\\hat f-\\bar f)^2]` (**variance**) plus `σ²` (irreducible noise). Total error is a U-shape in model complexity, bias dominates on the left, variance on the right, and the sweet spot minimizes the sum, not either term alone. Regularization constrains the hypothesis class, so it lowers **variance**, but it costs **bias**, you're sliding left toward underfitting on that complexity curve."
+ },
+ {
+  "id": "14.1-ml-foundations-2",
+  "chapter": "14-ML-DL/14.1-ml-foundations.md",
+  "prompt": "**Derive the gradient of logistic regression's cross-entropy loss. Why does the final form look identical to linear regression's gradient?** (Chain rule through `J → \\hat p → z → w`; the `\\hat p(1-\\hat p)` terms cancel, leaving `\\frac{1}{m}X^\\top(\\hat p - y)`. Both are GLMs with their natural loss, so the \"error × input\" form is shared.)",
+  "answer": "With `\\hat p = σ(z)`, `z = w^\\top x`, the chain rule gives `∂J/∂w = (∂J/∂\\hat p)(∂\\hat p/∂z)(∂z/∂w)`. Computing each piece, `∂J/∂\\hat p = (\\hat p - y)/(\\hat p(1-\\hat p))`, `∂\\hat p/∂z = \\hat p(1-\\hat p)`, and `∂z/∂w = x`, the `\\hat p(1-\\hat p)` terms cancel exactly, leaving `∂J/∂w = (\\hat p - y)x`, or in matrix form `∇_wJ = \\frac{1}{m}X^\\top(\\hat p - y)`. This is the identical shape to linear regression's `\\frac{1}{m}X^\\top(Xw-y)` because both are generalized linear models paired with their natural loss (Gaussian/MSE for linear, Bernoulli/cross-entropy for logistic), and that pairing always produces the universal \"error × input\" gradient form."
+ },
+ {
+  "id": "14.1-ml-foundations-3",
+  "chapter": "14-ML-DL/14.1-ml-foundations.md",
+  "prompt": "**You have a closed-form solution for linear regression. When would you still use gradient descent, and why?** (Normal equation is `O(n³)` to invert `XᵀX` and breaks when `n` is huge or `XᵀX` is singular/ill-conditioned. GD scales, handles streaming data, and generalizes to non-convex models.)",
+  "answer": "Use gradient descent when `n` (features) is large, since the normal equation `w = (X^\\top X)^{-1}X^\\top y` requires inverting the `n×n` matrix `X^\\top X`, an `O(n³)` operation that becomes infeasible with millions of features. It's also needed when `X^\\top X` is singular or ill-conditioned (more features than examples, or collinear features), which breaks the inverse outright. GD scales to huge or streaming data and, unlike the closed form, generalizes beyond convex quadratics to the non-convex models used everywhere in deep learning. Knowing both, and when each wins, is the point of deriving both."
+ },
+ {
+  "id": "14.1-ml-foundations-4",
+  "chapter": "14-ML-DL/14.1-ml-foundations.md",
+  "prompt": "**A fraud model reports 99% accuracy. Why might that be worthless, and what would you report instead?** (Base rate is ~99% negatives; predicting \"always negative\" hits 99% accuracy with zero recall. Report precision/recall/F1 on the positive class, AUC, and the confusion matrix; consider class weights / resampling / threshold tuning.)",
+  "answer": "It might be worthless because on an imbalanced problem like fraud (roughly 99% legitimate transactions), a model that just predicts \"legit, always\" also scores 99% accuracy while catching zero fraud, precision and recall on the positive class are both 0. Accuracy rewards ignoring the only class that matters. Instead report precision, recall, F1 on the positive class, ROC-AUC, and look at the full confusion matrix, then consider class weights, resampling (SMOTE), or threshold tuning to actually address the imbalance."
+ },
+ {
+  "id": "14.1-ml-foundations-5",
+  "chapter": "14-ML-DL/14.1-ml-foundations.md",
+  "prompt": "**Explain geometrically why L1 produces sparse weights but L2 doesn't.** (L1's constraint region is a diamond with corners on the axes; loss contours tend to touch a corner → a coordinate is exactly zero. L2's region is a smooth circle; contours touch an edge → all weights shrink but stay nonzero.)",
+  "answer": "Picture the loss contours (ellipses) expanding until they first touch the constraint region `\\|w\\| ≤ t`. L2's region is a circle, so the contour generically touches it on a smooth curved edge, which shrinks both weights but almost never lands exactly on an axis, so weights stay nonzero. L1's region is a diamond with corners sitting exactly on the axes, and the elliptical contour usually first touches at one of those corners, where one coordinate is exactly zero. Corners are what cause sparsity, that single geometric picture explains why Lasso does feature selection and Ridge doesn't."
+ },
+ {
+  "id": "14.1-ml-foundations-6",
+  "chapter": "14-ML-DL/14.1-ml-foundations.md",
+  "prompt": "**Derive why PCA's principal components are the eigenvectors of the covariance matrix.** (Maximize `u^\\top \\Sigma u` s.t. `\\|u\\|=1`; the Lagrangian's stationarity condition gives `\\Sigma u = \\lambda u`. Variance captured equals the eigenvalue, so top eigenvectors = top components.)",
+  "answer": "For centered data, the variance of the projection onto a unit vector `u` is `Var(Xu) = u^\\top Σu` where `Σ = \\frac{1}{m}X^\\top X` is the covariance matrix. PCA maximizes `u^\\top Σu` subject to `\\|u\\|=1`, so form the Lagrangian `L = u^\\top Σu - λ(u^\\top u - 1)` and set the stationarity condition `∂L/∂u = 2Σu - 2λu = 0`, giving `Σu = λu`. So the optimal directions are exactly the eigenvectors of `Σ`, and since `u^\\top Σu = λu^\\top u = λ` at that solution, the variance captured by a direction equals its eigenvalue. The top-`k` eigenvectors (largest eigenvalues) are therefore the top-`k` principal components, PCA is literally eigen-decomposition of the covariance matrix."
+ },
+ {
+  "id": "14.2-deep-learning-1",
+  "chapter": "14-ML-DL/14.2-deep-learning.md",
+  "prompt": "**Why can't a single neuron (logistic regression) solve XOR, and what specifically does adding a hidden layer with a nonlinearity buy you?** (One neuron = one hyperplane; XOR isn't linearly separable. A hidden layer with a nonlinearity composes multiple boundaries into a nonlinear one. Without the nonlinearity, stacked layers collapse to a single linear map.)",
+  "answer": "A single neuron computes `σ(w^\\top x + b)`, which carves the input space with exactly one hyperplane, and XOR's classes `{(0,0),(1,1)}` vs `{(0,1),(1,0)}` cannot be separated by any straight line. Adding a hidden layer with a nonlinearity `φ` between layers lets the network compose several straight cuts into a curved, nonlinear decision boundary. This only works because of the nonlinearity: if `φ` were the identity, `W^{[2]}(W^{[1]}x) = (W^{[2]}W^{[1]})x` collapses to a single linear map, so stacking without a squashing function adds no power. The chapter's from-scratch NumPy net (2→8 ReLU→1 sigmoid) does solve XOR, proving the mechanism."
+ },
+ {
+  "id": "14.2-deep-learning-2",
+  "chapter": "14-ML-DL/14.2-deep-learning.md",
+  "prompt": "**Derive `δ^{[1]}` for the two-layer net and explain backprop as a single repeated rule.** (`δ^{[1]} = (W^{[2]\\top}δ^{[2]}) ⊙ \\text{ReLU}'(z^{[1]})`. Rule: each layer's error = next layer's weights-transpose times next error, gated by this layer's activation derivative; each weight gradient = its layer's error × its input. It's the chain rule with `δ`'s memoized, DP on the computation graph.)",
+  "answer": "Starting from the output error `δ^{[2]} = \\hat y - y` (the sigmoid+cross-entropy shortcut), the chain rule routes it back through `W^{[2]}` and then through the hidden layer's activation derivative: `δ^{[1]} = (W^{[2]\\top}δ^{[2]}) ⊙ \\text{ReLU}'(z^{[1]})`, where `⊙` is elementwise and `ReLU'(z) = 1[z>0]`. The general pattern behind all of backprop is: compute the output error, then move backward layer by layer where each layer's error equals the next layer's weight-transpose times the next error, gated by that layer's own activation derivative, and each weight's gradient is its layer's error times its input activation (e.g. `∂J/∂W^{[1]} = δ^{[1]}x^\\top`). This is just the chain rule organized to reuse the `δ`'s so each gradient is computed once, dynamic programming over the computation graph, which is exactly what autograd automates."
+ },
+ {
+  "id": "14.2-deep-learning-3",
+  "chapter": "14-ML-DL/14.2-deep-learning.md",
+  "prompt": "**Explain the vanishing gradient problem and why ReLU mitigates it.** (Backprop multiplies activation derivatives across layers; sigmoid/tanh derivatives are `<1` (sigmoid `≤0.25`), so the product → 0 at early layers, which stop learning. ReLU's derivative is exactly 1 on the active path, so the product doesn't decay.)",
+  "answer": "Backprop multiplies activation derivatives together layer by layer via the chain rule. With sigmoid or tanh, each factor is at most `0.25` (sigmoid) or generally less than 1, so multiplying many such factors through a deep net drives the gradient at early layers toward zero, those layers effectively stop learning. ReLU's derivative is exactly `1` for `z>0`, so on the active path the product of derivatives doesn't decay as it's propagated backward through many layers. The chapter credits this directly with enabling deep nets to actually train, with skip connections and normalization as additional, separate fixes."
+ },
+ {
+  "id": "14.2-deep-learning-4",
+  "chapter": "14-ML-DL/14.2-deep-learning.md",
+  "prompt": "**Walk SGD → Momentum → RMSProp → Adam, naming the specific flaw each successive optimizer fixes.** (SGD zig-zags in ravines and is noisy; Momentum adds velocity to damp the zig-zag and accelerate; RMSProp adapts a per-parameter learning rate via a running gradient RMS; Adam combines momentum + RMSProp with bias correction.)",
+  "answer": "Plain SGD, `w ← w - α∇J`, is noisy on mini-batches and struggles in ravines, zig-zagging across steep directions while crawling along shallow ones. Momentum fixes the zig-zag by accumulating a velocity `v = βv + ∇J` and stepping with `v`, like a ball rolling downhill that averages out oscillation and accelerates along consistent directions. RMSProp fixes the problem that one global learning rate doesn't fit all parameters, it divides each coordinate's step by a running RMS of its recent gradients (`s = ρs + (1-ρ)∇²`, `w -= α∇/\\sqrt{s+ε}`), damping large-gradient directions and amplifying small ones. Adam combines momentum and RMSProp (first and second moment estimates, bias-corrected), giving the robust, fast, low-tuning default the chapter recommends starting with."
+ },
+ {
+  "id": "14.2-deep-learning-5",
+  "chapter": "14-ML-DL/14.2-deep-learning.md",
+  "prompt": "**At a conceptual level, how does self-attention let a Transformer model long-range dependencies better than an LSTM, and why does that matter for forecasting?** (Each position computes Q/K/V, scores against every other position (`QKᵀ/√d`), softmaxes, and takes a weighted sum of values, any position reaches any other in one step, fully parallel, no distance-based gradient decay. For forecasting, long-range seasonality/dependence is captured directly instead of being squeezed through a recurrent bottleneck.)",
+  "answer": "Self-attention lets each position compute query, key, and value projections, score its query against every other position's key (`QK^\\top/\\sqrt d`), softmax those scores, and take a weighted sum of values, so every token's new representation is a content-based weighted average of the whole sequence. That means any position can reach any other position in a single step, fully parallel, with no distance-based gradient decay, unlike an LSTM, which must carry information forward through its hidden state across every intervening time step and suffers vanishing gradients over long spans. For forecasting, this matters because long-range seasonality or dependence (e.g. a yearly cycle) gets captured directly rather than being squeezed through a sequential recurrent bottleneck, which is why Transformer forecasters like the Temporal Fusion Transformer and Informer have replaced LSTMs for long-horizon, multi-seasonal series."
+ },
+ {
+  "id": "14.2-deep-learning-6",
+  "chapter": "14-ML-DL/14.2-deep-learning.md",
+  "prompt": "**You see training loss low but validation loss rising. Name the phenomenon and three concrete fixes; tie it back to bias-variance.** (Overfitting / high variance. Fixes: more data or augmentation, dropout/weight decay, early stopping (also smaller model / lower LR). It's the variance term from the 14.1 decomposition growing, you slide back toward the bias-variance sweet spot.)",
+  "answer": "This is **overfitting**, high variance. Concrete fixes: get more training data or use data augmentation, add dropout or weight decay to constrain the model, and use early stopping to halt training once validation loss stops improving (a smaller model is another option). This is the variance term from the 14.1 bias-variance decomposition growing too large as the model gets too flexible; each of these fixes trades a bit of bias for less variance, sliding the model back toward the sweet spot where total error, not either term alone, is minimized."
+ },
+ {
+  "id": "17.1-semiconductor-physics-1",
+  "chapter": "17-Semiconductors/17.1-semiconductor-physics.md",
+  "prompt": "**Why silicon?** Group IV → 4 valence electrons → 4 covalent bonds → rigid crystal with a *small* band gap (~1.1 eV) we can control; plus it grows its own insulating oxide and it's literally sand. Not too conductive (copper), not too insulating (glass), controllable.",
+  "answer": "Silicon is Group IV, so it has 4 valence electrons and forms 4 covalent bonds with its neighbors, locking into a rigid crystal lattice. That structure gives it a small band gap, `E_g ≈ 1.1 eV`, big enough that pure silicon barely conducts on its own but small enough that doping, heat, or light can push electrons across it on command. It also grows its own stable insulating oxide (`SiO2`, glass) when heated in oxygen, and it is the second most abundant element in Earth's crust. Copper is too conductive to ever turn off and glass is too insulating to ever turn on; silicon sits in the controllable middle, which is what actually matters."
+ },
+ {
+  "id": "17.1-semiconductor-physics-2",
+  "chapter": "17-Semiconductors/17.1-semiconductor-physics.md",
+  "prompt": "**Energy bands.** Valence band (full, bonded electrons) and conduction band (empty, free electrons) separated by a band gap. Metal: bands overlap (always conducts). Insulator: huge gap (never). Semiconductor: small gap (controllable). Current needs a *partly*-filled band, electrons *and* empty states.",
+  "answer": "Electrons in a crystal occupy a valence band (bonded, normally full) and a conduction band (free to roam, normally empty), separated by a band gap `E_g`. Current only flows when a band is partly filled, meaning it has both electrons and nearby empty states to move into; a completely full or completely empty band carries nothing. A metal's bands overlap so it always conducts, an insulator has a huge gap (5-9 eV) so it essentially never conducts, and a semiconductor like silicon has a small gap (~1.1 eV) that is controllable rather than fixed."
+ },
+ {
+  "id": "17.1-semiconductor-physics-3",
+  "chapter": "17-Semiconductors/17.1-semiconductor-physics.md",
+  "prompt": "**Electrons and holes.** Excite an electron across the gap → a free electron *and* a hole (the empty bond it left). Holes act like mobile positive charges. Two carriers, not one.",
+  "answer": "When an electron gains enough energy to jump from the valence band to the conduction band, it produces two carriers, not one: a free electron in the conduction band, and a hole, the empty bond it left behind in the valence band. A neighboring electron can slide into that hole, which just moves the empty spot in the opposite direction, so the hole behaves like a mobile positive charge even though it is really just an absence. In intrinsic silicon electrons and holes are created and recombine in equal pairs, and tracking both carriers is essential because the whole transistor story is about engineering materials with mostly one or the other."
+ },
+ {
+  "id": "17.1-semiconductor-physics-4",
+  "chapter": "17-Semiconductors/17.1-semiconductor-physics.md",
+  "prompt": "**Doping.** Add Group V (donor, e.g. P) → extra electrons → n-type. Add Group III (acceptor, e.g. B) → extra holes → p-type. A pinch changes conductivity a million-fold. `n·p = nᵢ²` always.",
+  "answer": "Doping means sprinkling a tiny amount of a different element into the silicon lattice to flood it with one carrier type. A Group V donor like phosphorus has a 5th valence electron that has no bond to join, so it easily frees into the conduction band, giving n-type silicon with electrons as the majority carrier. A Group III acceptor like boron only forms 3 bonds, leaving a ready-made hole, giving p-type silicon with holes as the majority carrier. Even a ratio of one impurity atom per ten million silicon atoms changes conductivity a millionfold, and the law of mass action `n·p = nᵢ²` always holds, so boosting one carrier type suppresses the other."
+ },
+ {
+  "id": "17.1-semiconductor-physics-5",
+  "chapter": "17-Semiconductors/17.1-semiconductor-physics.md",
+  "prompt": "**P-N junction.** Carriers diffuse across, recombine, leave fixed ions → depletion region → built-in field → built-in potential (~0.7 V). Forward bias lowers the barrier (conducts, exponentially); reverse bias raises it (blocks). One-way valve = **diode**.",
+  "answer": "Join p-type and n-type silicon and carriers diffuse across the boundary and recombine, leaving behind fixed acceptor and donor ions that form a carrier-free depletion region. Those exposed fixed charges create a built-in electric field and built-in potential, `V_bi ≈ 0.6-0.7 V`, which is the barrier carriers must climb, and diffusion stops once the field balances it. Forward bias (+ to p, − to n) opposes that field, shrinks the depletion region, and lets current flood across exponentially, while reverse bias widens the depletion region and raises the barrier, blocking current except for a tiny leakage. That asymmetry, conducting one way and blocking the other, is the diode."
+ },
+ {
+  "id": "17.1-semiconductor-physics-6",
+  "chapter": "17-Semiconductors/17.1-semiconductor-physics.md",
+  "prompt": "**Diode equation.** `I = I_S(e^(V/nVt) − 1)`. Reverse → −I_S (tiny leak); zero → 0; forward → exponential explosion. The ~0.7 V \"turn-on\" is just the steep part of the exponential, not a real wall.",
+  "answer": "The Shockley diode equation, `I = I_S(e^(V/nVt) - 1)`, ties current to voltage through `I_S` (a tiny reverse saturation current) and the thermal voltage `Vt = kT/q ≈ 0.0258 V`. Under reverse bias it reduces to `I ≈ -I_S`, a tiny constant leak; at zero bias it gives `I = 0`; and under forward bias the exponential term dominates and current explodes, roughly multiplying by 10 every 60 mV. The famous 0.7 V \"turn-on\" is not a real threshold, it's just the point where the smooth exponential curve gets so steep it looks like a wall on a linear current scale."
+ },
+ {
+  "id": "17.1-semiconductor-physics-7",
+  "chapter": "17-Semiconductors/17.1-semiconductor-physics.md",
+  "prompt": "**The family.** LED (recombination → light), solar cell (light → carrier pairs → current), BJT (two junctions, current-controlled). All junctions. Next chapter: the MOSFET, our voltage-controlled switch, the brick of every chip. ---",
+  "answer": "The P-N junction is a platform that produces a whole family of devices. An LED forward-biases a direct-bandgap junction so electron-hole recombination releases energy as light instead of heat, with the band gap setting the color. A solar cell runs that in reverse: photons above the gap energy create electron-hole pairs, and the junction's built-in field separates them into usable current. A BJT stacks two junctions (like N-P-N) so a small current into the thin base layer controls a large current from collector to emitter, a current-controlled switch that ruled early electronics before being displaced by the voltage-controlled MOSFET covered next."
+ },
+ {
+  "id": "17.2-transistor-and-logic-1",
+  "chapter": "17-Semiconductors/17.2-transistor-and-logic.md",
+  "prompt": "**MOSFET structure.** n+ source and drain islands in a p-type body; a gate sitting over the gap, insulated by ultra-thin oxide. By default OFF (back-to-back junctions block).",
+  "answer": "An nMOS transistor starts with a p-type silicon body (substrate) into which two n-type islands are implanted, the source and drain, separated by a small gap. Over that gap sits a conductor, the gate, insulated from the silicon below by an ultra-thin oxide layer just a few nanometers thick. Because source-to-body and drain-to-body are each P-N junctions, one of them is always reverse-biased with no help, so by default the device is OFF and blocks current between source and drain."
+ },
+ {
+  "id": "17.2-transistor-and-logic-2",
+  "chapter": "17-Semiconductors/17.2-transistor-and-logic.md",
+  "prompt": "**The field effect.** A positive gate voltage past the **threshold `Vt`** inverts the surface and forms an electron **channel** bridging source and drain → ON. Remove it → channel vanishes → OFF. The gate controls by *field*, drawing no current itself.",
+  "answer": "A positive voltage on the gate acts like a charged plate whose electric field reaches through the oxide, repelling holes and pulling electrons to the silicon surface below. Once the gate voltage exceeds the threshold voltage `Vt`, enough electrons accumulate to invert the surface into an n-type-behaving layer, forming a conducting channel that bridges source and drain and turns the switch ON. Remove the gate voltage and the channel disperses, turning it back OFF. Because the oxide insulates the gate, this control happens entirely through the electric field with essentially no current flowing into the gate itself."
+ },
+ {
+  "id": "17.2-transistor-and-logic-3",
+  "chapter": "17-Semiconductors/17.2-transistor-and-logic.md",
+  "prompt": "**Switch.** Driven to the rails, a MOSFET is a voltage-controlled switch: nMOS closed when gate=1, pMOS closed when gate=0 (complementary). This is the bridge from physics to Boolean logic (1.2).",
+  "answer": "When driven fully high or fully low, a MOSFET behaves as a simple voltage-controlled switch rather than an analog device. An nMOS closes (conducts, low resistance) when its gate is high and opens when its gate is low; a pMOS is the mirror image, closing when its gate is low and opening when its gate is high. This maps directly onto Boolean logic 1s and 0s from Chapter 1.2, since a logic gate is just a network of switches that routes a high or low output based on the input combination, making the transistor the physical bridge between physics and computation."
+ },
+ {
+  "id": "17.2-transistor-and-logic-4",
+  "chapter": "17-Semiconductors/17.2-transistor-and-logic.md",
+  "prompt": "**CMOS.** Pull-up (pMOS) to Vdd + pull-down (nMOS) to GND, complementary so exactly one is on. Result: near-zero static power. That's why CMOS won.",
+  "answer": "CMOS builds every gate from two complementary transistor networks: a pull-up network of pMOS transistors connecting the output to `Vdd` (logic 1), and a pull-down network of nMOS transistors connecting the output to ground (logic 0). They're wired so that for any input, exactly one network conducts, never both and never neither, which means there is never a direct steady path from `Vdd` to ground. That eliminates continuous current in the idle state, giving near-zero static power, unlike older NMOS logic where a resistor kept burning power whenever the output was held low. This power advantage is why CMOS became the basis of essentially every modern chip."
+ },
+ {
+  "id": "17.2-transistor-and-logic-5",
+  "chapter": "17-Semiconductors/17.2-transistor-and-logic.md",
+  "prompt": "**Gates from transistors.** Inverter = 1 pMOS + 1 nMOS (2 transistors). NAND = nMOS series + pMOS parallel (4). NOR = the dual. NAND/NOR are \"natural\" because the pull-up's complement bakes in the NOT; AND/OR cost an extra inverter. NAND is universal (1.2) → whole CPU from one cell.",
+  "answer": "A CMOS inverter is the simplest gate: one pMOS pull-up and one nMOS pull-down, 2 transistors total. A 2-input NAND uses 4 transistors, two nMOS in series for the pull-down (on only when both inputs are high) and two pMOS in parallel for the pull-up (its complement); NOR is the dual, nMOS in parallel and pMOS in series. NAND and NOR are the \"natural\" CMOS gates because the pull-up network is automatically the complement of the pull-down, baking in a NOT for free, whereas plain AND or OR requires an extra inverter. Since NAND is functionally complete (from Chapter 1.2), this single 4-transistor cell, tiled and wired, is enough to build every gate and ultimately a whole CPU."
+ },
+ {
+  "id": "17.2-transistor-and-logic-6",
+  "chapter": "17-Semiconductors/17.2-transistor-and-logic.md",
+  "prompt": "**Delay & power.** Delay ≈ R·C (charging the next gate's capacitance) → sets the clock-speed ceiling via the critical path. Dynamic power ≈ α·C·Vdd²·f (scales with frequency and voltage-squared); static power ≈ leakage. Heat is the wall → multi-core.",
+  "answer": "A gate's propagation delay comes from charging or discharging the next gate's input capacitance through the transistor's on-resistance, an RC charging curve, `delay ≈ R_on · C_load`. The clock can't tick faster than the slowest chain of gates (the critical path) can settle, which caps clock speed. Dynamic power, burned while switching, scales as `P ≈ α·C·Vdd²·f`, so it grows with frequency and especially with voltage squared, while static power comes from leakage current when idle. Since power turns into heat that must be removed, this is the wall that stopped single-core clock speeds from climbing around 2005 and pushed the industry toward multi-core designs."
+ },
+ {
+  "id": "17.2-transistor-and-logic-7",
+  "chapter": "17-Semiconductors/17.2-transistor-and-logic.md",
+  "prompt": "**Scaling.** Dennard scaling gave free speed + density + constant power density per shrink, until ~2005, when voltage couldn't drop further (leakage) and power density became the limit. Moore's Law (count) ≠ Dennard (free speed). The end of Dennard → multi-core, dark silicon, specialization. ---",
+  "answer": "Dennard scaling said that shrinking a transistor's dimensions and its voltage by the same factor kept power density constant, so each generation delivered more transistors, higher clock speeds, and the same heat per area, all for free. This broke down around 2005 because voltage could no longer shrink: dropping the threshold voltage further caused subthreshold leakage to rise exponentially, so static power exploded, and without lower voltage, raising frequency drove power density (and heat) too high. Moore's Law, the growth in transistor count, is a separate thing from Dennard scaling and limped on even as Dennard ended, and the end of free speed forced the industry into multi-core designs, dark silicon (not powering all transistors at once), and specialized accelerators."
+ },
+ {
+  "id": "17.3-from-transistors-to-chips-1",
+  "chapter": "17-Semiconductors/17.3-from-transistors-to-chips.md",
+  "prompt": "**Combinational vs. sequential.** Combinational = output is a pure function of current inputs, no memory (adder, ALU, MUX, decoder). Sequential = output depends on inputs *and* stored state, via **feedback**, usually clocked (latch, flip-flop, register, CPU).",
+  "answer": "Combinational logic computes its output purely as a function of its current inputs, with no memory, like an adder, ALU, MUX, or decoder. Sequential logic's output depends on both the current inputs and stored state, which requires feedback, a wire routed from a gate's output back to its own input so the circuit can hold a value. Latches, flip-flops, registers, and ultimately a whole CPU are sequential, usually advanced by a clock, and feedback is the single new ingredient that turns forgetful gates into memory."
+ },
+ {
+  "id": "17.3-from-transistors-to-chips-2",
+  "chapter": "17-Semiconductors/17.3-from-transistors-to-chips.md",
+  "prompt": "**Memory from gates.** Cross-couple two NOR gates → **SR latch**, a feedback loop that *holds a bit* (S=set, R=reset, both-0=hold). Memory is just gates wired to reinforce themselves.",
+  "answer": "Cross-coupling two NOR gates, where each gate's output feeds the other gate's input, produces an SR latch, the simplest memory circuit. Setting S=1, R=0 forces `Q=1`; S=0, R=1 forces `Q=0`; and critically, S=0, R=0 makes each gate's output depend only on feedback from the other, so the loop holds whatever value it last had. S=1, R=1 is forbidden because it breaks the `Q`/`Q-bar` complement and causes an unpredictable race. Memory turns out to be nothing exotic, just gates wired in a loop that reinforces itself."
+ },
+ {
+  "id": "17.3-from-transistors-to-chips-3",
+  "chapter": "17-Semiconductors/17.3-from-transistors-to-chips.md",
+  "prompt": "**Flip-flop & clock.** Add an enable → **D latch** (transparent when enabled). Chain two on opposite clock phases → **edge-triggered D flip-flop**: captures D on the clock edge, holds it all cycle. N flip-flops = a **register**.",
+  "answer": "Adding a clock-enable to the SR latch, with `S=D` and `R=NOT D` to avoid the forbidden state, gives a D latch: when enabled it is transparent and `Q` tracks `D`, and when disabled it holds the last value. Chaining two D latches (a master and a slave) driven by opposite clock phases produces an edge-triggered D flip-flop, which captures `D` only at the instant the clock rises and holds it steady for the rest of the cycle. A bank of N flip-flops sharing one clock forms a register, storing an N-bit word, which is literally what a CPU register like `RAX` is."
+ },
+ {
+  "id": "17.3-from-transistors-to-chips-4",
+  "chapter": "17-Semiconductors/17.3-from-transistors-to-chips.md",
+  "prompt": "**Synchronous design.** One clock; every flip-flop updates on the same edge. Clock period must exceed the **critical-path delay** (17.2) so logic settles before capture → this bounds clock speed. Sampling only at edges makes the machine deterministic (glitches between edges don't matter).",
+  "answer": "In synchronous design, nearly every flip-flop on the chip captures its new value on the same clock edge, rather than reacting to inputs whenever they change. The clock period must be at least as long as the critical-path delay (from 17.2) so the combinational logic has time to settle before the next edge captures it, which is exactly why a longer logic path forces a lower clock frequency. Because storage only samples at clean edges, glitches or mid-flight signal changes between edges never get captured, making the whole machine deterministic even though millions of gates are switching asynchronously underneath."
+ },
+ {
+  "id": "17.3-from-transistors-to-chips-5",
+  "chapter": "17-Semiconductors/17.3-from-transistors-to-chips.md",
+  "prompt": "**Building blocks.** Adder/ALU (arithmetic, from 1.2), MUX (hardware `if`/selector), decoder (address → one-hot). Combine with registers + clock → a **datapath** (data flow) + **control** (sets the knobs each cycle) = a CPU skeleton; the loop state→ALU→latch is the running machine.",
+  "answer": "The standard building blocks are the adder/ALU (chained full adders that also handle AND/OR/NOT/shift/compare, the CPU's calculator from Chapter 1.2), the multiplexer (a data selector that acts as hardware `if`, choosing one of several inputs by a select line), and the decoder (turns an n-bit address into exactly one of `2^n` active output lines, used to select rows in memory). Combining these with registers and a clock produces a datapath, the circuitry where data actually flows and transforms, paired with control, which sets the MUX selects and ALU operation each cycle to execute the current instruction. The repeating loop of state feeding the ALU, computing a next state, and latching it back on the clock edge is the running machine, the same skeleton as a simple counter grown up into a CPU."
+ },
+ {
+  "id": "17.3-from-transistors-to-chips-6",
+  "chapter": "17-Semiconductors/17.3-from-transistors-to-chips.md",
+  "prompt": "**Memory in silicon.** **SRAM (6T)** = cross-coupled latch, fast, no refresh, expensive → caches/registers. **DRAM (1T1C)** = one leaky capacitor + one transistor, dense/cheap, **must refresh** (capacitor leaks) → main memory. This tradeoff *is* the cache-vs-RAM hierarchy of 5.1.",
+  "answer": "SRAM stores a bit in a 6-transistor cell: two cross-coupled inverters holding the bit in a feedback loop (the same latch idea) plus two access transistors, making it fast and needing no refresh since the loop actively holds its state, but expensive because of the transistor count. DRAM stores a bit in just 1 transistor and 1 capacitor, with charge on the capacitor representing the value, making it far denser and cheaper, but slower, and since the capacitor leaks, every cell must be read and rewritten (refreshed) roughly every 64 ms or the data decays. This tradeoff, a little fast expensive SRAM near the CPU versus lots of cheap leaky DRAM further away, is exactly the cache-versus-RAM hierarchy from Chapter 5.1, and the ~100x speed gap between them traces directly to the cell design, not wire distance."
+ },
+ {
+  "id": "17.3-from-transistors-to-chips-7",
+  "chapter": "17-Semiconductors/17.3-from-transistors-to-chips.md",
+  "prompt": "**Big picture.** A **SoC** = cores (datapath+control+L1) + shared cache (SRAM) + memory controller (drives DRAM, does refresh) + GPU (parallel throughput) + AI/other accelerators (specialization, the post-Dennard answer). The **ISA** (x86/ARM/RISC-V) is the hardware↔software contract, the abstraction rung that lets one program run on countless different chips. ---",
+  "answer": "A System on a Chip packs multiple CPU cores (each a datapath, control, and private L1 cache), a shared L2/L3 cache built from SRAM, a memory controller that drives external DRAM and handles its refresh, a GPU with thousands of simple ALUs for parallel throughput work, and specialized accelerators like AI/NPU chips, video, and crypto blocks, each a post-Dennard answer that trades general flexibility for performance-per-watt on a specific job. The Instruction Set Architecture (x86, ARM, RISC-V) is the defined contract of instructions, registers, and memory model that hardware promises to implement. It's the abstraction boundary that lets one compiled program run unmodified on any chip implementing that ISA, regardless of the transistors wired underneath."
+ },
+ {
+  "id": "17.4-chip-design-flow-and-hdl-1",
+  "chapter": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+  "prompt": "**Why is Verilog \"not software\"?** Explain concurrency vs sequential execution, and what a line of RTL physically *becomes*.",
+  "answer": "Verilog describes a circuit rather than a list of instructions, so it is not software in the normal sense. Software statements run sequentially, one line after another over time; hardware blocks described in Verilog all exist and operate concurrently, forever, in parallel, there is no \"line 1 runs first.\" The chapter's analogy: software is a recipe a single cook follows step by step, while Verilog is the blueprint of a kitchen where the stove, sink, and fridge are all physically present and running at once. A line of RTL doesn't execute, it becomes physical gates, flip-flops, and wires that take up silicon area, burn power, and add propagation delay, which is why the cost model shifts from time/memory (software) to area/power/timing (hardware)."
+ },
+ {
+  "id": "17.4-chip-design-flow-and-hdl-2",
+  "chapter": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+  "prompt": "**Walk the full chip flow** spec → bring-up, naming what each stage does and which EDA tools and which engineer own it.",
+  "answer": "1) Spec & architecture: define throughput/power/area budgets and the microarchitecture, owned by architects, no code yet. 2) RTL design: write behavior in Verilog/SystemVerilog, owned by design engineers. 3) Functional verification: build testbenches, simulate, write assertions and coverage to prove RTL matches spec, this is 40-70% of project effort and owned by verification engineers. 4) Synthesis: Synopsys Design Compiler/Fusion Compiler or Cadence Genus compile RTL into a gate-level netlist. 5) Place & route: Cadence Innovus or Synopsys IC Compiler II/Fusion Compiler place gates and route wires, owned by the physical design engineer. 6) Timing closure (STA): Synopsys PrimeTime checks every path meets the clock period, fixing setup/hold violations. 7) DFT: Siemens Tessent or Synopsys TestMAX add scan chains and BIST, owned by the DFT engineer. 8) Signoff & tapeout: DRC/LVS/power checks, then export GDSII to the foundry. 9) Fabrication: the foundry (TSMC, Samsung, Intel) turns GDSII into wafers over weeks to months. 10) Bring-up & test: first silicon is powered on and debugged, with a respin back through the flow if needed. An EDA software engineer at Synopsys/Cadence/Siemens builds the tools used in stages 4-8."
+ },
+ {
+  "id": "17.4-chip-design-flow-and-hdl-3",
+  "chapter": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+  "prompt": "**State the blocking vs non-blocking rule** and demonstrate it with the swap example.",
+  "answer": "Use blocking `=` inside combinational `always @(*)` blocks, where it executes immediately and in order like normal software; use non-blocking `<=` inside sequential `always @(posedge clk)` blocks, where all right-hand sides are read first and all left-hand sides update together at the clock edge, modeling how real flip-flops update simultaneously. The swap example proves it: given `a <= b; b <= a;` with starting values a=3, b=7, non-blocking reads both old values first then updates, so a becomes 7 and b becomes 3, a true swap, exactly like two flip-flops swapping on one edge. With blocking `=` instead, `a = b` immediately makes a=7, then `b = a` makes b=7 too, so both end up 7, which is broken hardware, not a swap."
+ },
+ {
+  "id": "17.4-chip-design-flow-and-hdl-4",
+  "chapter": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+  "prompt": "**Sketch the canonical three-block FSM** and explain Moore vs Mealy.",
+  "answer": "The canonical FSM has three blocks: (1) a clocked state register (`always @(posedge clk)`) that holds the current state and advances it, (2) combinational next-state logic that decides what state comes next based on the current state (and inputs), and (3) combinational output logic that produces the outputs. In a **Moore** machine, like the chapter's traffic-light controller, outputs depend only on the current state, so they're registered and glitch-free but may need more states or react a cycle late. In a **Mealy** machine, outputs depend on both state and current inputs, which can mean fewer states and faster reaction, but the combinational outputs can glitch."
+ },
+ {
+  "id": "17.4-chip-design-flow-and-hdl-5",
+  "chapter": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+  "prompt": "**Explain why verification is the biggest stage** and exactly which of your software skills transfer to it.",
+  "answer": "Verification is the biggest stage because it consumes 40-70% of total project effort and verification engineers outnumber designers 2:1 or 3:1, driven by a brutal cost asymmetry: a bug caught in verification costs an afternoon, but the same bug escaping to silicon costs a multi-million-dollar respin and months of delay. Software skills transfer directly: writing testbenches is unit testing (setup, drive stimulus, observe, compare, report PASS/FAIL); Python/Perl/Tcl automation drives regression flows and log parsing; constrained-random stimulus is essentially fuzzing; UVM's drivers, monitors, scoreboards, and sequences map onto familiar OOP patterns like factories, callbacks, and inheritance; and coverage analysis and debug are the same instincts as telemetry, instrumenting a system and finding the one bad case."
+ },
+ {
+  "id": "17.4-chip-design-flow-and-hdl-6",
+  "chapter": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+  "prompt": "**Contrast FPGA and ASIC** and justify why you'll prototype on an FPGA.",
+  "answer": "An FPGA is a reconfigurable chip you \"program\" like software, costs $100-300 to start, gets you a running design in minutes, but has lower per-unit speed/power efficiency and higher per-unit cost; you can reload it anytime. An ASIC is fixed custom silicon, costs $1M-$100M+ and takes months to get running through the full flow and fabrication, but is far more efficient and cheaper per unit at volume, and is frozen forever once made. You prototype on FPGA because it lets you actually run the exact hardware you designed today, on cheap hardware, using the same Verilog that could later target an ASIC, via AMD/Xilinx Vivado, Intel Quartus, or the open-source Yosys + nextpnr flow, without needing a $30M manufacturing run to see if your design works."
+ },
+ {
+  "id": "17.4-chip-design-flow-and-hdl-7",
+  "chapter": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+  "prompt": "**Name the big three EDA vendors**, their rough market shares, and one tool each does for synthesis, simulation, and timing. Nail these and you understand how chips are designed, and you've written and simulated real hardware. Next: [How chips are actually manufactured](17.5-semiconductor-manufacturing.md), turning your GDSII into atoms, and then [landing the job](17.6-semiconductor-careers.md).",
+  "answer": "The big three are **Synopsys** (~31%), **Cadence** (~30%), and **Siemens EDA** (~13%), together over 70% of the ~$20.8B (2026) EDA market. For synthesis (RTL to gates): Synopsys uses Design Compiler/Fusion Compiler, Cadence uses Genus; Siemens EDA has no listed synthesis tool. For simulation: Synopsys VCS, Cadence Xcelium, Siemens Questa. For static timing analysis: Synopsys PrimeTime, Cadence Tempus; Siemens EDA again has no listed STA tool, its strengths instead are DFT (Tessent) and physical verification (Calibre, the industry standard for DRC)."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-1",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Trace a chip from sand to shipped part**, naming the major stages.",
+  "answer": "Raw silica sand is purified into 9N (99.9999999% pure) electronic-grade polysilicon, then melted and pulled via the **Czochralski process** into a monocrystalline ingot, which is sliced and polished into 300mm wafers. Each wafer then goes through the fab loop, deposition, photoresist, lithography, develop, etch, ion implant, and CMP, repeated 60-100+ times to build FEOL transistors and BEOL metal interconnect in a cleanroom. Finished wafers are electrically probed and sorted (wafer sort), diced into individual dies, packaged (flip-chip, 2.5D/3D, chiplets plus HBM), then run through final test and binning before shipping. The whole journey takes roughly 80-120 days and hundreds of process steps."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-2",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Explain photolithography** as if you're teaching it: resist, mask, exposure, develop, and *use* `R = k₁·λ/NA` to say why wavelength and NA set the resolution limit (and what High-NA EUV trades away).",
+  "answer": "The wafer is spin-coated with light-sensitive **photoresist**, then a **photomask (reticle)** carrying one layer's circuit pattern (drawn at ~4x scale) is placed above it; a stepper/scanner shines light through the mask and lenses shrink the pattern onto the wafer, chemically exposing the resist (positive resist becomes soluble where exposed, negative resist becomes insoluble). A **developer** then washes away the soluble resist, leaving a hardened stencil that etch transfers into the real material below. The Rayleigh criterion `R ≈ k₁·λ/NA` sets the resolution floor: smaller wavelength λ and bigger numerical aperture NA both shrink R (finer features), while k₁ (~0.25-0.4) is a process-cleverness factor you can push only so far, which is why the industry chased shorter wavelengths (down to 13.5nm EUV) and bigger NA (water immersion, then High-NA EUV). High-NA EUV raises NA from 0.33 to 0.55, shrinking R by roughly 0.6x (about 40% finer), but since depth of focus scales as `λ/NA²`, squaring NA in the denominator collapses the focus margin by about 64%, and the smaller imaging field forces a full reticle to be stitched from two exposures."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-3",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Walk the multi-patterning ladder** (LELE/SADP/SAQP) and explain why a single EUV exposure is worth so much.",
+  "answer": "**LELE** (Litho-Etch-Litho-Etch) prints half the lines, etches, then prints the other half offset between them for 2x density, but needs two masks, two etches, and perfect overlay, any misalignment is an electrical disaster. **SADP** (Self-Aligned Double Patterning) prints \"mandrels,\" grows spacers on their sidewalls, then removes the mandrels so the spacers themselves become the fine lines; pitch is set by spacer width rather than litho, giving very uniform but rigid results. **SAQP** repeats SADP a second time for 4x density, used for the finest DUV-era fin/metal layers, with each doubling multiplying mask count, cost, cycle time, and defect opportunities. A single EUV exposure can replace an entire 3- or 4-mask multi-patterning sequence, so it means fewer masks, fewer etch/clean cycles, and fewer overlay-error chances, which lowers cost and raises yield on the critical layers, exactly the pain multi-patterning creates."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-4",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Make the case for EUV/ASML**, what problem it solves and why it's a geopolitical chokepoint.",
+  "answer": "EUV uses 13.5nm light, about 14x shorter than 193nm DUV, so a single exposure can print what used to require several expensive, defect-prone DUV multi-patterning passes, solving the resolution wall the industry hit for roughly 20 years stuck at 193nm. Generating and focusing 13.5nm light is extraordinarily hard: it's absorbed by air and glass, so the whole optical path must run in vacuum using mirrors instead of lenses, and the light source works by hitting molten tin droplets with a high-power laser twice, about 50,000 times a second, to vaporize them into 13.5nm-emitting plasma. **ASML** (Netherlands) is the only company on Earth that makes EUV scanners, at $150M-$400M+ per machine, so no country or company can build leading-edge logic chips without ASML, which makes it one of the most strategically critical companies alive and puts it at the center of chip export controls and geopolitics."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-5",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Explain what \"2nm\" really means in 2026**, and tell the FinFET → GAA/nanosheet story as *the gate clawing back control of the channel* (1 → 3 → 4 sides).",
+  "answer": "\"2nm\" is not a physical measurement, nothing on the chip is actually 2nm, the smallest features are more like 20-30nm. It's a marketing label for a density/performance/power generation, and the honest metric engineers actually use is transistor density in MTr/mm². The real story is the transistor's structure: planar transistors controlled the channel from only **1 face**, and below ~22nm the source and drain got close enough to fight the gate for control (short-channel effects, causing leakage). FinFET (~2011) stood the channel up as a fin so the gate wraps **3 sides**, restoring control. GAA/nanosheet transistors, arriving at the 2nm-class node in 2026, stack horizontal silicon sheets with the gate wrapping all **4 sides** of each sheet, the best possible control and lowest leakage. Since there's nowhere past wrapping all four sides, the next frontier is stacking transistors on top of each other (CFET) rather than re-wrapping the gate."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-6",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Explain why yield dominates cost**, why big dies are expensive (the exponential), what the learning curve is, and what binning recovers.",
+  "answer": "Yield dominates cost because a wafer costs roughly the same to process (about $15,000-$30,000 for a leading-edge 300mm wafer) whether the resulting chips work or not, so cost per good die = wafer cost divided by working dies. Big dies are expensive because defect-free probability follows roughly `e^(−D₀·A)`, with die area A in the exponent, so doubling die area more than doubles the kill rate, which is exactly why huge GPU and server-CPU dies cost so much more than small ones. The **learning curve** is the fact that a new node's defect density D₀ starts high (unproven recipes, drifting tools) and falls steadily over months to years as engineers hunt down and fix the dominant defect mechanisms, so yield climbs continuously over a node's life, this climb is the central job of yield engineering. **Binning** recovers value from imperfect dies by selling them as lower-tier SKUs, speed binning (slower parts sold cheaper), functional binning/harvesting (a die with a bad core ships as a cut-down part), and power binning (low-leakage parts become premium low-power SKUs), turning otherwise-scrapped or downgraded silicon into revenue."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-7",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Quantify chiplets vs monolithic**, the yield win, the packaging tax, and the U-shaped optimal split.",
+  "answer": "The chapter's model splits a fixed total silicon area into N dies and shows the win directly: for 8cm² of total silicon, a monolithic die yields only about 45% (you scrap over half the silicon), while splitting into 4 chiplets yields about 82% each and 8 chiplets about 90% each, because a defect now only kills a small chiplet (~1/N of the silicon) instead of the whole die. The packaging tax is real, though: the model charges roughly $4 per chiplet for packaging/interposer/assembly and a 98.5% assembly yield, both of which eat into the savings. The result is a **U-shaped cost curve**: splitting helps a lot at first (you stop scrapping huge dies), then the per-chiplet packaging cost and compounding assembly-yield loss overtake the savings; small dies or low defect density favor staying monolithic, while big dies or high defect density (flagship GPUs, server CPUs on a fresh node) favor chiplets decisively, which is exactly why AMD, Apple, and Nvidia use them."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-8",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Pitch advanced packaging** (2.5D/3D/HBM/CoWoS) as a parallel path to performance.",
+  "answer": "As transistor scaling slows and node costs soar, packaging has stopped being an afterthought and become a primary lever for performance alongside the fab process itself. **2.5D integration** places multiple dies side by side on a passive silicon interposer with ultra-dense wiring so they talk at near on-chip bandwidth; **TSMC's CoWoS** is the famous example, connecting a high-end AI GPU's compute die to its memory. **3D integration** stacks dies vertically and connects them through **TSVs (Through-Silicon Vias)** for maximum density and shortest wires; **HBM (High-Bandwidth Memory)** is stacked DRAM enabled entirely by 3D packaging, and it's the memory feeding modern AI accelerators. CoWoS-class packaging capacity is currently a bottleneck for the entire AI hardware boom, which is exactly why packaging is now spoken of in the same breath as node scaling."
+ },
+ {
+  "id": "17.5-semiconductor-manufacturing-9",
+  "chapter": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+  "prompt": "**Identify the manufacturing-side roles that fit a software/data background** (yield analytics, metrology/inspection ADC, computational litho) and what they involve. Nail these and you understand how chips are physically made, and you've quantified the economics yourself. Next: [the industry map and how you actually land an entry-level job](17.6-semiconductor-careers.md).",
+  "answer": "**Yield / process-data analytics** (at TSMC, Intel, Micron, GlobalFoundries, Samsung, Applied Materials) means mining the fab's massive per-wafer, per-step, per-tool datasets to correlate defects with specific tools, recipes, or steps, build predictive and anomaly-detection models, and drive the yield learning curve down, pure statistics and ML applied to manufacturing data. **Metrology and inspection** roles sit on the fab's data firehose: metrology measures dimensions like critical dimension and overlay (CD-SEM, scatterometry, ellipsometry), while inspection scans for defects, KLA is the dominant inspection-tool maker, and turning those images into \"which tool is drifting, which defects actually kill chips\" is statistical process control plus image classification, with automatic defect classification (ADC) on inspection images being a clean CNN application. **Computational lithography** (OPC, inverse lithography, source-mask optimization at ASML, foundries' litho teams, and EDA groups at Synopsys/Siemens) deliberately distorts mask patterns in software so diffraction produces the intended shape, a massive simulation problem that's increasingly ML-accelerated."
+ },
+ {
+  "id": "17.6-semiconductor-careers-1",
+  "chapter": "17-Semiconductors/17.6-semiconductor-careers.md",
+  "prompt": "**Draw the industry map**, IDM vs fabless vs foundry vs EDA vs equipment, with two companies in each, and place TSMC, Nvidia, Synopsys, Intel, and ASML correctly.",
+  "answer": "**IDM** (designs and manufactures its own chips): Intel, Samsung (also Micron, Texas Instruments, SK Hynix). **Fabless** (designs chips, owns no fabs, pays a foundry): Nvidia, Qualcomm (also AMD, Apple, Broadcom, ARM, which licenses IP rather than selling chips). **Pure-play foundry** (manufactures other companies' designs): TSMC, the giant leader, plus GlobalFoundries and UMC. **EDA** (software tools every designer uses): Synopsys, Cadence (also Siemens EDA), an oligopoly holding over 70% of the market. **Equipment/materials** (build the machines fabs run on): ASML, the sole EUV-scanner maker, plus Applied Materials, Lam Research, and KLA. Placing the named companies: TSMC is a foundry, Nvidia is fabless, Synopsys is EDA, Intel is an IDM, and ASML is equipment."
+ },
+ {
+  "id": "17.6-semiconductor-careers-2",
+  "chapter": "17-Semiconductors/17.6-semiconductor-careers.md",
+  "prompt": "**Rank the roles** for a software/data grad and, for your top two (DV and yield/process-data analytics), state the *day-to-day*, the *skills wanted*, *which of your exact resume skills transfer*, and the *difficulty to break in*.",
+  "answer": "Ranked best-fit to still-good: **Design Verification** engineer and **EDA Software** engineer (both top-tier fits), then **Yield/Process-Data Analytics**, **FPGA/Digital Design**, and **Firmware/Embedded** (strong fits), then **DFT/Test** and **Physical Design** (moderate fits), with **ML-for-EDA** as a research-adjacent standout differentiator. For **DV**: day-to-day is building SystemVerilog/UVM testbenches, writing constrained-random stimulus and assertions, running simulations (VCS/Xcelium/Questa), triaging failures, and building regression automation; it wants SystemVerilog+UVM, scripting, Linux, and digital-design grasp; your Python transfers to flow automation and log parsing, C++ to reference-model scoreboards, telemetry/observability transfers directly to coverage analysis and failure triage (the killer analogy), and CI/CD transfers because nightly regressions are CI for hardware; difficulty is low-medium, the easiest strong-fit door, since the only real gap (SystemVerilog/UVM) is learnable in weeks. For **yield/process-data analytics**: day-to-day is mining per-wafer/per-step/per-tool datasets and wafer maps to find what's hurting yield, build predictive/anomaly models, and catch tool drift, living in pandas/SQL/notebooks/dashboards; it wants statistics, data wrangling, and ML; your pandas/SQL is the daily medium, ML/PyTorch/TensorFlow maps to wafer-map defect classification, and telemetry/observability transfers almost 1:1 since fab tool sensor data is telemetry at massive scale, arguably the single best resume-to-role match in the whole chapter; difficulty is low-medium if the req exists, needing the least hardware-specific knowledge, but reqs are fewer and vaguely titled, so you have to hunt for them."
+ },
+ {
+  "id": "17.6-semiconductor-careers-3",
+  "chapter": "17-Semiconductors/17.6-semiconductor-careers.md",
+  "prompt": "**Pitch your transferable skills**, turn three real resume bullets (a data-pipeline one, a telemetry/observability one, and a CI/CD one) into verification/EDA *and* yield-analytics bullets without fabricating anything.",
+  "answer": "A data-pipeline bullet (e.g. building a real-time analytics pipeline and dashboard) reframes for verification/EDA as automated data/regression pipelines processing large result sets with strict boundary validation, the same rigor verification regressions demand, and for yield-analytics as high-volume manufacturing-data ingestion and validation pipelines. A telemetry/observability bullet (logging, metrics, tracing across services) reframes for verification/EDA as instrumenting systems with telemetry to surface failures fast, directly analogous to coverage analysis and failure triage in design verification, and for yield-analytics as fab tool-data monitoring and anomaly detection, the same instrument-collect-detect loop at wafer/lot/tool scale. A CI/CD bullet (dashboards monitoring service metrics and alerting on anomalies) reframes for verification/EDA as building and maintaining regression infrastructure, nightly regressions are CI for hardware, and for yield-analytics as anomaly-detection and monitoring pipelines over high-volume telemetry, surfacing drift and outliers, extendable with ML classifiers like defect-pattern or wafer-map classification. Every reframe stays true to the real work, it just re-weights which truth leads."
+ },
+ {
+  "id": "17.6-semiconductor-careers-4",
+  "chapter": "17-Semiconductors/17.6-semiconductor-careers.md",
+  "prompt": "**Answer the core interview topics** cold: CMOS inverter, setup/hold (and *work the timing slack calc*), metastability, CDC + the two-flop synchronizer, Moore vs Mealy, pipelining + hazards, blocking vs non-blocking, sync vs async reset, clock gating, dynamic vs static power, coverage (code vs functional), assertions, constrained-random vs directed, the *FIFO-depth calc*, and why verification matters.",
+  "answer": "A **CMOS inverter** pairs a PMOS (pulls output high) with an NMOS (pulls output low); exactly one conducts at a time, so there's almost no static power, power is burned mainly while switching. **Setup time** is how long data must be stable before a clock edge, **hold time** is how long after; violating setup means data arrives too late (wrong/metastable capture, usually a too-slow combinational path), violating hold means data changed too soon (corrupted capture, path too fast). Worked slack: with T=2.0ns, clk-to-Q=0.3ns, comb delay=1.2ns, setup=0.2ns, skew=+0.1ns, arrival = 0.3+1.2 = 1.5ns and required = 2.0+0.1−0.2 = 1.9ns, so slack = +0.4ns, it passes. **Metastability** is when a setup/hold violation puts a flop in an unstable state that resolves unpredictably; you manage (not eliminate) it with synchronizers, quantified by MTBF. **CDC** happens when a signal crosses clock domains and can be sampled mid-transition; the fix for a single control bit is a **two-flop synchronizer** (the first flop may go metastable but gets a full cycle to settle before the second samples it), while multi-bit data needs a handshake or an async FIFO with Gray-coded pointers. A **Moore** machine's outputs depend only on state (glitch-free); a **Mealy** machine's outputs also depend on inputs (fewer states, can glitch). **Pipelining** splits a long combinational path into clocked stages to raise clock frequency and throughput at the cost of latency, with **data hazards** (fixed by forwarding/stalling), **control hazards** (branch prediction/flush), and **structural hazards** (resource conflicts). **Blocking `=`** belongs in combinational `always @(*)` blocks (executes in order); **non-blocking `<=`** belongs in clocked `always @(posedge clk)` blocks (all RHS sampled first, then all LHS update together, modeling real flip-flops); mixing them causes sim/synth mismatches. **Synchronous reset** is sampled only on the clock edge (clean for STA, needs a running clock); **asynchronous reset** forces the flop immediately (works at power-up but risks glitches and reset-removal timing); best practice is asynchronous assertion with synchronous de-assertion via a reset synchronizer. **Clock gating** disables the clock to idle flops to cut dynamic power, using a proper ICG cell rather than ANDing the clock to avoid glitches. **Dynamic power** (proportional to C·V²·f·α) comes from switching and is cut via DVFS and clock gating; **static/leakage power** leaks even when idle and is cut via power gating and multi-Vt cells. **Code coverage** is automatic and structural (line/branch/toggle, what code ran); **functional coverage** is intentional (covergroups over scenarios that matter, what you actually tested); verification is done when coverage closes, not when tests pass. **Assertions (SVA)** are inline, machine-checkable claims (e.g. request followed by grant within 5 cycles) that self-check continuously and fire right at the violation. **Directed** tests hand-write known scenarios; **constrained-random** generates many legal randomized scenarios within constraints (fuzzing for hardware), steered by coverage feedback. Worked **FIFO depth**: a producer writing 1 item/cycle in bursts of 120 against a consumer reading 4 every 5 cycles (0.8/cycle) accumulates at a net fill rate of 0.2/cycle × 120 cycles = 24 items, so depth ≥ 24 (rounded to 32). Finally, **verification matters** because a bug caught here costs an afternoon, while one that escapes to silicon costs a multi-million-dollar respin and months of delay, which is why it consumes 40-70% of project effort and outstaffs design 2:1 or 3:1."
+ },
+ {
+  "id": "17.6-semiconductor-careers-5",
+  "chapter": "17-Semiconductors/17.6-semiconductor-careers.md",
+  "prompt": "**Walk the 16-week plan** block by block, what you learn and ship in each of foundations / FPGA / verification / capstone, and which portfolio repo each block produces.",
+  "answer": "**Block 1, weeks 1-4 (HDL & digital foundations):** Verilog basics, blocking vs non-blocking, combinational vs sequential, the three-block FSM pattern, and a computer-architecture refresh (pipelining, caches, CMOS inverter, setup/hold) via HDLBits and nand2tetris; produces the `hdl-basics` repo (counter, ALU, FSMs). **Block 2, weeks 5-8 (real hardware on an FPGA):** get a board (Arty A7/Basys 3 or Tang Nano), learn the synth→place→route→bitstream flow, and build blink/debounce, a 7-segment/PWM driver, a UART, and a FIFO with timing constraints; produces `fpga-uart` plus 2-3 FPGA repos with demo GIFs. **Block 3, weeks 9-12 (verification, the differentiator):** SystemVerilog classes, randomization and constraints, SVA assertions, functional coverage driven to 100% on the ALU, and UVM basics (agent/driver/monitor/scoreboard) plus CDC and the FIFO-depth calculation on an async FIFO; produces `alu-verified` and `fifo-cdc`. **Block 4, weeks 13-16 (capstone, automation, apply):** design and verify a small RV32I RISC-V CPU with a reference model, read a static-timing report, write Tcl/Python flow automation or an ML-on-fab-data demo, then polish and start applying to 5+ new-grad roles a week; produces `tiny-riscv` plus `eda-scripting` or `ml-for-eda`."
+ },
+ {
+  "id": "17.6-semiconductor-careers-6",
+  "chapter": "17-Semiconductors/17.6-semiconductor-careers.md",
+  "prompt": "**Recite the portfolio**, name all six repos and, for `alu-verified`, `fifo-cdc`, and `tiny-riscv`, the exact interview questions each one lets you answer *and point to*.",
+  "answer": "The six repos are `hdl-basics` (fundamentals: counter, mux/demux, adder, shift register, FSMs), `alu-verified` (the verification centerpiece), `fpga-uart` (real silicon on a real board), `fifo-cdc` (the CDC concept repo), `tiny-riscv` (the standout capstone), and `ml-for-eda`/`fab-economics` (the unique data/ML card). `alu-verified` lets you answer and point to verification methodology, constrained-random vs directed testing, functional vs code coverage, assertions (SVA), and how you debug a failure, the core DV question cluster. `fifo-cdc` lets you answer and point to metastability, clock-domain crossing, two-flop synchronizers, the Gray-coded async FIFO, and the FIFO-depth calculation. `tiny-riscv` demonstrates real computer-architecture understanding and the ability to design and verify a non-trivial block end to end, and pairs with reading a static-timing report and identifying a CDC path."
+ },
+ {
+  "id": "17.6-semiconductor-careers-7",
+  "chapter": "17-Semiconductors/17.6-semiconductor-careers.md",
+  "prompt": "**Run the job-search playbook**, categories of target companies, where new-grad programs and ASIC/VLSI postings live, how you'd network into a referral, and how you'd set comp expectations (and where to verify the numbers).",
+  "answer": "Target company categories: **design & fabless** (Nvidia, AMD, Apple, Qualcomm, Broadcom, ARM, Marvell, Cerebras, Tenstorrent, SiFive, plus hyperscaler silicon teams like Google TPU and Amazon Annapurna/Graviton/Trainium), **IDMs** (Intel, Samsung, Micron, Texas Instruments, Analog Devices), **foundries** (TSMC including TSMC Arizona, GlobalFoundries, where yield/process-data jobs concentrate), **EDA** (Synopsys, Cadence, Siemens EDA), and **equipment/inspection** (ASML, Applied Materials, Lam Research, KLA). New-grad postings live under searches like \"[company] university/new grad/rotational\" (Intel, Nvidia, AMD, Qualcomm, Micron, TI all run named programs), on filtered company career sites and LinkedIn saved searches for exact titles, and in VLSI/ASIC communities (r/FPGA, r/chipdesign, VLSI job boards, Verification Academy forums, local IEEE chapters); CHIPS-Act-funded fabs like TSMC Arizona are unusually open to new grads right now. Networking into a referral: build the portfolio first so outreach has something concrete to point at, find people actually doing the target role on LinkedIn and send a short non-asking message asking for a 15-minute chat, be visibly useful in communities, and only ask for a referral after rapport is built, then follow up with converted interns or alumni for the warmest intros. For comp, treat any range as a starting orientation only and pull current numbers for the exact company, level, and city from levels.fyi, Glassdoor, or Blind right before an offer conversation; EDA and hyperscaler/big-fabless roles tend to sit higher, geography matters a lot, and a strong portfolio is real negotiating leverage."
+ },
+ {
+  "id": "17.6-semiconductor-careers-8",
+  "chapter": "17-Semiconductors/17.6-semiconductor-careers.md",
+  "prompt": "**Explain why now is a strong moment to enter** the field. Nail these and you're not just *curious* about semiconductors: you're a **candidate** with a plan, a portfolio, and a story. That completes the Semiconductors part: from [what a semiconductor is](17.1-semiconductor-physics.md), through [how chips are designed](17.4-chip-design-flow-and-hdl.md) and [made](17.5-semiconductor-manufacturing.md), to a concrete path into the field. Time to write some Verilog and start the 16 weeks.",
+  "answer": "Three forces line up right now. The **CHIPS Act** committed $52.7B (about $33.7B awarded) to re-shore US manufacturing, funding new fabs like TSMC Arizona, Intel, and Micron and creating thousands of new engineering jobs from a low base. The **AI-driven design boom** has every hyperscaler and startup wanting custom accelerators, which is exploding demand for design and especially verification headcount. And there's a widely reported **workforce shortage**, the industry is hiring faster than universities produce hardware engineers, which is a structural opening for a motivated CS grad who skills up on SystemVerilog/UVM, FPGA work, and a real portfolio."
+ }
+]
