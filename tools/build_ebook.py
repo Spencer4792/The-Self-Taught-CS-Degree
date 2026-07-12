@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
-"""Build EPUB (and optionally PDF) editions of the book from SUMMARY.md order.
+"""Build EPUB and PDF editions of the book from SUMMARY.md order.
+
+Each chapter is parsed SEPARATELY through pandoc's AST (matching how the
+website and GitHub render them), filtered (mermaid fallbacks, internal-link
+handling), and only then assembled. Concatenating raw markdown is unsafe:
+fence-state can leak across chapter boundaries.
 
 Usage:
-  python3 tools/build_ebook.py epub                 -> dist/cs-mastery.epub
-  python3 tools/build_ebook.py tex                  -> dist/cs-mastery.tex (for PDF)
-  python3 tools/build_ebook.py stage-tex <N>        -> dist/stage-<N>.tex
+  python3 tools/build_ebook.py frags     # parse+filter all chapters -> dist/_frag/
+  python3 tools/build_ebook.py epub      # frags -> dist/cs-mastery.epub
+  python3 tools/build_ebook.py tex       # frags -> dist/cs-mastery.tex (then run xelatex twice)
 
-Requires pandoc. PDF additionally requires xelatex (run it on the .tex output).
-Mermaid diagrams are replaced with a pointer to the web edition (ASCII art
-in the chapters already covers most of them).
+Requires pandoc; PDF additionally requires xelatex with DejaVu fonts.
 """
-import re, sys, subprocess, pathlib
+import re, sys, json, subprocess, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
+FRAG = DIST / "_frag"
 SITE = "https://spencer4792.github.io/The-Self-Taught-CS-Degree/"
 
+# ---------------------------------------------------------------- summary
 def parse_summary():
     stages, cur = [], None
     for ln in (ROOT / "SUMMARY.md").read_text(encoding="utf-8").split("\n"):
@@ -28,82 +33,171 @@ def parse_summary():
             cur[1].append((m_item.group(1), m_item.group(2)))
     return stages
 
-def transform(text):
-    """Prepare one chapter's markdown for ebook conversion."""
-    out, in_fence, fence_lang, buf = [], False, None, []
-    for ln in text.split("\n"):
-        s = ln.lstrip()
-        if not in_fence and s.startswith("```"):
-            in_fence, fence_lang, buf = True, s[3:].strip().lower(), [ln]
-            continue
-        if in_fence:
-            buf.append(ln)
-            if s.startswith("```") and len(buf) > 1:
-                in_fence = False
-                if fence_lang == "mermaid":
-                    out.append(f"*(Interactive diagram in the [web edition]({SITE}).)*")
-                else:
-                    out.extend(buf)
-            continue
-        # demote headings one level (stages become chapters' parents)
-        if re.match(r"^#{1,5} ", ln):
-            ln = "#" + ln
-        # chapter-to-chapter links -> plain emphasis (targets don't exist in ebook)
-        ln = re.sub(r"\[([^\]]+)\]\((?!https?://)[^)]*\.md[^)]*\)", r"*\1*", ln)
-        ln = re.sub(r"\[([^\]]+)\]\(#[^)]*\)", r"*\1*", ln)
-        out.append(ln)
-    return "\n".join(out)
+# ---------------------------------------------------------------- AST filter
+def _walk(node):
+    if isinstance(node, list):
+        return [_walk(x) for x in node]
+    if not isinstance(node, dict):
+        return node
+    t = node.get("t")
+    if t == "CodeBlock":
+        (_, classes, _), _code = node["c"]
+        if "mermaid" in classes:
+            return {"t": "Para", "c": [{"t": "Emph", "c": [
+                {"t": "Str", "c": "(Interactive diagram in the web edition: "},
+                {"t": "Str", "c": SITE}, {"t": "Str", "c": ")"}]}]}
+        return node
+    if t == "Link":
+        attr, inlines, (url, _title) = node["c"]
+        if not url.startswith(("http://", "https://", "mailto:")):
+            return {"t": "Emph", "c": _walk(inlines)}
+        return {"t": "Link", "c": [attr, _walk(inlines), [url, _title]]}
+    node = dict(node)
+    if "c" in node:
+        node["c"] = _walk(node["c"])
+    return node
 
-def concat(stages):
-    parts = ["---",
-             'title: "The Self-Taught CS Degree"',
-             'author: "Spencer Hales"',
-             f'date: ""',
-             "lang: en",
-             "---", ""]
-    for stage_title, chapters in stages:
-        parts.append(f"# {stage_title}\n")
+def build_frags():
+    FRAG.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for _, chapters in parse_summary():
         for _, path in chapters:
-            p = ROOT / path
-            if p.exists():
-                parts.append(transform(p.read_text(encoding="utf-8")))
-                parts.append("")
-    return "\n".join(parts)
+            src = ROOT / path
+            slug = path.replace("/", "__")
+            out = FRAG / (slug + ".json")
+            if out.exists() and out.stat().st_mtime > src.stat().st_mtime:
+                continue
+            r = subprocess.run(["pandoc", "-f", "markdown", "-t", "json", str(src)],
+                               capture_output=True, text=True, check=True)
+            doc = json.loads(r.stdout)
+            doc["blocks"] = _walk(doc["blocks"])
+            out.write_text(json.dumps(doc), encoding="utf-8")
+            n += 1
+    print(f"filtered {n} chapters -> {FRAG}")
 
-def pdf_sanitize(md):
-    # xelatex with DejaVu lacks astral-plane emoji; keep the codepoint readable
-    return md.replace("\U0001F600", "[U+1F600]")
+def convert_frag(path, to, extra=()):
+    r = subprocess.run(["pandoc", "-f", "json", "-t", to, str(path), *extra],
+                       capture_output=True, text=True, check=True)
+    return r.stdout
 
-PDF_VARS = ["-V", "mainfont=DejaVu Serif", "-V", "monofont=DejaVu Sans Mono",
-            "-V", "sansfont=DejaVu Sans", "-V", "geometry:margin=2.2cm",
-            "-V", "fontsize=10pt", "-V", "documentclass=report",
-            "--toc", "--toc-depth=2", "--pdf-engine=xelatex"]
+# --- PDF-only: long inline code can't break inside \texttt{...}; split it
+#     into chunks joined by \allowbreak so TeX can wrap between them.
+def _split_code_text(text, width=22):
+    chunks, cur = [], ""
+    for ch in text:
+        cur += ch
+        if len(cur) >= width and ch in ',;&=/:)]}_.- ':
+            chunks.append(cur); cur = ""
+        elif len(cur) >= width + 14:      # no natural break point found
+            chunks.append(cur); cur = ""
+    if cur: chunks.append(cur)
+    return chunks
 
-def run_pandoc(md_text, out_path, fmt):
-    DIST.mkdir(exist_ok=True)
-    src = DIST / "_book.md"
-    src.write_text(md_text, encoding="utf-8")
-    if fmt == "epub":
-        cmd = ["pandoc", str(src), "-o", str(out_path), "--toc", "--toc-depth=2",
-               "--epub-chapter-level=2", "--metadata", "title=The Self-Taught CS Degree"]
-    else:  # tex
-        cmd = ["pandoc", str(src), "-s", "-o", str(out_path), "--top-level-division=part"] + \
-              [a for a in PDF_VARS if a != "--pdf-engine=xelatex"]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        print(r.stderr[-3000:])
-        sys.exit(1)
-    print(f"wrote {out_path}")
+def _walk_pdf(node):
+    if isinstance(node, list):
+        out = []
+        for x in node:
+            if isinstance(x, dict) and x.get("t") == "Code" and len(x["c"][1]) > 30:
+                attr, text = x["c"]
+                pieces = _split_code_text(text)
+                for k, piece in enumerate(pieces):
+                    if k:
+                        out.append({"t": "RawInline", "c": ["latex", "\\allowbreak{}"]})
+                    out.append({"t": "Code", "c": [attr, piece]})
+            else:
+                out.append(_walk_pdf(x))
+        return out
+    if isinstance(node, dict):
+        node = dict(node)
+        if "c" in node:
+            node["c"] = _walk_pdf(node["c"])
+        return node
+    return node
+
+# ---------------------------------------------------------------- EPUB
+def build_epub():
+    parts = ["<html><body>"]
+    for stage_title, chapters in parse_summary():
+        parts.append(f"<h1>{stage_title}</h1>")
+        for _, path in chapters:
+            frag = FRAG / (path.replace("/", "__") + ".json")
+            html = convert_frag(frag, "html")
+            # chapter's own H1 stays; shift to h1 is already the case
+            parts.append(html)
+    parts.append("</body></html>")
+    big = DIST / "_book.html"
+    big.write_text("\n".join(parts), encoding="utf-8")
+    out = DIST / "cs-mastery.epub"
+    subprocess.run(["pandoc", "-f", "html", str(big), "-o", str(out),
+                    "--toc", "--toc-depth=2", "--epub-chapter-level=1",
+                    "--metadata", "title=The Self-Taught CS Degree",
+                    "--metadata", "author=Spencer Hales"], check=True)
+    print(f"wrote {out}")
+
+# ---------------------------------------------------------------- PDF (tex)
+HEADER = r"""
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,fontsize=\small,commandchars=\\\{\}}
+\RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere,fontsize=\footnotesize}
+\usepackage{etoolbox}
+\AtBeginEnvironment{longtable}{\footnotesize}
+\usepackage[htt]{hyphenat}
+\emergencystretch=3em
+\usepackage{xurl}
+\usepackage{newunicodechar}
+\newfontfamily\glyphfb{DejaVu Sans}
+""" + "\n".join(
+    r"\newunicodechar{%s}{{\glyphfb %s}}" % (c, c)
+    for c in "✓✗ℂ∎∥≪≫⊨⋈①②③④⑤⑥⑦⑧⑨⟺")
+
+def build_tex():
+    # get a standalone preamble from pandoc itself
+    dummy = DIST / "_dummy.md"
+    # the dummy must exercise highlighting + tables so pandoc's standalone
+    # template emits the Shaded/Highlighting macros and longtable support
+    dummy.write_text("x\n\n```python\nx = 1\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n", encoding="utf-8")
+    hdr = DIST / "_header.tex"
+    hdr.write_text(HEADER, encoding="utf-8")
+    shell = subprocess.run(
+        ["pandoc", str(dummy), "-s", "-t", "latex", "--toc", "--toc-depth=2",
+         "-H", str(hdr), "--top-level-division=chapter",
+         "-V", "documentclass=report", "-V", "mainfont=DejaVu Serif",
+         "-V", "monofont=DejaVu Sans Mono", "-V", "sansfont=DejaVu Sans",
+         "-V", "geometry:margin=2.2cm", "-V", "fontsize=10pt",
+         "-V", "title=The Self-Taught CS Degree", "-V", "author=Spencer Hales",
+         "-V", "colorlinks=true"],
+        capture_output=True, text=True, check=True).stdout
+    preamble = shell.split("\\begin{document}")[0]
+    post = shell.split("\\begin{document}")[1]
+    front = post.split("\\tableofcontents")[0] + "\\tableofcontents\n\\setcounter{tocdepth}{1}\n"
+
+    body = []
+    for stage_title, chapters in parse_summary():
+        safe = stage_title.replace("&", "\\&").replace("%", "\\%").replace("#", "\\#")
+        body.append("\\part{%s}" % safe)
+        for _, path in chapters:
+            frag = FRAG / (path.replace("/", "__") + ".json")
+            doc = json.loads(frag.read_text(encoding="utf-8"))
+            doc["blocks"] = _walk_pdf(doc["blocks"])
+            tmp = FRAG / "_pdf_tmp.json"
+            tmp.write_text(json.dumps(doc), encoding="utf-8")
+            # --no-highlight: colored tokens become unbreakable macro args in
+            # LaTeX; plain verbatim + fvextra can wrap long lines anywhere
+            tex = convert_frag(tmp, "latex", ["--top-level-division=chapter", "--no-highlight"])
+            body.append(tex.replace("\U0001F600", "[U+1F600]"))
+    out = DIST / "cs-mastery.tex"
+    out.write_text(preamble + "\\begin{document}" + front + "\n".join(body) +
+                   "\n\\end{document}\n", encoding="utf-8")
+    print(f"wrote {out}  (run: cd dist && xelatex cs-mastery.tex, twice)")
 
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "epub"
-    stages = parse_summary()
-    if mode == "epub":
-        run_pandoc(concat(stages), DIST / "cs-mastery.epub", "epub")
+    DIST.mkdir(exist_ok=True)
+    if mode == "frags":
+        build_frags()
+    elif mode == "epub":
+        build_frags(); build_epub()
     elif mode == "tex":
-        run_pandoc(pdf_sanitize(concat(stages)), DIST / "cs-mastery.tex", "tex")
-    elif mode == "stage-tex":
-        n = int(sys.argv[2])
-        run_pandoc(pdf_sanitize(concat([stages[n]])), DIST / f"stage-{n}.tex", "tex")
+        build_frags(); build_tex()
     else:
-        sys.exit("unknown mode")
+        sys.exit("unknown mode: frags | epub | tex")
