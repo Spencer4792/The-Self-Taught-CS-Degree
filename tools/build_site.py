@@ -55,6 +55,12 @@ def main():
         p = ROOT / extra
         if p.exists():
             shutil.copy(p, docs / p.name)
+    # ship the Anki deck so the README's download link works on the site
+    if (ROOT / "study").exists():
+        (docs / "study").mkdir(exist_ok=True)
+        for f in (ROOT / "study").glob("*.*"):
+            if f.suffix in (".apkg", ".tsv"):
+                shutil.copy(f, docs / "study" / f.name)
     # README becomes the site index; rewrite links pointing at it
     if (ROOT / "README.md").exists():
         shutil.copy(ROOT / "README.md", docs / "index.md")
