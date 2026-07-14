@@ -1,0 +1,562 @@
+[
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "TSMC N2 yields reported around 60-70%; Samsung SF2 (2nm) yields ~50-60%",
+    "topic": "TSMC/Samsung 2nm yield rates",
+    "verify": "Search recent TSMC N2 and Samsung SF2 yield reports/analyst estimates",
+    "volatility": "high"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "Intel's 18A is in high-volume manufacturing at Fab 52 (Arizona), reported yields ~65-75%",
+    "topic": "Intel 18A yield and HVM status",
+    "verify": "Search current Intel 18A production status, Fab 52 news, yield reports",
+    "volatility": "high"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "3nm is in high-volume production and powers current flagship phones and AI chips",
+    "topic": "Leading-edge node currently in production",
+    "verify": "Check whether 2nm has since overtaken 3nm as the flagship-shipping node",
+    "volatility": "high"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "Leading-edge 300mm wafer costs perhaps $15,000-$30,000+ (examples ~$16k/$14k/$21k/$33k for N5/N3/N2)",
+    "topic": "Advanced wafer processing cost",
+    "verify": "Search current reports on 300mm wafer pricing at leading-edge nodes (TSMC/Samsung/Intel)",
+    "volatility": "high"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "CoWoS-class packaging capacity is currently a bottleneck for the entire AI hardware boom",
+    "topic": "Advanced packaging (CoWoS) capacity bottleneck",
+    "verify": "Search current TSMC CoWoS capacity / AI chip packaging supply reports",
+    "volatility": "high"
+  },
+  {
+    "file": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+    "claim": "EDA is a ~$20.8B (2026) industry",
+    "topic": "EDA industry total market size",
+    "verify": "Search current EDA market size figures (ESD Alliance/SEMI reports)",
+    "volatility": "high"
+  },
+  {
+    "file": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+    "claim": "Synopsys (~31%), Cadence (~30%), Siemens EDA (~13%), together over 70% of the EDA market",
+    "topic": "EDA vendor market share",
+    "verify": "Search recent EDA market share reports/analyst breakdowns",
+    "volatility": "high"
+  },
+  {
+    "file": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+    "claim": "Specific FPGA dev board prices: Tang Nano 9K/20K (~$15-40), iCEBreaker/TinyFPGA (~$70), Digilent Arty A7/Basys 3",
+    "topic": "Specific FPGA board pricing",
+    "verify": "Check current retail prices for Tang Nano 9K/20K, iCEBreaker, Arty A7, Basys 3",
+    "volatility": "high"
+  },
+  {
+    "file": "20-AI/20.3-generative-ai-and-llms.md",
+    "claim": "Modern LLM context windows range from a few thousand to hundreds of thousands of tokens",
+    "topic": "LLM context window sizes",
+    "verify": "Check current context-window ranges of top LLMs (GPT, Claude, Gemini, Llama)",
+    "volatility": "high"
+  },
+  {
+    "file": "20-AI/20.3-generative-ai-and-llms.md",
+    "claim": "Example LLM API pricing used in cost calculations: ~$3/M input tokens, $15/M output tokens",
+    "topic": "LLM token pricing example",
+    "verify": "Check current per-token pricing of major LLM APIs (OpenAI, Anthropic, Google)",
+    "volatility": "high"
+  },
+  {
+    "file": "20-AI/20.3-generative-ai-and-llms.md;20-AI/20.4-agentic-ai.md",
+    "claim": "MCP (Anthropic, 2024) is described as \"the de-facto standard by 2026\" for connecting models to tools/data, and the default pattern for production agents",
+    "topic": "MCP adoption/standard status",
+    "verify": "Confirm MCP's current adoption status and whether it remains the dominant tool-integration protocol",
+    "volatility": "high"
+  },
+  {
+    "file": "20-AI/20.4-agentic-ai.md",
+    "claim": "\"The 2026 framework landscape\" table names LangGraph, Claude Agent SDK, CrewAI, AutoGen, LlamaIndex, Pydantic AI as the current agent frameworks",
+    "topic": "Agentic AI framework landscape",
+    "verify": "Check current popularity/status/existence of LangGraph, CrewAI, AutoGen, LlamaIndex, Pydantic AI, Claude Agent SDK",
+    "volatility": "high"
+  },
+  {
+    "file": "20-AI/20.2-ml-engineering-and-mlops.md",
+    "claim": "MLOps stack named as current: orchestration (Airflow, Prefect, Kubeflow, Dagster), serving (FastAPI/BentoML/Triton/KServe), monitoring (Evidently, Prometheus/Grafana, WhyLabs)",
+    "topic": "MLOps tooling landscape",
+    "verify": "Check current MLOps stack for tool churn, consolidation, or replacement by newer tools",
+    "volatility": "high"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "Illustrative comparison: a $40,000 rack in an AWS data center vs. a $599 Mac mini",
+    "topic": "Mac mini base price vs. server rack cost",
+    "verify": "Verify current Mac mini base price (apple.com) and a representative server rack cost",
+    "volatility": "high"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "AWS data egress often costs $0.05-$0.09/GB",
+    "topic": "AWS data egress pricing",
+    "verify": "Check current AWS egress pricing tiers (aws.amazon.com/ec2/pricing/on-demand)",
+    "volatility": "high"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "The 2024 Mac mini (M4 / M4 Pro) is described as the current generation and \"one of the best small servers money can buy\"",
+    "topic": "Mac mini current generation (M4/M4 Pro)",
+    "verify": "Confirm whether M4/M4 Pro is still the current shipping Mac mini generation",
+    "volatility": "high"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "M4 Pro Mac mini unified memory up to 64GB, memory bandwidth ~273 GB/s",
+    "topic": "M4 Pro Mac mini memory specs",
+    "verify": "Verify current max RAM and memory-bandwidth specs for the current Mac mini on apple.com",
+    "volatility": "high"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "M5 / M5 Pro Mac minis are \"expected around mid-to-late 2026,\" adding a 'Neural Accelerator'",
+    "topic": "M5 Mac mini future-release prediction",
+    "verify": "Check whether the M5/M5 Pro Mac mini has shipped and whether specs match the prediction",
+    "volatility": "high"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "Cost-model example prices a 64GB M4 Pro Mac mini at $1,999 each",
+    "topic": "M4 Pro 64GB Mac mini price",
+    "verify": "Verify current price of the 64GB M4 Pro Mac mini configuration on apple.com",
+    "volatility": "high"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "Cost model assumes cloud instance_usd_per_hour=0.90, egress_usd_per_gb=0.08, managed_services_per_month=50",
+    "topic": "Illustrative cloud compute/egress pricing assumptions",
+    "verify": "Check whether these figures still approximate current on-demand cloud pricing",
+    "volatility": "high"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "A consumer NVIDIA GPU has \"far more raw FLOPS but only 8-24GB of VRAM\"",
+    "topic": "Consumer NVIDIA GPU VRAM capacity",
+    "verify": "Check current consumer NVIDIA GPU VRAM ranges (RTX 50-series and later)",
+    "volatility": "high"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "VC funding ladder: Pre-seed $100k-$1M, Seed $1M-$5M, Series A $5M-$20M, Series B $20M-$50M, Series C+ $50M+",
+    "topic": "VC funding round size ranges",
+    "verify": "Check recent VC market reports (Carta, PitchBook, Crunchbase) for current typical round sizes by stage",
+    "volatility": "high"
+  },
+  {
+    "file": "15-Career/15.3-behavioral-resume-jobsearch.md",
+    "claim": "A recruiter spends roughly 6-10 seconds on the first pass of a resume",
+    "topic": "Recruiter resume-scan time statistic",
+    "verify": "Search current recruiting/HR studies for resume scan-time figures",
+    "volatility": "high"
+  },
+  {
+    "file": "15-Career/15.3-behavioral-resume-jobsearch.md",
+    "claim": "A referral can be 5-10x more likely to get an interview than a cold application",
+    "topic": "Referral conversion advantage statistic",
+    "verify": "Search current hiring-funnel/referral-conversion studies for the referral advantage multiplier",
+    "volatility": "high"
+  },
+  {
+    "file": "15-Career/15.3-behavioral-resume-jobsearch.md",
+    "claim": "Funnel benchmarks: ~5-10% of applications to screen, ~30-50% of screens to onsite, ~20-40% of onsites to offer",
+    "topic": "Job application funnel conversion rates",
+    "verify": "Search current entry-level tech hiring funnel/conversion-rate data",
+    "volatility": "high"
+  },
+  {
+    "file": "10-Cloud-DevOps/10.4-aws.md",
+    "claim": "EC2 Spot instances offer up to ~90% off On-Demand pricing",
+    "topic": "EC2 Spot instance discount percentage",
+    "verify": "Check current AWS EC2 Spot pricing page for the max discount claim",
+    "volatility": "high"
+  },
+  {
+    "file": "10-Cloud-DevOps/10.4-aws.md",
+    "claim": "Lambda limits: max 15-minute timeout, up to 10 GB memory",
+    "topic": "Lambda max timeout and memory limits",
+    "verify": "Check AWS Lambda quotas/limits documentation for current values",
+    "volatility": "high"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "TSMC 2nm customers reportedly include Nvidia, AMD, Apple, Qualcomm, Google, Microsoft, Amazon",
+    "topic": "TSMC 2nm named customers",
+    "verify": "Search recent TSMC 2nm customer/order announcements",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "TSMC plans a 1nm-class node around 2027, with 1.4nm on the roadmap",
+    "topic": "TSMC future node roadmap (1nm/1.4nm)",
+    "verify": "Search TSMC's latest published roadmap (A16, A14, etc.)",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "GAA / nanosheet transistors arriving at the 2nm-class node in 2026",
+    "topic": "GAA/nanosheet node production timing",
+    "verify": "Search TSMC/Samsung/Intel GAA transistor production status",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "EUV scanner costs run $150M-$400M+ (High-NA at top of range); ASML described as sole EUV maker",
+    "topic": "ASML EUV scanner pricing and monopoly status",
+    "verify": "Search current ASML EUV/High-NA EUV scanner pricing and any competitor entrants",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md",
+    "claim": "US CHIPS Act committed $52.7B (with ~$33.7B awarded so far)",
+    "topic": "CHIPS Act appropriation/award figures",
+    "verify": "Search current CHIPS Act funding tracker for updated award totals",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md;17-Semiconductors/17.6-semiconductor-careers.md",
+    "claim": "TSMC Arizona (Fab 21) running 4nm in volume since early 2025, targeting 3nm around 2027; TSMC has floated up to 12 fabs (~6,000 direct jobs)",
+    "topic": "TSMC Arizona fab construction/production timeline",
+    "verify": "Search recent TSMC Arizona fab news for updated production/expansion status",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.5-semiconductor-manufacturing.md;17-Semiconductors/17.6-semiconductor-careers.md",
+    "claim": "Intel's Ohio mega-fab slipped to ~2030; Intel's 18A runs in Arizona now",
+    "topic": "Intel fab construction timelines (Ohio, Arizona)",
+    "verify": "Search recent Intel Ohio fab and Arizona Fab 52 status updates",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+    "claim": "EDA tool-to-vendor mapping: Synopsys (VCS, Design Compiler, Fusion Compiler, IC Compiler II, PrimeTime, TestMAX, Synplify); Cadence (Genus, Innovus, Xcelium, Tempus, Pegasus, Modus); Siemens (Questa, Tessent, Calibre, Aprisa)",
+    "topic": "Current EDA tool product names/portfolio",
+    "verify": "Search current Synopsys/Cadence/Siemens EDA product lines for renames, discontinuations, or new flagship tools",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+    "claim": "FPGA dev board costs $100-300 vs. ASIC cost to start of $1M-$100M+",
+    "topic": "FPGA vs. ASIC development cost figures",
+    "verify": "Search current FPGA dev board pricing and typical ASIC NRE/mask cost figures",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md;17-Semiconductors/17.6-semiconductor-careers.md",
+    "claim": "Verification consumes 40-70% of total project effort; verification engineers outnumber designers 2:1 or 3:1 (~50-70% of chip-design headcount)",
+    "topic": "Verification staffing ratio industry statistic",
+    "verify": "Search current industry surveys on verification effort/headcount ratio (e.g., Siemens/Wilson Research Functional Verification Study)",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.6-semiconductor-careers.md",
+    "claim": "\"A widely reported workforce shortage\": the industry is hiring faster than universities produce hardware engineers",
+    "topic": "Semiconductor workforce/talent shortage claim",
+    "verify": "Search recent semiconductor industry workforce shortage reports (SIA, McKinsey, Deloitte)",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.6-semiconductor-careers.md",
+    "claim": "TinyTapeout lets students submit a tiny design to a real shuttle for a modest fee",
+    "topic": "TinyTapeout program availability and pricing",
+    "verify": "Search current TinyTapeout program status, submission cost, and shuttle schedule",
+    "volatility": "medium"
+  },
+  {
+    "file": "17-Semiconductors/17.1-semiconductor-physics.md",
+    "claim": "The entire $600B+ semiconductor industry rests on silicon's 4 valence electrons",
+    "topic": "Global semiconductor industry revenue size",
+    "verify": "Search current global semiconductor industry annual revenue (SIA/Gartner/IDC figures)",
+    "volatility": "medium"
+  },
+  {
+    "file": "20-AI/20.2-ml-engineering-and-mlops.md",
+    "claim": "Experiment tracking is done with MLflow and Weights & Biases",
+    "topic": "Experiment tracking tools (MLflow, W&B)",
+    "verify": "Confirm MLflow/W&B remain the dominant experiment-tracking tools",
+    "volatility": "medium"
+  },
+  {
+    "file": "20-AI/20.2-ml-engineering-and-mlops.md",
+    "claim": "Hyperparameter tuning uses Bayesian optimization tools Optuna and Hyperopt",
+    "topic": "Hyperparameter tuning tools (Optuna, Hyperopt)",
+    "verify": "Verify Optuna/Hyperopt are still standard hyperparameter-tuning libraries",
+    "volatility": "medium"
+  },
+  {
+    "file": "20-AI/20.2-ml-engineering-and-mlops.md",
+    "claim": "DVC is the \"git-for-data\" standard for dataset versioning",
+    "topic": "DVC as data-versioning standard",
+    "verify": "Confirm DVC remains the leading data-version-control tool",
+    "volatility": "medium"
+  },
+  {
+    "file": "20-AI/20.3-generative-ai-and-llms.md",
+    "claim": "LLM tokenizers classify over a ~100,000-way vocabulary",
+    "topic": "Typical LLM tokenizer vocabulary size",
+    "verify": "Verify typical vocab sizes of current LLM tokenizers",
+    "volatility": "medium"
+  },
+  {
+    "file": "20-AI/20.3-generative-ai-and-llms.md",
+    "claim": "Example embedding endpoint returns a 1,536-dimension vector per chunk",
+    "topic": "Embedding model output dimension",
+    "verify": "Check current standard embedding dimensions from major providers (OpenAI, etc.)",
+    "volatility": "medium"
+  },
+  {
+    "file": "20-AI/20.4-agentic-ai.md",
+    "claim": "Semantic Kernel is positioned as Microsoft's .NET-first (also Python) enterprise agent framework",
+    "topic": "Semantic Kernel framework positioning",
+    "verify": "Verify Semantic Kernel is still active and positioned this way",
+    "volatility": "medium"
+  },
+  {
+    "file": "20-AI/20.4-agentic-ai.md",
+    "claim": "Agent observability relies on OpenTelemetry plus agent-specific tools LangSmith, LangFuse, Arize",
+    "topic": "Agent observability/tracing tools",
+    "verify": "Confirm these remain the leading agent observability tools",
+    "volatility": "medium"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "Residential electricity assumed at $0.18/kWh in the cost model",
+    "topic": "Residential electricity price assumption",
+    "verify": "Verify current average US residential electricity rate (EIA data)",
+    "volatility": "medium"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "Apple's license permits virtualizing macOS only on Apple hardware; Mac-cloud rentals (MacStadium, AWS EC2 Mac) exist",
+    "topic": "Apple macOS virtualization licensing and Mac-cloud rental services",
+    "verify": "Verify Apple's current EULA virtualization terms and that MacStadium/EC2 Mac still operate",
+    "volatility": "medium"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "Software gross margin of 70-90% is cited as the strong/software-like benchmark",
+    "topic": "SaaS gross margin benchmark",
+    "verify": "Check current SaaS benchmark reports (Bessemer, ChartMogul) for typical gross margin ranges",
+    "volatility": "medium"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "LTV:CAC ratio target of \u22653:1 is cited as healthy",
+    "topic": "LTV to CAC ratio benchmark",
+    "verify": "Check current VC/SaaS metrics benchmark reports for the standard LTV:CAC target",
+    "volatility": "medium"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "CAC payback period target of under 12 months",
+    "topic": "CAC payback period benchmark",
+    "verify": "Check current SaaS benchmark reports for typical CAC payback targets",
+    "volatility": "medium"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "Sean Ellis PMF test: ~40%+ saying \"very disappointed\" is cited as a strong product-market-fit signal",
+    "topic": "Product-market fit survey threshold",
+    "verify": "Search current PMF / Sean Ellis test methodology sources for the accepted threshold",
+    "volatility": "medium"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "Rule of thumb: start raising with 6+ months of runway left",
+    "topic": "Fundraising runway rule of thumb",
+    "verify": "Search current startup fundraising advice/VC blogs for recommended runway buffer before raising",
+    "volatility": "medium"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "GTM price bands: inside sales $5k-$50k/yr; field/enterprise sales $50k+/yr",
+    "topic": "B2B sales motion price bands",
+    "verify": "Search current GTM/SaaS pricing-motion benchmark articles for these price band ranges",
+    "volatility": "medium"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "SOC 2 report is described as often \"the price of entry\" to sell to enterprises",
+    "topic": "SOC 2 as enterprise sales requirement",
+    "verify": "Search current enterprise software procurement/security-review norms to confirm SOC 2 prevalence",
+    "volatility": "medium"
+  },
+  {
+    "file": "16-Data/16.5-beyond-python-languages.md",
+    "claim": "Go is described as having had \"no generics until recently\"",
+    "topic": "Go generics recency",
+    "verify": "Check Go release notes to confirm how long generics (added in Go 1.18, 2022) have existed relative to the reader's present",
+    "volatility": "medium"
+  },
+  {
+    "file": "15-Career/15.1-coding-interviews.md",
+    "claim": "Online assessments use HackerRank, Codility, CodeSignal; live rounds use CoderPad/HackerRank/Google Docs",
+    "topic": "Named coding-interview platforms in use",
+    "verify": "Search current hiring-pipeline articles for which OA/live-coding platforms are in use",
+    "volatility": "medium"
+  },
+  {
+    "file": "15-Career/15.1-coding-interviews.md",
+    "claim": "\"Maybe 13 patterns\" are said to cover the overwhelming majority of coding interview questions",
+    "topic": "Number of interview patterns covering most questions",
+    "verify": "Search current coding-interview prep resources (NeetCode, LeetCode) for whether this pattern taxonomy still holds",
+    "volatility": "medium"
+  },
+  {
+    "file": "15-Career/15.1-coding-interviews.md",
+    "claim": "Pramp and interviewing.io are recommended by name as mock-interview platforms",
+    "topic": "Named mock interview platforms",
+    "verify": "Verify Pramp and interviewing.io are still operating and commonly recommended",
+    "volatility": "medium"
+  },
+  {
+    "file": "15-Career/15.3-behavioral-resume-jobsearch.md",
+    "claim": "One-page resume with \"no exceptions\" is the rule for entry-level candidates",
+    "topic": "Resume length norm for new grads",
+    "verify": "Search current resume-writing guidance for entry-level SWE roles to confirm the one-page rule",
+    "volatility": "medium"
+  },
+  {
+    "file": "15-Career/15.3-behavioral-resume-jobsearch.md",
+    "claim": "New-grad portals open in cycles, often Aug-Nov for the next year, with hiring heaviest in the fall",
+    "topic": "New-grad hiring season timing",
+    "verify": "Search current new-grad tech hiring cycle timing (major tech co new-grad portal open dates)",
+    "volatility": "medium"
+  },
+  {
+    "file": "15-Career/15.3-behavioral-resume-jobsearch.md",
+    "claim": "The whole hiring process per company often runs 3-6 weeks screen-to-offer",
+    "topic": "Hiring process timeline length",
+    "verify": "Search current reports on tech hiring process duration/time-to-offer",
+    "volatility": "medium"
+  },
+  {
+    "file": "15-Career/15.3-behavioral-resume-jobsearch.md",
+    "claim": "levels.fyi and Glassdoor are recommended by name for salary range research",
+    "topic": "Named salary research tools",
+    "verify": "Verify levels.fyi and Glassdoor remain the standard tools for comp research",
+    "volatility": "medium"
+  },
+  {
+    "file": "10-Cloud-DevOps/10.4-aws.md",
+    "claim": "AWS is described as having ~200 services",
+    "topic": "AWS total service count",
+    "verify": "Check current AWS service catalog / Products page count",
+    "volatility": "medium"
+  },
+  {
+    "file": "10-Cloud-DevOps/10.4-aws.md",
+    "claim": "Example Lambda functions set Runtime: python3.12",
+    "topic": "Lambda Python runtime version used in examples",
+    "verify": "Check AWS Lambda supported runtimes list for the current recommended version",
+    "volatility": "medium"
+  },
+  {
+    "file": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+    "claim": "Example output shows \"git version 2.43.0\"; text states any version 2.30+ is fine",
+    "topic": "Current/example Git version and minimum recommended version",
+    "verify": "Check the latest stable Git release version and commonly recommended minimum",
+    "volatility": "medium"
+  },
+  {
+    "file": "11-Version-Control/11.2-git-hands-on-tutorial.md",
+    "claim": "Git only garbage-collects unreachable commits after ~30 days",
+    "topic": "Git reflog/unreachable-object GC retention default",
+    "verify": "Check current `git gc`/reflog expiry defaults in Git docs",
+    "volatility": "medium"
+  },
+  {
+    "file": "00-Orientation/00.1-setup-and-tooling.md",
+    "claim": "Setup example uses `pyenv install 3.12.4`, verified with `python --version` => Python 3.12.4",
+    "topic": "Specific Python version used as setup example",
+    "verify": "Check the current latest stable Python 3.x release",
+    "volatility": "medium"
+  },
+  {
+    "file": "00-Orientation/00.1-setup-and-tooling.md",
+    "claim": "uv and poetry are named as modern Python packaging tools \"worth adopting later\"",
+    "topic": "Recommended modern Python packaging tools",
+    "verify": "Check current popularity/status of uv, poetry, and pip in the Python tooling ecosystem",
+    "volatility": "medium"
+  },
+  {
+    "file": "12-Security/12.2-network-security.md",
+    "claim": "Let's Encrypt issues 90-day certificates",
+    "topic": "Let's Encrypt certificate validity period",
+    "verify": "Check Let's Encrypt's current certificate lifetime policy",
+    "volatility": "medium"
+  },
+  {
+    "file": "12-Security/12.2-network-security.md",
+    "claim": "Guidance requires TLS 1.2+ (prefer 1.3), disable RC4, 3DES, export ciphers",
+    "topic": "TLS protocol/cipher deprecation recommendation",
+    "verify": "Check current NIST/browser-vendor TLS protocol and cipher deprecation guidance",
+    "volatility": "medium"
+  },
+  {
+    "file": "12-Security/12.2-network-security.md",
+    "claim": "Secret rotation example uses AutomaticallyAfterDays: 90, i.e., rotate every 90 days",
+    "topic": "Recommended secret rotation cadence",
+    "verify": "Check current AWS/industry best-practice guidance on secret rotation intervals",
+    "volatility": "medium"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "Standard startup equity schedule is a 4-year vest with a 1-year cliff",
+    "topic": "Startup equity vesting norm",
+    "verify": "Search current startup equity/vesting norm articles (Carta, YC) to confirm 4yr/1yr cliff is still standard",
+    "volatility": "low"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "Option pool carved out is typically ~10-20% of the cap table",
+    "topic": "Startup option pool size norm",
+    "verify": "Search current cap table/option pool sizing benchmarks (Carta equity reports)",
+    "volatility": "low"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "Privacy/health-data regulatory landscape referenced: GDPR, CCPA/CPRA, HIPAA",
+    "topic": "Privacy/health data law landscape",
+    "verify": "Search for recent amendments or new state privacy laws since this was written",
+    "volatility": "low"
+  },
+  {
+    "file": "21-Business/21.1-software-company.md",
+    "claim": "QSBS (Section 1202) rules described as potentially very favorable to founders/early investors",
+    "topic": "QSBS tax benefit rules",
+    "verify": "Search current IRS/QSBS Section 1202 rules for founder stock tax treatment",
+    "volatility": "low"
+  },
+  {
+    "file": "17-Semiconductors/17.4-chip-design-flow-and-hdl.md",
+    "claim": "Synopsys completed its ~$35B acquisition of Ansys in July 2025",
+    "topic": "Synopsys-Ansys acquisition status/value",
+    "verify": "Verify deal closing date, final value, and any post-close regulatory conditions",
+    "volatility": "low"
+  },
+  {
+    "file": "22-Infrastructure/22.1-mac-minis-and-server-farms.md",
+    "claim": "Dropbox and 37signals/Basecamp are cited as cloud-repatriation case studies that saved millions/year",
+    "topic": "Dropbox / 37signals cloud-repatriation case studies",
+    "verify": "Verify these companies' cloud-repatriation stories are still accurately characterized",
+    "volatility": "low"
+  },
+  {
+    "file": "10-Cloud-DevOps/10.4-aws.md",
+    "claim": "S3 is marketed as having \"eleven 9s\" (11 nines) of durability",
+    "topic": "S3 durability percentage claim",
+    "verify": "Check current AWS S3 durability SLA on aws.amazon.com/s3",
+    "volatility": "low"
+  }
+]
