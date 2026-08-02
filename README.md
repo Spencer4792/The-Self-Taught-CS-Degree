@@ -36,9 +36,9 @@ Whether you are teaching yourself from scratch, filling gaps after a degree, or 
 
 - **Read on the website or in the repo.** The [website](https://spencer4792.github.io/The-Self-Taught-CS-Degree/) is the same content with search and navigation; the repo is where you clone, run the code, and do the exercises. Most people read on the site and work in a local clone.
 - **Follow the order.** [SUMMARY.md](SUMMARY.md) lists every chapter in the exact order to read them, from easiest to hardest. The same progression, with stage descriptions, is in the Learning Path below. The numbered folders are just stable labels for storage, so read by the path, not by folder order.
-- **Read with your hands.** Every chapter has runnable code (mostly Python) and exercises with worked solutions. Type the code out and run it. That is the whole point. To run the examples, create a virtual environment and `pip install -r requirements.txt`. The heavy machine-learning libraries live in `requirements-ml.txt`, so install those only when you reach Parts 14, 19, and 20.
+- **Read with your hands.** Every chapter has runnable code (mostly Python) and exercises with worked solutions. Type the code out and run it. That is the whole point. To run the examples, create a virtual environment and `pip install -r requirements.txt`. The heavy machine-learning libraries live in `requirements-ml.txt`, so install those only when you reach Parts 14, 19, and 20. The C++ track (Part 29) needs any C++17 compiler; the examples use `g++`.
 - **Dip into the reference.** The [cheat sheets](28-Appendix/28.1-cheat-sheets.md) and [glossary](28-Appendix/28.2-glossary.md) are meant to stay open in a tab.
-- **Drill with flashcards.** [study/cs-mastery.apkg](study/cs-mastery.apkg) is an Anki deck built from every chapter's "Teach it back" section plus the glossary: 880 cards in per-part subdecks. Import it into [Anki](https://apps.ankiweb.net/) and review as you finish each chapter. (Regenerate anytime with `python3 tools/build_anki.py`.)
+- **Drill with flashcards.** [study/cs-mastery.apkg](study/cs-mastery.apkg) is an Anki deck built from every chapter's "Teach it back" section plus the glossary: 910 cards in per-part subdecks. Import it into [Anki](https://apps.ankiweb.net/) and review as you finish each chapter. (Regenerate anytime with `python3 tools/build_anki.py`.)
 - **Read offline.** `python3 tools/build_ebook.py epub` produces an EPUB for e-readers, and `python3 tools/build_ebook.py tex` plus two `xelatex` passes produces the full ~1,800-page PDF (requires pandoc; PDF also needs TeX). Mermaid diagrams link back to the web edition; everything else, including the ASCII diagrams and all code, is in the book itself.
 - **Plan and stay on track.** Use the [Study Guide](STUDY-GUIDE.md) to pick a route (fastest path to a job, web, or data/ML) and a schedule, the [Progress Tracker](PROGRESS.md) to check off chapters, the [Project Index](PROJECTS.md) to build a portfolio as you go, and the [Stage Checkpoints](CHECKPOINTS.md) to confirm you are ready before moving on.
 
@@ -174,8 +174,13 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [17.3 From Transistors to Chips: Architecture & Memory](17-Semiconductors/17.3-from-transistors-to-chips.md)
 - [17.4 Chip Design Flow & Hardware Description Languages](17-Semiconductors/17.4-chip-design-flow-and-hdl.md)
 - [17.5 Semiconductor Manufacturing: How Chips Are Made](17-Semiconductors/17.5-semiconductor-manufacturing.md)
+- [17.7 Fab Equipment & Tool Software](17-Semiconductors/17.7-fab-equipment-and-tool-software.md)
 - [17.6 The Industry & Landing an Entry-Level Semiconductor Job](17-Semiconductors/17.6-semiconductor-careers.md)
 - [16.5 Beyond Python: Go, C++, R & Node.js](16-Data/16.5-beyond-python-languages.md)
+- [29.1 C++ for Python Programmers](29-Cpp/29.1-cpp-for-python-programmers.md)
+- [29.2 Memory & Object Lifetime in C++](29-Cpp/29.2-memory-and-object-lifetime.md)
+- [29.3 Allocators, Arenas & the Cache](29-Cpp/29.3-allocators-arenas-cache.md)
+- [29.4 Industrial & Embedded C++: the Software Inside a Fab Tool](29-Cpp/29.4-industrial-embedded-cpp.md)
 - [22.1 Mac Minis, Home Labs & Building Server Farms](22-Infrastructure/22.1-mac-minis-and-server-farms.md)
 - [21.1 Building & Structuring a Software Company](21-Business/21.1-software-company.md)
 

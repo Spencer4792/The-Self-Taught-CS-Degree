@@ -114,8 +114,13 @@ This is the reading order. Work through it top to bottom and every chapter build
 - [17.3 From Transistors to Chips: Architecture and Memory](17-Semiconductors/17.3-from-transistors-to-chips.md)
 - [17.4 Chip Design Flow and Hardware Description Languages](17-Semiconductors/17.4-chip-design-flow-and-hdl.md)
 - [17.5 Semiconductor Manufacturing](17-Semiconductors/17.5-semiconductor-manufacturing.md)
+- [17.7 Fab Equipment and Tool Software](17-Semiconductors/17.7-fab-equipment-and-tool-software.md)
 - [17.6 The Industry and Landing an Entry-Level Semiconductor Job](17-Semiconductors/17.6-semiconductor-careers.md)
 - [16.5 Beyond Python: Go, C++, R and Node.js](16-Data/16.5-beyond-python-languages.md)
+- [29.1 C++ for Python Programmers](29-Cpp/29.1-cpp-for-python-programmers.md)
+- [29.2 Memory and Object Lifetime in C++](29-Cpp/29.2-memory-and-object-lifetime.md)
+- [29.3 Allocators, Arenas and the Cache](29-Cpp/29.3-allocators-arenas-cache.md)
+- [29.4 Industrial and Embedded C++: the Software Inside a Fab Tool](29-Cpp/29.4-industrial-embedded-cpp.md)
 - [22.1 Mac Minis, Home Labs and Building Server Farms](22-Infrastructure/22.1-mac-minis-and-server-farms.md)
 - [21.1 Building and Structuring a Software Company](21-Business/21.1-software-company.md)
 

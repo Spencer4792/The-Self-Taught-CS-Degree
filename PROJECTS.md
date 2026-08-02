@@ -1,7 +1,7 @@
 # Project and Portfolio Index
 
 
-**160 hands-on projects across the book.**
+**171 hands-on projects across the book.**
 
 Employers hire on proof, not claims. This is every build-it project in the book, in reading order, so you can grow a GitHub portfolio as you learn. Put the bigger ones in their own repositories with a clear README (see [15.4 Capstone and Portfolio Projects](15-Career/15.4-capstone-projects.md) for how to present them).
 
@@ -321,11 +321,30 @@ Tip: the six capstone briefs at the very bottom (in 15.4) are the projects most 
 - Mini-project - a Python "fab economics" model
 - Mini-project 2 - node shrink × die growth × yield, all interacting
 
+### [17.7 Fab Equipment and Tool Software](17-Semiconductors/17.7-fab-equipment-and-tool-software.md)
+- Build it - pump-down curve + Preston-equation CMP endpoint simulation
+- Mini-project - a run-to-run controller with control charts
+
 ### [17.6 The Industry and Landing an Entry-Level Semiconductor Job](17-Semiconductors/17.6-semiconductor-careers.md)
 - Mini-project - your personalized 90-day roadmap, portfolio plan & resume rewrite
 
 ### [16.5 Beyond Python: Go, C++, R and Node.js](16-Data/16.5-beyond-python-languages.md)
 - Mini-project: word-frequency counter in Python, Go, and Node
+
+### [29.1 C++ for Python Programmers](29-Cpp/29.1-cpp-for-python-programmers.md)
+- Mini-project - `wordfreq`, a timed CLI tool (Python vs C++)
+
+### [29.2 Memory and Object Lifetime in C++](29-Cpp/29.2-memory-and-object-lifetime.md)
+- Build it - a rule-of-five dynamic array (RAII from scratch)
+- Mini-project - an allocation counter that makes leaks visible
+
+### [29.3 Allocators, Arenas and the Cache](29-Cpp/29.3-allocators-arenas-cache.md)
+- Build it - an arena and a pool allocator, tested
+- Mini-project - an allocator benchmark suite with written analysis
+
+### [29.4 Industrial and Embedded C++: the Software Inside a Fab Tool](29-Cpp/29.4-industrial-embedded-cpp.md)
+- Build it - a simulated CMP controller (state machine + fixed-rate loop + telemetry)
+- Mini-project - fault recovery and a flight recorder
 
 ### [22.1 Mac Minis, Home Labs and Building Server Farms](22-Infrastructure/22.1-mac-minis-and-server-farms.md)
 - Build it - mini-project (a): a single hardened headless server
