@@ -36,7 +36,7 @@ Whether you are teaching yourself from scratch, filling gaps after a degree, or 
 
 - **Read on the website or in the repo.** The [website](https://spencer4792.github.io/The-Self-Taught-CS-Degree/) is the same content with search and navigation; the repo is where you clone, run the code, and do the exercises. Most people read on the site and work in a local clone.
 - **Follow the order.** [SUMMARY.md](SUMMARY.md) lists every chapter in the exact order to read them, from easiest to hardest. The same progression, with stage descriptions, is in the Learning Path below. The numbered folders are just stable labels for storage, so read by the path, not by folder order.
-- **Read with your hands.** Every chapter has runnable code (mostly Python) and exercises with worked solutions. Type the code out and run it. That is the whole point. To run the examples, create a virtual environment and `pip install -r requirements.txt`. The heavy machine-learning libraries live in `requirements-ml.txt`, so install those only when you reach Parts 14, 19, and 20. The C++ track (Part 29) needs any C++17 compiler; the examples use `g++`.
+- **Read with your hands.** Every chapter has runnable code (mostly Python) and exercises with worked solutions. Type the code out and run it. That is the whole point. To run the examples, create a virtual environment and `pip install -r requirements.txt`. The heavy machine-learning libraries live in `requirements-ml.txt`, so install those only when you reach Parts 14, 19, and 20. The C++ track (Part 29, seven chapters from first class to lock-free queues) needs any C++17 compiler; the examples use `g++`.
 - **Dip into the reference.** The [cheat sheets](28-Appendix/28.1-cheat-sheets.md) and [glossary](28-Appendix/28.2-glossary.md) are meant to stay open in a tab.
 - **Drill with flashcards.** [study/cs-mastery.apkg](study/cs-mastery.apkg) is an Anki deck built from every chapter's "Teach it back" section plus the glossary: 910 cards in per-part subdecks. Import it into [Anki](https://apps.ankiweb.net/) and review as you finish each chapter. (Regenerate anytime with `python3 tools/build_anki.py`.)
 - **Read offline.** `python3 tools/build_ebook.py epub` produces an EPUB for e-readers, and `python3 tools/build_ebook.py tex` plus two `xelatex` passes produces the full ~1,800-page PDF (requires pandoc; PDF also needs TeX). Mermaid diagrams link back to the web edition; everything else, including the ASCII diagrams and all code, is in the book itself.
@@ -164,7 +164,7 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [20.4 Agentic AI: Creating & Implementing Agents](20-AI/20.4-agentic-ai.md)
 
 ### Stage 7 - Going deep & wide: advanced & specialized tracks (degree year 4 / electives)
-*Pick by curiosity and goals. Compilers builds on Stage 3's automata/architecture; semiconductors needs Stage 1 (logic) + Stage 3 (architecture); physics needs the Stage 1 math.*
+*Pick by curiosity and goals. Compilers builds on Stage 3's automata/architecture; semiconductors needs Stage 1 (logic) + Stage 3 (architecture); physics needs the Stage 1 math; fab engineering (Part 30) builds on 17.5/17.7 and the physics; the C++ track builds on Stages 2-3 and reads in the order shown (29.1, 29.5, 29.2, 29.6, 29.3, 29.7, 29.4).*
 - [24.1 Lexing, Parsing & Abstract Syntax Trees](24-Compilers/24.1-lexing-parsing-asts.md)
 - [24.2 Interpreters, Type Systems & a Bytecode VM](24-Compilers/24.2-interpreters-and-vms.md)
 - [19.1 Physics for Computer Scientists: Mechanics & Electromagnetism](19-Physics/19.1-physics-for-cs.md)
@@ -176,10 +176,18 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 - [17.5 Semiconductor Manufacturing: How Chips Are Made](17-Semiconductors/17.5-semiconductor-manufacturing.md)
 - [17.7 Fab Equipment & Tool Software](17-Semiconductors/17.7-fab-equipment-and-tool-software.md)
 - [17.6 The Industry & Landing an Entry-Level Semiconductor Job](17-Semiconductors/17.6-semiconductor-careers.md)
+- [30.1 Electrical Engineering for the Fab Floor](30-Fab-Engineering/30.1-electrical-engineering-for-the-fab.md)
+- [30.2 Chemical Engineering for CMP: Slurries, Fluids & Ultrapure Water](30-Fab-Engineering/30.2-chemical-engineering-for-cmp.md)
+- [30.3 Mechanical Engineering for Fab Tools: Motion, Vibration & Precision](30-Fab-Engineering/30.3-mechanical-engineering-for-fab-tools.md)
+- [30.4 CMP Process Engineering: Uniformity, Defects & Control](30-Fab-Engineering/30.4-cmp-process-engineering.md)
+- [30.5 The Field Service & Startup Playbook: Installing a Fab Tool](30-Fab-Engineering/30.5-field-service-and-tool-install.md)
 - [16.5 Beyond Python: Go, C++, R & Node.js](16-Data/16.5-beyond-python-languages.md)
 - [29.1 C++ for Python Programmers](29-Cpp/29.1-cpp-for-python-programmers.md)
+- [29.5 Classes, Vtables & How C++ Lays Objects Out in Memory](29-Cpp/29.5-classes-and-object-layout.md)
 - [29.2 Memory & Object Lifetime in C++](29-Cpp/29.2-memory-and-object-lifetime.md)
+- [29.6 Templates, the STL & Compile-Time C++](29-Cpp/29.6-templates-and-compile-time-cpp.md)
 - [29.3 Allocators, Arenas & the Cache](29-Cpp/29.3-allocators-arenas-cache.md)
+- [29.7 Concurrency, Atomics & the C++ Memory Model](29-Cpp/29.7-concurrency-atomics-memory-model.md)
 - [29.4 Industrial & Embedded C++: the Software Inside a Fab Tool](29-Cpp/29.4-industrial-embedded-cpp.md)
 - [22.1 Mac Minis, Home Labs & Building Server Farms](22-Infrastructure/22.1-mac-minis-and-server-farms.md)
 - [21.1 Building & Structuring a Software Company](21-Business/21.1-software-company.md)
@@ -220,7 +228,7 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 **Part 14, Machine Learning & Deep Learning:** [14.1](14-ML-DL/14.1-ml-foundations.md) · [14.2](14-ML-DL/14.2-deep-learning.md)
 **Part 15, Landing the Job:** [15.1](15-Career/15.1-coding-interviews.md) · [15.2](15-Career/15.2-system-design-interviews.md) · [15.3](15-Career/15.3-behavioral-resume-jobsearch.md) · [15.4](15-Career/15.4-capstone-projects.md)
 **Part 16, Data, Visualization & Performance:** [16.1](16-Data/16.1-statistics-and-probability.md) · [16.2](16-Data/16.2-data-wrangling-pandas-numpy.md) · [16.3](16-Data/16.3-data-visualization.md) · [16.4](16-Data/16.4-performance-optimization.md) · [16.5](16-Data/16.5-beyond-python-languages.md)
-**Part 17, Semiconductors & Hardware:** [17.1](17-Semiconductors/17.1-semiconductor-physics.md) · [17.2](17-Semiconductors/17.2-transistor-and-logic.md) · [17.3](17-Semiconductors/17.3-from-transistors-to-chips.md) · [17.4](17-Semiconductors/17.4-chip-design-flow-and-hdl.md) · [17.5](17-Semiconductors/17.5-semiconductor-manufacturing.md) · [17.6](17-Semiconductors/17.6-semiconductor-careers.md)
+**Part 17, Semiconductors & Hardware:** [17.1](17-Semiconductors/17.1-semiconductor-physics.md) · [17.2](17-Semiconductors/17.2-transistor-and-logic.md) · [17.3](17-Semiconductors/17.3-from-transistors-to-chips.md) · [17.4](17-Semiconductors/17.4-chip-design-flow-and-hdl.md) · [17.5](17-Semiconductors/17.5-semiconductor-manufacturing.md) · [17.6](17-Semiconductors/17.6-semiconductor-careers.md) · [17.7](17-Semiconductors/17.7-fab-equipment-and-tool-software.md)
 **Part 18, Mathematics for CS:** [18.1](18-Math/18.1-calculus-for-cs.md) · [18.2](18-Math/18.2-linear-algebra-and-eigenvalues.md)
 **Part 19, Physics:** [19.1](19-Physics/19.1-physics-for-cs.md) · [19.2](19-Physics/19.2-modern-physics-and-quantum-computing.md)
 **Part 20, AI, ML Engineering & Agents:** [20.1](20-AI/20.1-artificial-intelligence.md) · [20.2](20-AI/20.2-ml-engineering-and-mlops.md) · [20.3](20-AI/20.3-generative-ai-and-llms.md) · [20.4](20-AI/20.4-agentic-ai.md)
@@ -231,6 +239,8 @@ This is the spine of the book: **everything arranged from easiest to hardest, as
 **Part 25, Computer Architecture & Assembly:** [25.1](25-Architecture/25.1-computer-architecture.md) · [25.2](25-Architecture/25.2-assembly-programming.md)
 **Part 26, Distributed Systems:** [26.1](26-Distributed-Systems/26.1-foundations.md) · [26.2](26-Distributed-Systems/26.2-consensus-and-replication.md)
 **Part 27, Software Engineering:** [27.1](27-Software-Engineering/27.1-clean-code-and-design-patterns.md) · [27.2](27-Software-Engineering/27.2-testing-and-architecture.md)
+**Part 29, The C++ Track:** [29.1](29-Cpp/29.1-cpp-for-python-programmers.md) · [29.5](29-Cpp/29.5-classes-and-object-layout.md) · [29.2](29-Cpp/29.2-memory-and-object-lifetime.md) · [29.6](29-Cpp/29.6-templates-and-compile-time-cpp.md) · [29.3](29-Cpp/29.3-allocators-arenas-cache.md) · [29.7](29-Cpp/29.7-concurrency-atomics-memory-model.md) · [29.4](29-Cpp/29.4-industrial-embedded-cpp.md)
+**Part 30, Fab Engineering:** [30.1](30-Fab-Engineering/30.1-electrical-engineering-for-the-fab.md) · [30.2](30-Fab-Engineering/30.2-chemical-engineering-for-cmp.md) · [30.3](30-Fab-Engineering/30.3-mechanical-engineering-for-fab-tools.md) · [30.4](30-Fab-Engineering/30.4-cmp-process-engineering.md) · [30.5](30-Fab-Engineering/30.5-field-service-and-tool-install.md)
 **Part 11 (cont.), Git tutorial:** [11.2](11-Version-Control/11.2-git-hands-on-tutorial.md)
 **Appendix:** [28.1 Cheat Sheets](28-Appendix/28.1-cheat-sheets.md) · [28.2 Glossary](28-Appendix/28.2-glossary.md)
 
@@ -245,7 +255,7 @@ This curriculum is built to take you from **absolute beginner to properly deep**
 - **Stages 0-2** build the foundations most self-taught developers feel shaky on, including the calculus and linear algebra (eigenvalues, SVD) that make everything later make sense.
 - **Stages 3-5** turn you into someone who can build, ship, scale, secure, and operate real software end to end.
 - **Stage 6** is the intelligence layer: classical ML and deep learning on a firm mathematical footing, then production MLOps, then how LLMs actually work and how to build **agentic AI** systems.
-- **Stage 7** is where you go deep and wide on whatever you are curious about: **physics** and quantum computing, the full **semiconductor** stack (with a researched guide to breaking into that industry), other programming languages, **building server farms and Mac-mini infrastructure**, and **running a software company**.
+- **Stage 7** is where you go deep and wide on whatever you are curious about: **physics** and quantum computing, the full **semiconductor** stack (with a researched guide to breaking into that industry), **fab engineering** (the electrical, chemical, and mechanical engineering behind CMP tools, plus a field-service playbook for installing them), a complete **C++ track** from first class to the memory model, **building server farms and Mac-mini infrastructure**, and **running a software company**.
 - **Stage 8** is the bridge to employment: interviews, portfolio, and the job search, kept warm the whole way through.
 
 Let's build the deep understanding. Start at [Stage 0](00-Orientation/00.1-setup-and-tooling.md).

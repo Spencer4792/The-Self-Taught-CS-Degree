@@ -12,7 +12,7 @@ Pair this with three companion files:
 
 ## How to choose a route
 
-If your only goal is a first job, do not try to read all 94 chapters before applying. Pick a track below, finish it, build the projects, and start applying while you keep learning. You become hireable well before you finish the whole book. The full path is there for real depth and for the long game, not as a gate you must clear before you are allowed to apply.
+If your only goal is a first job, do not try to read all 106 chapters before applying. Pick a track below, finish it, build the projects, and start applying while you keep learning. You become hireable well before you finish the whole book. The full path is there for real depth and for the long game, not as a gate you must clear before you are allowed to apply.
 
 Three things are true of every track:
 
@@ -64,6 +64,14 @@ Add to Track A: the rest of [Part 7: Databases](07-Databases), all of [Part 9: S
 Track A's Core, plus the math and data spine, with data projects instead of a second web app.
 
 Add to the Core: [18.1 Calculus](18-Math/18.1-calculus-for-cs.md), [18.2 Linear Algebra and Eigenvalues](18-Math/18.2-linear-algebra-and-eigenvalues.md), all of [Part 16: Data](16-Data) (statistics, pandas, visualization, performance), [7.1 SQL](07-Databases/07.1-relational-and-sql.md), [14.1 ML Foundations](14-ML-DL/14.1-ml-foundations.md), [14.2 Deep Learning](14-ML-DL/14.2-deep-learning.md), [20.2 ML Engineering and MLOps](20-AI/20.2-ml-engineering-and-mlops.md), and [20.3 Generative AI and LLMs](20-AI/20.3-generative-ai-and-llms.md). Build Capstone Project 3 (pipeline to model to dashboard).
+
+---
+
+## Track D: Semiconductor equipment and process engineering
+
+For readers heading into the fab world (field service, equipment engineering, CMP process engineering) rather than a pure software seat. The CS core still pays for itself daily: fab tools are computers with pumps attached, and the engineers who can script, analyze data, and read the control software are the ones who advance fastest.
+
+Add to Track A's Core: [18.1 Calculus](18-Math/18.1-calculus-for-cs.md), [16.1 Statistics and Probability](16-Data/16.1-statistics-and-probability.md), [19.1 Physics for CS](19-Physics/19.1-physics-for-cs.md), [5.2 Concurrency](05-Systems/05.2-concurrency.md), all of [Part 17: Semiconductors](17-Semiconductors) (17.5 and 17.7 especially), all of [Part 30: Fab Engineering](30-Fab-Engineering), and the C++ track in reading order ([29.1](29-Cpp/29.1-cpp-for-python-programmers.md), [29.5](29-Cpp/29.5-classes-and-object-layout.md), [29.2](29-Cpp/29.2-memory-and-object-lifetime.md), [29.6](29-Cpp/29.6-templates-and-compile-time-cpp.md), [29.3](29-Cpp/29.3-allocators-arenas-cache.md), [29.7](29-Cpp/29.7-concurrency-atomics-memory-model.md), [29.4](29-Cpp/29.4-industrial-embedded-cpp.md)). For the portfolio, polish the virtual-tool DOE from [30.4](30-Fab-Engineering/30.4-cmp-process-engineering.md), the qual-marathon analyzer from [30.5](30-Fab-Engineering/30.5-field-service-and-tool-install.md), and the run-to-run controller from [17.7](17-Semiconductors/17.7-fab-equipment-and-tool-software.md): together they read as "this person already thinks like a process engineer."
 
 ---
 
